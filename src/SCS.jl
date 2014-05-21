@@ -1,29 +1,36 @@
 module SCS
 
-export test_scs, SCSMatrix, SCSData, SCSSolution, SCSInfo, SCSCone
+export SCSInt, create_scs_matrix, create_scs_data, create_scs_cone, init, solve, finish
+
+# TODO: Actually fix this and make it work for windows
+@windows_only SCSInt = Int64
+@unix_only SCSInt = Int32
+
 
 immutable SCSMatrix
-  values::Ptr{Float64}
-  rowval::Ptr{Int32}
-  colptr::Ptr{Int32}
+  values::Ptr{Cdouble}
+  rowval::Ptr{SCSInt}
+  colptr::Ptr{SCSInt}
 end
 
+
 immutable SCSData
-  m::Int32
-  n::Int32
+  m::SCSInt
+  n::SCSInt
   A::Ptr{SCSMatrix}
-  b::Ptr{Float64}
-  c::Ptr{Float64}
-  max_iters::Int32
-  eps::Float64
-  alpha::Float64
-  rho_x::Float64
-  scale::Float64
-  cg_rate::Float64
-  verbose::Int32
-  normalize::Int32
-  warm_start::Int32
+  b::Ptr{Cdouble}
+  c::Ptr{Cdouble}
+  max_iters::SCSInt
+  eps::Cdouble
+  alpha::Cdouble
+  rho_x::Cdouble
+  scale::Cdouble
+  cg_rate::Cdouble
+  verbose::SCSInt
+  normalize::SCSInt
+  warm_start::SCSInt
 end
+
 
 immutable SCSSolution
   x::Ptr{None}
@@ -31,67 +38,131 @@ immutable SCSSolution
   s::Ptr{None}
 end
 
-immutable SCSInfo
-  iter::Int32
 
-  # TODO: Look into this
+immutable SCSInfo
+  iter::SCSInt
+  # We need to allocate 32 bytes for a character string, so we allocate 256 bits
+  # of integer instead
+  # TODO: Find a better way to do this
   status1::Int128
   status2::Int128
 
-  statusVal::Int32
-  pobj::Float64
-  dobj::Float64
-  resPri::Float64
-  resDual::Float64
-  relGap::Float64
-  setupTime::Float64
-  solveTime::Float64
+  statusVal::SCSInt
+  pobj::Cdouble
+  dobj::Cdouble
+  resPri::Cdouble
+  resDual::Cdouble
+  relGap::Cdouble
+  setupTime::Cdouble
+  solveTime::Cdouble
 end
+
 
 immutable SCSCone
-  f::Int32
-  l::Int32
-  q::Ptr{Int32}
-  qsize::Int32
-  s::Ptr{Int32}
-  ssize::Int32
-  ep::Int32
-  ed::Int32
+  f::SCSInt
+  l::SCSInt
+  q::Ptr{SCSInt}
+  qsize::SCSInt
+  s::Ptr{SCSInt}
+  ssize::SCSInt
+  ep::SCSInt
+  ed::SCSInt
 end
 
-function test_scs()
-  sol = SCSSolution(C_NULL, C_NULL, C_NULL)
 
-  zero = convert(Int32, 0)
+immutable SCSWork
+  u::Ptr{Cdouble}
+  v::Ptr{Cdouble}
+  u_t::Ptr{Cdouble}
+  u_prev::Ptr{Cdouble}
+  h::Ptr{Cdouble}
+  g::Ptr{Cdouble}
+  pr::Ptr{Cdouble}
+  dr::Ptr{Cdouble}
+  gTh::Cdouble
+  sc_b::Cdouble
+  sc_c::Cdouble
+  nm_b::Cdouble
+  nm_c::Cdouble
+  meanNormRowA::Cdouble
+  D::Ptr{Cdouble}
+  E::Ptr{Cdouble}
+  p::Ptr{Void}
+end
+
+
+function init(data::SCSData, cone::SCSCone)
+  # Initialize the info struct
+  zero = convert(SCSInt, 0)
   info = SCSInfo(zero, convert(Int128, 0), convert(Int128, 0), zero, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
-  # info = SCSInfo(zero, C_NULL, zero, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
 
-  q = [convert(Int32, 0)]
-  s = [convert(Int32, 0)]
-  one = convert(Int32, 1)
+  p_work = ccall((:scs_init, "../scs/scs.so"), Ptr{SCSWork},
+      (Ptr{SCSData}, Ptr{SCSCone}, Ptr{SCSInfo}),
+      &data, &cone, &info)
 
-  # TODO: Check what this should be
-  cone = SCSCone(one, zero, pointer(q), zero, pointer(s), zero, zero, zero)
+  return p_work, info
+end
 
-  sp = sparse([1.0]')
 
-  values = sp.nzval * 1.0
-  rowval = convert(Array{Int32, 1}, sp.rowval - 1)
-  colptr = convert(Array{Int32, 1}, sp.colptr - 1)
+function solve(p_work::Ptr{SCSWork}, data::SCSData, cone::SCSCone, info::SCSInfo)
+  # Initialize the solution struct. Note that the pointers can be null since SCS will take care
+  # of it for us
+  solution = SCSSolution(C_NULL, C_NULL, C_NULL)
+  solution_ptr = pointer([solution])
 
-  A = SCSMatrix(pointer(values), pointer(rowval), pointer(colptr))
+  info_ptr = pointer([info])
 
-  temp = [A]
-  p = pointer(temp)
-  c = [1.0]
-  b = [1.0]
+  status = ccall((:scs_solve, "../scs/scs.so"), SCSInt,
+      (Ptr{SCSWork}, Ptr{SCSData}, Ptr{SCSCone}, Ptr{SCSSolution}, Ptr{SCSInfo}),
+      p_work, &data, &cone, solution_ptr, info_ptr)
 
-  data = SCSData(one, one, p, pointer(b),  pointer(c), convert(Int32, 2500), 1e-3, 1.8, 1e-3, 5.0, 1.5,
-    one, one, zero)
+  solution = unsafe_load(solution_ptr)
+  info = unsafe_load(info_ptr)
 
-  status = ccall((:scs, "../scs/scs.so"), Int32, (Ptr{SCSData}, Ptr{SCSCone}, Ptr{SCSSolution}, Ptr{SCSInfo}),
-                  &data, &cone, &sol, &info)
 
+  return status, solution, info, p_work
+end
+
+
+function finish(data::SCSData, p_work::Ptr{SCSWork})
+  ccall((:scs_finish, "../scs/scs.so"), Void,
+      (Ptr{SCSData}, Ptr{SCSWork}),
+      &data, p_work)
+end
+
+
+# All of these will be keyword arguments
+function create_scs_data(;m::SCSInt=nothing, n::SCSInt=nothing, A::Ptr{SCSMatrix}=nothing,
+    b::Ptr{Cdouble}=nothing,  c::Ptr{Cdouble}=nothing, max_iters=convert(SCSInt, 2500)::SCSInt,
+    eps=convert(Cdouble, 1e-3)::Cdouble, alpha=convert(Cdouble, 1.8)::Cdouble,
+    rho_x=convert(Cdouble, 1e-3)::Cdouble, scale=convert(Cdouble, 5.0)::Cdouble,
+    cg_rate=convert(Cdouble, 1.5)::Cdouble, verbose=convert(SCSInt, 1)::SCSInt,
+    normalize=convert(SCSInt, 1)::SCSInt, warm_start=convert(SCSInt, 0)::SCSInt)
+
+  data = SCSData(m, n, A, b, c, max_iters, eps, alpha, rho_x, scale, cg_rate, verbose, normalize, warm_start)
+  return data
+end
+
+
+function create_scs_data(m::SCSInt, n::SCSInt, A::Ptr{SCSMatrix}, b::Ptr{Cdouble}, c::Ptr{Cdouble})
+  return create_scs_data(m=m, n=n, A=A, b=b, c=c)
+end
+
+
+function create_scs_matrix(A)
+  A_sparse = sparse(A)
+
+  values = A_sparse.nzval * 1.0
+  rowval = convert(Array{SCSInt, 1}, A_sparse.rowval - 1)
+  colptr = convert(Array{SCSInt, 1}, A_sparse.colptr - 1)
+
+  return SCSMatrix(pointer(values), pointer(rowval), pointer(colptr))
+end
+
+
+function create_scs_cone(f::SCSInt, l::SCSInt, q::Ptr{SCSInt}, qsize::SCSInt, s::Ptr{SCSInt},
+  ssize::SCSInt, ep::SCSInt, ed::SCSInt)
+  return SCSCone(f, l, q, qsize, s, ssize, ep, ed)
 end
 
 
