@@ -2,6 +2,12 @@ module SCS
 
 export SCSInt, create_scs_matrix, create_scs_data, create_scs_cone, init, solve, finish
 
+if isfile(joinpath(Pkg.dir("SCS"), "deps", "deps.jl"))
+    include("../deps/deps.jl")
+else
+    error("SCS not properly installed. Please run Pkg.build(\"SCS\")")
+end
+
 # TODO: Actually fix this and make it work for windows
 @windows_only SCSInt = Int64
 @unix_only SCSInt = Int32
@@ -96,7 +102,7 @@ function init(data::SCSData, cone::SCSCone)
   zero = convert(SCSInt, 0)
   info = SCSInfo(zero, convert(Int128, 0), convert(Int128, 0), zero, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
 
-  p_work = ccall((:scs_init, "../scs/scs.so"), Ptr{SCSWork},
+  p_work = ccall((:scs_init, SCS.scs), Ptr{SCSWork},
       (Ptr{SCSData}, Ptr{SCSCone}, Ptr{SCSInfo}),
       &data, &cone, &info)
 
@@ -112,7 +118,7 @@ function solve(p_work::Ptr{SCSWork}, data::SCSData, cone::SCSCone, info::SCSInfo
 
   info_ptr = pointer([info])
 
-  status = ccall((:scs_solve, "../scs/scs.so"), SCSInt,
+  status = ccall((:scs_solve, SCS.scs), SCSInt,
       (Ptr{SCSWork}, Ptr{SCSData}, Ptr{SCSCone}, Ptr{SCSSolution}, Ptr{SCSInfo}),
       p_work, &data, &cone, solution_ptr, info_ptr)
 
@@ -125,7 +131,7 @@ end
 
 
 function finish(data::SCSData, p_work::Ptr{SCSWork})
-  ccall((:scs_finish, "../scs/scs.so"), Void,
+  ccall((:scs_finish, SCS.scs), Void,
       (Ptr{SCSData}, Ptr{SCSWork}),
       &data, p_work)
 end
