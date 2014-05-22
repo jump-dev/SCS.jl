@@ -5,10 +5,11 @@ export SCSInt, create_scs_matrix, create_scs_data, create_scs_cone, init, solve,
 if isfile(joinpath(Pkg.dir("SCS"), "deps", "deps.jl"))
     include("../deps/deps.jl")
 else
-    error("SCS not properly installed. Please run Pkg.build(\"SCS\")")
+    error("SCS not properly installed. Please run Pkg.build(\"SCS\") and restart julia")
 end
 
 # TODO: Actually fix this and make it work for windows
+SCSInt = Int32
 @windows_only SCSInt = Int64
 @unix_only SCSInt = Int32
 
