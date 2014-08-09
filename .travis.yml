@@ -3,12 +3,19 @@ compiler:
   - clang
 notifications:
   email: false
+env:
+  matrix:
+    - JULIAVERSION="juliareleases"
+    - JULIAVERSION="julianightlies"
 before_install:
   - sudo add-apt-repository ppa:staticfloat/julia-deps -y
-  - sudo add-apt-repository ppa:staticfloat/julianightlies -y
+  - sudo add-apt-repository ppa:staticfloat/${JULIAVERSION} -y
   - sudo apt-get update -qq -y
   - sudo apt-get install libpcre3-dev julia -y
 script:
   - julia -e 'Pkg.init(); run(`ln -s $(pwd()) $(Pkg.dir("SCS"))`); Pkg.pin("SCS"); Pkg.resolve(); Pkg.build("SCS")'
   - julia -e 'using SCS; @assert isdefined(:SCS); @assert typeof(SCS) === Module'
-  - julia -e 'include("$(Pkg.dir("SCS"))/test/test.jl");'
+  - if [ $JULIAVERSION = "julianightlies" ]; then julia --code-coverage test/test.jl; fi
+  - if [ $JULIAVERSION = "juliareleases" ]; then julia test/test.jl; fi
+after_success:
+- julia -e 'cd(Pkg.dir("SCS")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())'
