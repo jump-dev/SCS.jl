@@ -1,10 +1,11 @@
 using SCS
 
+# Solve a trivial problem
 A = [1.0]'
 solution = SCS_solve(1, 1, A, [1.0], [1.0], 1, 0, [0], 0, [0], 0, 0, 0);
 @assert solution.ret_val == 1
 
-
+# Solve the same problem from the low-level interface
 function low_level_scs()
   A = [1.0]'
   data = create_scs_data(1, 1, A, [1.0], [1.0])
@@ -17,10 +18,11 @@ function low_level_scs()
   SCS_finish(data, p_work)
 end
 
-low_level_scs()
+low_level_scs();
 
-
-function feasible_test_one()
+# Random, feasible conic problem (no exponential or SDP cones)
+# Problem data taken from https://github.com/cvxgrp/scs/blob/master/examples/raw/demo_data
+function feasible_basic_conic()
   n = 11;
   m = 112;
 
@@ -49,9 +51,11 @@ function feasible_test_one()
   @assert sol.ret_val == 1
 end
 
-feasible_test_one()
+feasible_basic_conic();
 
-function feasible_test_two()
+# Feasible conic problem with exponential cones (no SDP cones)
+# Problem data taken from https://github.com/cvxgrp/scs/blob/master/examples/raw/randomConeFeasible
+function feasible_exponential_conic()
   n = 148;
   m = 445;
   f = 100;
@@ -78,11 +82,12 @@ function feasible_test_two()
   @assert sol.ret_val == 1
 end
 
-feasible_test_two()
+feasible_exponential_conic();
 
-
-# TODO: This test doesn't work because we don't know where the blas/lapack libraries are
-function feasible_test_three()
+# Feasible conic problem with exponential and SDP cones
+# BLAS and LAPACK must be linked
+# Problem data taken from https://github.com/cvxgrp/scs/blob/master/examples/raw/randomConeFeasibleSDP
+function feasible_sdp_conic()
   n = 173;
   m = 520;
   f = 100;
@@ -108,4 +113,4 @@ function feasible_test_three()
   @assert sol.ret_val == 1
 end
 
-# feasible_test_three()
+feasible_sdp_conic();

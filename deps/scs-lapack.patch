@@ -1,0 +1,8 @@
+48c48
+< USE_LAPACK = 0
+---
+> USE_LAPACK = 1
+52c52
+<   LDFLAGS += -lblas -llapack -lgfortran
+---
+>   LDFLAGS += -lblas -llapack

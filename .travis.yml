@@ -11,3 +11,4 @@ before_install:
 script:
   - julia -e 'Pkg.init(); run(`ln -s $(pwd()) $(Pkg.dir("SCS"))`); Pkg.pin("SCS"); Pkg.resolve(); Pkg.build("SCS")'
   - julia -e 'using SCS; @assert isdefined(:SCS); @assert typeof(SCS) === Module'
+  - julia -e 'include("$(Pkg.dir("SCS"))/test/test.jl");'

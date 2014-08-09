@@ -22,6 +22,7 @@ provides(SimpleBuild,
       `cat ${BinDeps.depsdir(scs)}/make-dylib.patch` |> `patch Makefile`
       `cat ${BinDeps.depsdir(scs)}/scs-fpic.patch` |> `patch scs.mk`
       `cat ${BinDeps.depsdir(scs)}/scs-long.patch` |> `patch scs.mk`
+      `cat ${BinDeps.depsdir(scs)}/scs-lapack.patch` |> `patch scs.mk`
       `make libscsdir.dylib`
       `mv libscsdir.dylib $prefix/lib`
     end)
@@ -37,6 +38,7 @@ provides(SimpleBuild,
       `cat ${BinDeps.depsdir(scs)}/make-so.patch` |> `patch Makefile`
       `cat ${BinDeps.depsdir(scs)}/scs-fpic.patch` |> `patch scs.mk`
       `cat ${BinDeps.depsdir(scs)}/scs-long.patch` |> `patch scs.mk`
+      `cat ${BinDeps.depsdir(scs)}/scs-lapack.patch` |> `patch scs.mk`
       `make libscsdir.so`
       `mv libscsdir.so $prefix/lib`
     end)

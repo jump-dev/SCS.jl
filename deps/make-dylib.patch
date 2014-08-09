@@ -1,4 +1,4 @@
 46a47,49
 > libscsdir.dylib: $(OBJECTS) $(DIRSRC)/private.o  $(DIRECT_OBJECTS)
-> 	$(CC) -o libscsdir.dylib $(OBJECTS) $(DIRSRC)/private.o  $(DIRECT_OBJECTS) -shared
+> 	$(CC) -o libscsdir.dylib $(OBJECTS) $(DIRSRC)/private.o  $(DIRECT_OBJECTS) $(LDFLAGS) -shared
 > 
