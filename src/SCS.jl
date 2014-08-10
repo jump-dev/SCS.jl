@@ -6,8 +6,9 @@ else
   error("SCS not properly installed. Please run Pkg.build(\"SCS\") and restart julia")
 end
 
-include("SCS_types.jl")
+include("types.jl")
 include("low_level_wrapper.jl")
 include("high_level_wrapper.jl")
+include("SCSSolverInterface.jl")  # MathProgBase interface
 
 end # module

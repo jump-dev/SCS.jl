@@ -102,22 +102,22 @@ type Solution
   x::Array{Float64, 1}
   y::Array{Float64, 1}
   s::Array{Float64, 1}
-  status::ASCIIString
+  status::Symbol
   ret_val::Int64
 
   const status_map = {
-    1 => "solved",
-    -2 => "primal infeasible, dual unbounded",
-    -1 => "primal unbounded, dual infeasible",
-    -3 => "indeterminate",
-    -4 => "failure"
+    1 => :Optimal,
+    -2 => :Infeasible,
+    -1 => :Unbounded,
+    -3 => :Indeterminate,
+    -4 => :Error
   }
 
   function Solution(x::Array{Float64, 1}, y::Array{Float64, 1}, s::Array{Float64, 1}, ret_val::Int64)
     if haskey(status_map, ret_val)
       return new(x, y, s, status_map[ret_val], ret_val)
     else
-      return new(x, y, s, "unknown problem in solver", ret_val)
+      return new(x, y, s, :UnknownError, ret_val)
     end
   end
 end
