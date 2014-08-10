@@ -1,6 +1,6 @@
 #############################################################################
 # SCS.jl
-# Wrapper around the SCS solver https://github.com/ifa-ethz/ecos
+# Wrapper around the SCS solver https://github.com/cvxgrp/scs
 # See http://github.com/karanveerm/SCS.jl
 #############################################################################
 # test/mpb.jl
