@@ -9,7 +9,15 @@
 
 require(joinpath(Pkg.dir("MathProgBase"), "src", "MathProgSolverInterface.jl"))
 importall MathProgSolverInterface
+import Base.convert
 
+function convert(x::Type{Int64}, y::UnitRange{Int64})
+    if length(y) == 1
+        return y[1]
+    else
+        Base.convert(x, y)
+    end
+end
 #############################################################################
 # Define the MPB Solver and Model objects
 export SCSSolver
@@ -36,13 +44,14 @@ type SCSMathProgModel <: AbstractMathProgModel
     obj_val::Float64
     primal_sol::Vector{Float64}
     dual_sol::Vector{Float64}
+    slack::Vector{Float64}
     fwd_map::Vector{Int}                # To reorder solution if we solved
-end                                   # using the conic interface
+end                                     # using the conic interface
 
 SCSMathProgModel() = SCSMathProgModel(0, 0, spzeros(0, 0), Int[], Int[],
                                       0, 0, Int[], 0, Int[], 0, 0, 0,
                                       :Min, :NotSolved, 0.0, Float64[], Float64[],
-                                      Int[])
+                                      Float64[],Int[])
 
 #############################################################################
 # Begin implementation of the MPB low-level interface
@@ -114,12 +123,12 @@ function loadproblem!(m::SCSMathProgModel, A, collb, colub, obj, rowlb, rowub, s
 
     m.n         = nvar                              # Number of variables
     m.m         = length(ineqidx) + length(eqidx)   # Number of inequalities Gx <=_K h
-    # TODO: There is probably a better way to do this that I can't think of at
-    # 12am
-    m.A         = sparse([ A[eqidx,:]; A[ineqidx,:] ])
-    m.b         = [ eqbnd; ineqbnd ]
+    m.A         = sparse([A[eqidx,:]; A[ineqidx,:]])
+    m.b         = [eqbnd; ineqbnd]
     m.c         = (sense == :Max) ? obj * -1 : obj[:]
                                         # The objective coeffs (always min)
+    m.f         = length(eqidx)
+    m.l         = length(ineqidx)
     m.q         = Int64[]
     m.qsize     = 0
     m.s         = Int64[]
@@ -128,9 +137,6 @@ function loadproblem!(m::SCSMathProgModel, A, collb, colub, obj, rowlb, rowub, s
     m.ed        = 0
     m.orig_sense = sense                # Original objective sense
     m.fwd_map   = [1:nvar]              # Identity mapping
-
-    m.f         = length(eqidx)
-    m.l         = length(ineqidx)
 end
 
 function optimize!(m::SCSMathProgModel)
@@ -138,14 +144,16 @@ function optimize!(m::SCSMathProgModel)
       m.s, m.ssize, m.ep, m.ed)
 
   m.solve_stat = solution.status
-  m.primal_sol = solution.x
+  m.primal_sol = solution.x[m.fwd_map]
+  # TODO: Do we need to do some sort of mapping for the dual solution?
   m.dual_sol = solution.y
+  m.slack = solution.s
   m.obj_val = dot(m.c, m.primal_sol) * (m.orig_sense == :Max ? -1 : +1)
 end
 
 status(m::SCSMathProgModel) = m.solve_stat
 getobjval(m::SCSMathProgModel) = m.obj_val
-getsolution(m::SCSMathProgModel) = m.primal_sol[m.fwd_map]
+getsolution(m::SCSMathProgModel) = m.primal_sol
 
 #############################################################################
 # Begin implementation of the MPB conic interface
@@ -153,7 +161,128 @@ getsolution(m::SCSMathProgModel) = m.primal_sol[m.fwd_map]
 # - loadconicproblem!
 # http://mathprogbasejl.readthedocs.org/en/latest/conic.html
 
-function loadconicproblem!(s::SCSMathProgModel, c, A, b, cones)
+# TODO: This is the world's worst implementation. REDO tomorrow
+function orderconesforscs(A, b, cones)
+    # Order the cones as
+    # free cones
+    # zero cones
+    # linear cones
+    # SOC cones
+    # SDP cones
+    # Exp primal cones
+    # Exp dual cones
+    scs_A = nothing
+
+    num_vars = 0
+    for (cone, idxs) in cones
+       num_vars += length(idxs)
+    end
+
+    fwd_map = Array(Int, num_vars)
+    multipliers = ones(num_vars, 1)
+
+    k = 1
+    for (cone, idxs) in cones
+        if cone == :Free
+            if scs_A == nothing
+                scs_A = A[:, idxs]
+            else
+                scs_A = [scs_A A[:, idxs]]
+            end
+            fwd_map[idxs] = k:k + length(idxs) - 1
+            k += length(idxs)
+        end
+    end
+
+    for (cone, idxs) in cones
+        if cone == :Zero
+            if scs_A == nothing
+                scs_A = A[:, idxs]
+            else
+                scs_A = [scs_A A[:, idxs]]
+            end
+            fwd_map[idxs] = k:k + length(idxs) - 1
+            k += length(idxs)
+        end
+    end
+
+    for (cone, idxs) in cones
+        if cone == :NonNeg
+            if scs_A == nothing
+                scs_A = A[:, idxs]
+            else
+                scs_A = [scs_A A[:, idxs]]
+            end
+            fwd_map[idxs] = k:k + length(idxs) - 1
+            k += length(idxs)
+        end
+    end
+    for (cone, idxs) in cones
+        if cone == :NonPos
+            if scs_A == nothing
+                scs_A = -A[:, idxs]
+            else
+                scs_A = [scs_A A[:, idxs]]
+            end
+            fwd_map[idxs] = k:k + length(idxs) - 1
+            multipliers[k:k + length(idxs) - 1] = -1
+            k += length(idxs)
+        end
+    end
+
+    for (cone, idxs) in cones
+        if cone == :SOC
+            if scs_A == nothing
+                scs_A = A[:, idxs]
+            else
+                scs_A = [scs_A A[:, idxs]]
+            end
+            fwd_map[idxs] = k:k + length(idxs) - 1
+            k += length(idxs)
+        end
+    end
+
+    for (cone, idxs) in cones
+        if cone == :SDP
+            if scs_A == nothing
+                scs_A = A[:, idxs]
+            else
+                scs_A = [scs_A A[:, idxs]]
+            end
+            fwd_map[idxs] = k:k + length(idxs) - 1
+            k += length(idxs)
+        end
+    end
+
+    for (cone, idxs) in cones
+        if cone == :ExpPrimal
+            if scs_A == nothing
+                scs_A = A[:, idxs]
+            else
+                scs_A = [scs_A A[:, idxs]]
+            end
+            fwd_map[idxs] = k:k + length(idxs) - 1
+            k += length(idxs)
+        end
+    end
+
+    for (cone, idxs) in cones
+        if cone == :ExpDual
+            if scs_A == nothing
+                scs_A = A[:, idxs]
+            else
+                scs_A = [scs_A A[:, idxs]]
+            end
+            fwd_map[idxs] = k:k + length(idxs) - 1
+            k += length(idxs)
+        end
+    end
+
+    return scs_A, b[:], cones, fwd_map, multipliers
+end
+
+# TODO: This is the world's worst implementation. REDO tomorrow
+function loadconicproblem!(model::SCSMathProgModel, c, A, b, cones)
     # TODO (if it matters): make this more efficient for sparse A
 
     # We don't support SOCRotated
@@ -163,121 +292,97 @@ function loadconicproblem!(s::SCSMathProgModel, c, A, b, cones)
         cone_vars[1] in bad_cones && error("Cone type $(cone_vars[1]) not supported")
     end
 
-    G = -speye(n)
-    m, n = size(A)
+    scs_A, scs_b, cones, fwd_map, multipliers = orderconesforscs(A, b, cones)
 
-    scs_A = [A; G]
-    scs_b = [b; zeros(n, 1)]
-
-    # MathProgBase form             SCS form
-    # min c'x                       min c'x
-    # st  A x = b                   st  A x + s = b
-    #       x in K                      s in K
-
-    # Expand out the cones info
-    # The cones can come in any order, so we need to build a mapping
-    # from the variable indices in the input to the internal ordering
-    # we will use.
-
-    # In the first past we'll just count up the number of variables
-    # of each type.
-    num_vars = 0
-    for (cone_type, idxs) in cones
-        num_vars += length(idxs)
-    end
-    fwd_map = Array(Int,    num_vars)  # Will be used for SOCs
-    rev_map = Array(Int,    num_vars)  # Need to restore sol. vec.
-    idxcone = Array(Symbol, num_vars)  # We'll uses this for non-SOCs
-
-    # Now build the mapping
-    pos = 1
+    num_free = 0
     for (cone, idxs) in cones
-        for i in idxs
-            fwd_map[i]   = pos   # fwd_map = orig idx -> internal idx
-            rev_map[pos] = i     # rev_map = internal idx -> orig idx
-            idxcone[pos] = cone
-            pos += 1
+        if cone == :Free
+            num_free += length(idxs)
         end
     end
+    multipliers = multipliers[num_free + 1 : end]
+    m, n = size(scs_A)
 
-    # Rearrange data into the internal ordering
-    ecos_c = c[rev_map]
-    ecos_A = A[:,rev_map]
-    ecos_b = b[:]
+    rows_G = n - num_free
+    G = [zeros(rows_G, num_free) -diagm(multipliers)]
 
-    # For all variables in the :Zero cone, fix at 0 with an
-    # equality constraint. TODO: Don't even include them
+    scs_A = [scs_A; G]
+    scs_b = [b; zeros(rows_G, 1)]
 
-    for j = 1:num_vars
-        idxcone[j] != :Zero && continue
-
-        new_row    = zeros(1,num_vars)
-        new_row[j] = 1.0
-        ecos_A     = vcat(ecos_A, new_row)
-        ecos_b     = vcat(ecos_b, 0.0)
-    end
-
-    # Build G matrix
-    # There will be one row for every :NonNeg and :NonPos cone
-    # and an additional row for every variable in a :SOC cone
-    # Or in other words, everything that isn't a :Free or :Zero
-    # gets a row in G and h
-    num_G_row = 0
-    for j = 1:num_vars
-        idxcone[j] == :Free && continue
-        idxcone[j] == :Zero && continue
-        num_G_row += 1
-    end
-    ecos_G = zeros(num_G_row,num_vars)
-    ecos_h = zeros(num_G_row)
-
-    # First, handle the :NonNeg, :NonPos cases
-    num_pos_orth = 0
-    G_row = 1
-    for j = 1:num_vars
-        if idxcone[j] == :NonNeg
-            ecos_G[G_row,j] = -1.0
-            G_row += 1
-            num_pos_orth += 1
-        elseif idxcone[j] == :NonPos
-            ecos_G[G_row,j] = +1.0
-            G_row += 1
-            num_pos_orth += 1
-        end
-    end
-    @assert G_row == num_pos_orth + 1
-    # Now handle the SOCs
-    # The MPB unput form is basically just says a vector of
-    # variables (y,x) lives in the SOC  || x || <= y
-    # ECOS wants somethings in the form h - Gx in Q so we
-    # will prove 0 - Ix \in Q
-    num_SOC_cones = 0
-    SOC_conedims  = Int[]
+    # num zero cones
+    f = m
     for (cone, idxs) in cones
-        cone != :SOC && continue
-        # Found a new SOC
-        num_SOC_cones += 1
-        push!(SOC_conedims, length(idxs))
-        # Add the entries (carrying on from pos. orthant)
-        for j in idxs
-            ecos_G[G_row,fwd_map[j]] = -1.0
-            G_row += 1
+        if cone == :Zero
+            f += length(idxs)
         end
     end
-    @assert G_row == num_G_row + 1
 
-    # Store in the ECOS structure
-    m.nvar          = num_vars
-    m.nineq         = num_G_row
-    m.neq           = length(ecos_b)
-    m.npos          = num_pos_orth
-    m.ncones        = num_SOC_cones
-    m.conedims      = SOC_conedims
-    m.G             = ecos_G
-    m.A             = ecos_A
-    m.c             = ecos_c
-    m.orig_sense    = :Min
-    m.h             = ecos_h
-    m.b             = ecos_b
-    m.fwd_map       = fwd_map
+    # num linear cones
+    l = 0
+    for (cone, idxs) in cones
+        if cone == :NonNeg
+            l += length(idxs)
+        end
+    end
+
+    for (cone, idxs) in cones
+        if cone == :NonPos
+            l += length(idxs)
+        end
+    end
+
+    q = Int64[]
+    qsize = 0
+    for (cone, idxs) in cones
+        if cone == :SOC
+            qsize += 1
+            push!(q, length(idxs))
+        end
+    end
+
+    s = Int64[]
+    ssize = 0
+    for (cone, idxs) in cones
+        if cone == :SDP
+            # n must be a square integer
+            n = length(idxs)
+            try
+                sqrt_n = convert(Int, sqrt(n))
+            catch
+                error("number of SDP variables must be square")
+            end
+            ssize += 1
+            push!(s, sqrt_n)
+        end
+    end
+
+    ep = 0
+    for (cone, idxs) in cones
+        if cone == :ExpPrimal
+            ep += length(idxs) / 3
+        end
+    end
+
+    ed = 0
+    for (cone, idxs) in cones
+        if cone == :ExpDual
+            ed += length(idxs) / 3
+        end
+    end
+
+    model.n         = n
+    model.m         = m + rows_G
+    model.A         = scs_A
+    model.b         = scs_b[:]
+    model.c         = c[:]
+    model.q         = q
+    model.qsize     = qsize
+    model.s         = s
+    model.ssize     = ssize
+    model.ep        = ep
+    model.ed        = ed
+    model.orig_sense = :Min
+    model.f         = f
+    model.l         = l
+    model.fwd_map   = fwd_map
 end

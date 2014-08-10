@@ -12,8 +12,8 @@ using MathProgBase
 using SCS
 
 solver = SCSSolver()
-objtol = 1e-3
-primaltol = 1e-3
+objtol = 1e-4
+primaltol = 1e-4
 
 # Stub some methods
 MathProgBase.getreducedcosts(m::SCS.SCSMathProgModel) = nothing
@@ -61,10 +61,10 @@ s = SCSSolver()
 m = MathProgBase.model(s)
 MathProgBase.loadproblem!(m, A, collb, colub, obj, rowlb, rowub, sense)
 MathProgBase.optimize!(m)
-@test_approx_eq_eps MathProgBase.getobjval(m) 99.0 1e-2
+@test_approx_eq_eps MathProgBase.getobjval(m) 99.0 1e-3
 x = MathProgBase.getsolution(m)
-@test_approx_eq_eps x[1] 2.0 1e-2
-@test_approx_eq_eps x[2] 3.0 1e-2
-@test_approx_eq_eps x[3] 0.0 1e-2
-@test_approx_eq_eps x[4] 9.0 1e-2
-@test_approx_eq_eps x[5] 0.0 1e-2
+@test_approx_eq_eps x[1] 2.0 1e-4
+@test_approx_eq_eps x[2] 3.0 1e-4
+@test_approx_eq_eps x[3] 0.0 1e-4
+@test_approx_eq_eps x[4] 9.0 1e-4
+@test_approx_eq_eps x[5] 0.0 1e-4

@@ -24,7 +24,7 @@ end
 # refer to create_scs_cone for K
 function create_scs_data(;m::Clong=nothing, n::Clong=nothing, A::Ptr{SCSMatrix}=nothing,
         b::Ptr{Cdouble}=nothing,  c::Ptr{Cdouble}=nothing, max_iters=2500::Clong,
-        eps=convert(Cdouble, 1e-3)::Cdouble, alpha=convert(Cdouble, 1.8)::Cdouble,
+        eps=convert(Cdouble, 1e-5)::Cdouble, alpha=convert(Cdouble, 1.8)::Cdouble,
         rho_x=convert(Cdouble, 1e-3)::Cdouble, scale=convert(Cdouble, 5.0)::Cdouble,
         cg_rate=convert(Cdouble, 1.5)::Cdouble, verbose=1::Clong,
         normalize=1::Clong, warm_start=0::Clong)
