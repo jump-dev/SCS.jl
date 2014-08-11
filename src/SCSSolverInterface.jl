@@ -15,7 +15,7 @@ function convert(x::Type{Int64}, y::UnitRange{Int64})
     if length(y) == 1
         return y[1]
     else
-        Base.convert(x, y)
+        error("convert` has no method matching convert(::Type{Int64}, ::UnitRange{Int64})")
     end
 end
 #############################################################################
@@ -145,9 +145,13 @@ function optimize!(m::SCSMathProgModel)
 
   m.solve_stat = solution.status
   m.primal_sol = solution.x[m.fwd_map]
+
   # TODO: Do we need to do some sort of mapping for the dual solution?
   m.dual_sol = solution.y
+
+  # TODO: Get the right slack variables in the right order
   m.slack = solution.s
+
   m.obj_val = dot(m.c, m.primal_sol) * (m.orig_sense == :Max ? -1 : +1)
 end
 
@@ -161,39 +165,49 @@ getsolution(m::SCSMathProgModel) = m.primal_sol
 # - loadconicproblem!
 # http://mathprogbasejl.readthedocs.org/en/latest/conic.html
 
-# TODO: This is the world's worst implementation. REDO tomorrow
 function orderconesforscs(A, b, cones)
-    # Order the cones as
-    # free cones
-    # zero cones
-    # linear cones
-    # SOC cones
-    # SDP cones
-    # Exp primal cones
-    # Exp dual cones
+    # Order the cones as:
+    # Free, Zero, NonNeg (NonPos are converted), SOC, SDP, ExpPrimal, ExpDual
+    #
+    # Returns:
+    # - scs_A (A ordered as needed), b, cones
+    # - fwd_map (mapping to reorder the solution)
+    # - diag_G (see loadconicproblem as to why it is needed)
+    # - num_free, num_zero, num_linear, soc_sizes, len_soc_sizes, sqrt_sdp_sizes,
+    # - len_sqrt_sdp_size, num_expprimal, num_expdual
+
+    m, n = size(A)
+
+    # TODO: Instead of concatenating, probably a better idea to allocate
+    # all the memory at once and just insert
     scs_A = nothing
 
+    # First, count the total number of variables
     num_vars = 0
     for (cone, idxs) in cones
        num_vars += length(idxs)
     end
 
     fwd_map = Array(Int, num_vars)
-    multipliers = ones(num_vars, 1)
+    diag_G = ones(num_vars, 1)
+    cur_index = 1
 
-    k = 1
+    num_free = 0
     for (cone, idxs) in cones
         if cone == :Free
             if scs_A == nothing
-                scs_A = A[:, idxs]
+                scs_A = A[:, [idxs...]]
             else
                 scs_A = [scs_A A[:, idxs]]
             end
-            fwd_map[idxs] = k:k + length(idxs) - 1
-            k += length(idxs)
+            fwd_map[idxs] = cur_index:cur_index + length(idxs) - 1
+            cur_index += length(idxs)
+            num_free += length(idxs)
         end
     end
 
+    # num zero cones
+    num_zero = 0
     for (cone, idxs) in cones
         if cone == :Zero
             if scs_A == nothing
@@ -201,22 +215,29 @@ function orderconesforscs(A, b, cones)
             else
                 scs_A = [scs_A A[:, idxs]]
             end
-            fwd_map[idxs] = k:k + length(idxs) - 1
-            k += length(idxs)
+            fwd_map[idxs] = cur_index:cur_index + length(idxs) - 1
+            cur_index += length(idxs)
+            num_zero += length(idxs)
         end
     end
 
+    # num linear cones
+    num_lin = 0
     for (cone, idxs) in cones
         if cone == :NonNeg
             if scs_A == nothing
                 scs_A = A[:, idxs]
             else
+                println(idxs)
+                println(size(A))
                 scs_A = [scs_A A[:, idxs]]
             end
-            fwd_map[idxs] = k:k + length(idxs) - 1
-            k += length(idxs)
+            fwd_map[idxs] = cur_index:cur_index + length(idxs) - 1
+            cur_index += length(idxs)
+            num_lin += length(idxs)
         end
     end
+
     for (cone, idxs) in cones
         if cone == :NonPos
             if scs_A == nothing
@@ -224,12 +245,18 @@ function orderconesforscs(A, b, cones)
             else
                 scs_A = [scs_A A[:, idxs]]
             end
-            fwd_map[idxs] = k:k + length(idxs) - 1
-            multipliers[k:k + length(idxs) - 1] = -1
-            k += length(idxs)
+            fwd_map[idxs] = cur_index:cur_index + length(idxs) - 1
+
+            # Convert NonPos to NonNeg for slack variables
+            diag_G[cur_index:cur_index + length(idxs) - 1] = -1
+            cur_index += length(idxs)
+            num_lin += length(idxs)
         end
     end
 
+    # SOC cone
+    soc_sizes = Int64[]
+    len_soc_sizes = 0
     for (cone, idxs) in cones
         if cone == :SOC
             if scs_A == nothing
@@ -237,11 +264,16 @@ function orderconesforscs(A, b, cones)
             else
                 scs_A = [scs_A A[:, idxs]]
             end
-            fwd_map[idxs] = k:k + length(idxs) - 1
-            k += length(idxs)
+            fwd_map[idxs] = cur_index:cur_index + length(idxs) - 1
+            cur_index += length(idxs)
+            len_soc_sizes += 1
+            push!(soc_sizes, length(idxs))
         end
     end
 
+    # SDP cone
+    sqrt_sdp_sizes = Int64[]
+    len_sqrt_sdp_size = 0
     for (cone, idxs) in cones
         if cone == :SDP
             if scs_A == nothing
@@ -249,23 +281,42 @@ function orderconesforscs(A, b, cones)
             else
                 scs_A = [scs_A A[:, idxs]]
             end
-            fwd_map[idxs] = k:k + length(idxs) - 1
-            k += length(idxs)
+            fwd_map[idxs] = cur_index:cur_index + length(idxs) - 1
+            cur_index += length(idxs)
+
+            # n must be a square integer
+            n = length(idxs)
+            try
+                sqrt_n = convert(Int, sqrt(n))
+            catch
+                error("number of SDP variables must be square")
+            end
+            len_sqrt_sdp_size += 1
+            push!(sqrt_sdp_sizes, sqrt_n)
         end
     end
 
+    num_expprimal = 0
     for (cone, idxs) in cones
         if cone == :ExpPrimal
+            println(idxs)
             if scs_A == nothing
                 scs_A = A[:, idxs]
             else
                 scs_A = [scs_A A[:, idxs]]
             end
-            fwd_map[idxs] = k:k + length(idxs) - 1
-            k += length(idxs)
+
+            if length(idxs) % 3 != 0
+                error("Number of ExpPrimal variables must be a multiple of 3")
+            end
+
+            fwd_map[idxs] = cur_index:cur_index + length(idxs) - 1
+            cur_index += length(idxs)
+            num_expprimal += length(idxs) / 3
         end
     end
 
+    num_expdual = 0
     for (cone, idxs) in cones
         if cone == :ExpDual
             if scs_A == nothing
@@ -273,15 +324,21 @@ function orderconesforscs(A, b, cones)
             else
                 scs_A = [scs_A A[:, idxs]]
             end
-            fwd_map[idxs] = k:k + length(idxs) - 1
-            k += length(idxs)
+
+            if length(idxs) % 3 != 0
+                error("Number of ExpDual variables must be a multiple of 3")
+            end
+
+            fwd_map[idxs] = cur_index:cur_index + length(idxs) - 1
+            cur_index += length(idxs)
+            num_expdual += length(idxs) / 3
         end
     end
 
-    return scs_A, b[:], cones, fwd_map, multipliers
+    return scs_A, b[:], cones, fwd_map, diag_G, num_free, num_zero, num_lin, soc_sizes,
+           len_soc_sizes, sqrt_sdp_sizes, len_sqrt_sdp_size, num_expprimal, num_expdual
 end
 
-# TODO: This is the world's worst implementation. REDO tomorrow
 function loadconicproblem!(model::SCSMathProgModel, c, A, b, cones)
     # TODO (if it matters): make this more efficient for sparse A
 
@@ -292,83 +349,43 @@ function loadconicproblem!(model::SCSMathProgModel, c, A, b, cones)
         cone_vars[1] in bad_cones && error("Cone type $(cone_vars[1]) not supported")
     end
 
-    scs_A, scs_b, cones, fwd_map, multipliers = orderconesforscs(A, b, cones)
+    # Convert idxs to an array
+    cones = [(cone, [idxs...]) for (cone, idxs) in cones]
 
-    num_free = 0
-    for (cone, idxs) in cones
-        if cone == :Free
-            num_free += length(idxs)
-        end
-    end
-    multipliers = multipliers[num_free + 1 : end]
+    scs_A, scs_b, cones, fwd_map, diag_G, num_free, f, l,
+        q, qsize, s, ssize, ep, ed = orderconesforscs(A, b, cones)
+
+    # MathProgBase form             SCS form
+    # min c'x                       min c'x
+    # st  A x = b                   st  A x  + s= b
+    #       x in K                      s in K
+    #
+    # So, we translate MathProgBase form to SCS form as follows:
+    #
+    # min c'x
+    # st [A; G] x + [0; s] = b
+    #            s in K
+    # For most cases, G is simply -I
+    # Some of the diagonal entries of G are actually 1 instead of -1
+    # since SCS doesn't accept NonPos, hence they are converted
+    # we maintain variable `diag_G` which keeps track of which diagonal
+    # entries are 1 and which are -1
+    # Also, since we don't specify entries in the :Free cone, so G is more
+    # like [0 -I]
+    #
+    # TODO: Make this comment more clear
+
+    diag_G = diag_G[num_free + 1 : end]
     m, n = size(scs_A)
 
+    # [A; -I] x + [0; s] = b has the first m cones as Zero cones
+    f += m
+
     rows_G = n - num_free
-    G = [zeros(rows_G, num_free) -diagm(multipliers)]
+    G = [zeros(rows_G, num_free) -diagm(diag_G)]
 
     scs_A = [scs_A; G]
     scs_b = [b; zeros(rows_G, 1)]
-
-    # num zero cones
-    f = m
-    for (cone, idxs) in cones
-        if cone == :Zero
-            f += length(idxs)
-        end
-    end
-
-    # num linear cones
-    l = 0
-    for (cone, idxs) in cones
-        if cone == :NonNeg
-            l += length(idxs)
-        end
-    end
-
-    for (cone, idxs) in cones
-        if cone == :NonPos
-            l += length(idxs)
-        end
-    end
-
-    q = Int64[]
-    qsize = 0
-    for (cone, idxs) in cones
-        if cone == :SOC
-            qsize += 1
-            push!(q, length(idxs))
-        end
-    end
-
-    s = Int64[]
-    ssize = 0
-    for (cone, idxs) in cones
-        if cone == :SDP
-            # n must be a square integer
-            n = length(idxs)
-            try
-                sqrt_n = convert(Int, sqrt(n))
-            catch
-                error("number of SDP variables must be square")
-            end
-            ssize += 1
-            push!(s, sqrt_n)
-        end
-    end
-
-    ep = 0
-    for (cone, idxs) in cones
-        if cone == :ExpPrimal
-            ep += length(idxs) / 3
-        end
-    end
-
-    ed = 0
-    for (cone, idxs) in cones
-        if cone == :ExpDual
-            ed += length(idxs) / 3
-        end
-    end
 
     model.n         = n
     model.m         = m + rows_G
@@ -385,4 +402,54 @@ function loadconicproblem!(model::SCSMathProgModel, c, A, b, cones)
     model.f         = f
     model.l         = l
     model.fwd_map   = fwd_map
+end
+
+function loadineqconicproblem!(model::SCSMathProgModel, c, A, b, G, h, cones)
+    # IneqMathProgBase form             SCS form
+    # min c'x                           min c'x
+    # st  A x = b                       st  A x + s = b
+    #     h - G x in K                      s in K
+    bad_cones = [:SOCRotated]
+    for cone_vars in cones
+        cone_vars[1] in bad_cones && error("Cone type $(cone_vars[1]) not supported")
+    end
+
+    m, n  = size(A)
+    # Convert idxs to an array
+    new_cones = (Symbol, Array)[]
+    for (cone, idxs) in cones
+        idxs = [idxs...] + m
+        push!(new_cones, (cone, idxs))
+    end
+    push!(new_cones, (:Zero, 1:m))
+
+
+    scs_A = [A; G]
+    scs_b = [b; h]
+    scs_A, scs_b, cones, fwd_map, diag_G, num_free, f, l,
+        q, qsize, s, ssize, ep, ed = orderconesforscs(scs_A', scs_b, new_cones)
+
+
+    scs_A = full(scs_A') .* diag_G
+
+    model.n         = n
+    model.m         = size(scs_A, 1)
+    model.A         = scs_A
+    model.b         = scs_b[:]
+    model.c         = c[:]
+    model.q         = q
+    model.qsize     = qsize
+    model.s         = s
+    model.ssize     = ssize
+    model.ep        = ep
+    model.ed        = ed
+    model.orig_sense = :Min
+    model.f         = f
+    model.l         = l
+    # TODO: fix
+    model.fwd_map   = 1:n
+
+    if model.m < model.n
+        error("m must be greater than equal to n")
+    end
 end

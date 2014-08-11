@@ -13,6 +13,13 @@ using SCS
 
 s = SCSSolver()
 
+# Problem 1 - all vars in nonneg cone
+# min -3x - 2y - 4z
+# st    x +  y +  z == 3
+#            y +  z == 2
+#       x>=0 y>=0 z>=0
+# Opt solution = -11
+# x = 1, y = 0, z = 2
 m = MathProgBase.model(s)
 MathProgBase.loadconicproblem!(m,
                     [-3.0, -2.0, -4.0],
