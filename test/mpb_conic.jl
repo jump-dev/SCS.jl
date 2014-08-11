@@ -77,3 +77,22 @@ MathProgBase.optimize!(m)
 @test_approx_eq_eps MathProgBase.getsolution(m)[1] 1.0 1e-4
 @test_approx_eq_eps MathProgBase.getsolution(m)[2] 1.0/sqrt(2.0) 1e-4
 @test_approx_eq_eps MathProgBase.getsolution(m)[3] 1.0/sqrt(2.0) 1e-4
+
+# Problem 4 - ExpPrimal
+# min x + y + z
+#  st  y e^(x/y) <= x, y > 0 (i.e (x, y, z) are in the exponential primal cone)
+#      x == 1
+#      y == 2
+m = MathProgBase.model(s)
+MathProgBase.loadconicproblem!(m,
+[1.0, 1.0, 1.0],
+[0.0 1.0 0.0;
+ 1.0 0.0 0.0],
+[2.0, 1.0],
+[(:ExpPrimal, 1:3)])
+MathProgBase.optimize!(m)
+@test MathProgBase.status(m) == :Optimal
+@test_approx_eq_eps MathProgBase.getobjval(m) 6.2974 1e-4
+@test_approx_eq_eps MathProgBase.getsolution(m)[1] 1.0 1e-4
+@test_approx_eq_eps MathProgBase.getsolution(m)[2] 2.0 1e-4
+@test_approx_eq_eps MathProgBase.getsolution(m)[3] 3.29744 1e-4
