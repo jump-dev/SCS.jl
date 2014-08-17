@@ -404,11 +404,13 @@ function loadconicproblem!(model::SCSMathProgModel, c, A, b, cones)
     model.fwd_map   = fwd_map
 end
 
-function loadineqconicproblem!(model::SCSMathProgModel, c, A, b, G, h, cones)
+function loadineqconicproblem!(model::SCSMathProgModel, c, A, b, cones)
     # IneqMathProgBase form             SCS form
     # min c'x                           min c'x
     # st  A x = b                       st  A x + s = b
-    #     h - G x in K                      s in K
+    #     s in K                            s in K
+    # Hence, not much needs to be done here.
+
     bad_cones = [:SOCRotated]
     for cone_vars in cones
         cone_vars[1] in bad_cones && error("Cone type $(cone_vars[1]) not supported")
@@ -416,19 +418,10 @@ function loadineqconicproblem!(model::SCSMathProgModel, c, A, b, G, h, cones)
 
     m, n  = size(A)
     # Convert idxs to an array
-    new_cones = (Symbol, Array)[]
-    for (cone, idxs) in cones
-        idxs = [idxs...] + m
-        push!(new_cones, (cone, idxs))
-    end
-    push!(new_cones, (:Zero, 1:m))
+    cones = [(cone, [idxs...]) for (cone, idxs) in cones]
 
-
-    scs_A = [A; G]
-    scs_b = [b; h]
     scs_A, scs_b, cones, fwd_map, diag_G, num_free, f, l,
-        q, qsize, s, ssize, ep, ed = orderconesforscs(scs_A', scs_b, new_cones)
-
+        q, qsize, s, ssize, ep, ed = orderconesforscs(A', b, cones)
 
     scs_A = full(scs_A') .* diag_G
 
@@ -452,4 +445,30 @@ function loadineqconicproblem!(model::SCSMathProgModel, c, A, b, G, h, cones)
     if model.m < model.n
         error("m must be greater than equal to n")
     end
+
+end
+
+function loadineqconicproblem!(model::SCSMathProgModel, c, A, b, G, h, cones)
+    # IneqMathProgBase form             SCS form
+    # min c'x                           min c'x
+    # st  A x = b                       st  A x + s = b
+    #     h - G x in K                      s in K
+    #
+    # We rewrite it as [A; G]x  + s = [b; h]
+    # and call the form specified above
+
+    m, n  = size(A)
+    # Convert idxs to an array
+    new_cones = (Symbol, Array)[]
+    for (cone, idxs) in cones
+        idxs = [idxs...] + m
+        push!(new_cones, (cone, idxs))
+    end
+    push!(new_cones, (:Zero, 1:m))
+
+
+    scs_A = [A; G]
+    scs_b = [b; h]
+
+    loadineqconicproblem!(model, c, scs_A, scs_b, new_cones)
 end
