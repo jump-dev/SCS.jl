@@ -288,11 +288,11 @@ function orderconesforscs(A, b, cones)
             n = length(idxs)
             try
                 sqrt_n = convert(Int, sqrt(n))
+                len_sqrt_sdp_size += 1
+                push!(sqrt_sdp_sizes, sqrt_n)
             catch
                 error("number of SDP variables must be square")
             end
-            len_sqrt_sdp_size += 1
-            push!(sqrt_sdp_sizes, sqrt_n)
         end
     end
 
@@ -334,7 +334,6 @@ function orderconesforscs(A, b, cones)
             num_expdual += length(idxs) / 3
         end
     end
-
     return scs_A, b[:], cones, fwd_map, diag_G, num_free, num_zero, num_lin, soc_sizes,
            len_soc_sizes, sqrt_sdp_sizes, len_sqrt_sdp_size, num_expprimal, num_expdual
 end
@@ -423,6 +422,8 @@ function loadineqconicproblem!(model::SCSMathProgModel, c, A, b, cones)
     scs_A, scs_b, cones, fwd_map, diag_G, num_free, f, l,
         q, qsize, s, ssize, ep, ed = orderconesforscs(A', b, cones)
 
+    println("ssize=",ssize)
+
     scs_A = full(scs_A') .* diag_G
 
     model.n         = n
@@ -445,7 +446,6 @@ function loadineqconicproblem!(model::SCSMathProgModel, c, A, b, cones)
     if model.m < model.n
         error("m must be greater than equal to n")
     end
-
 end
 
 function loadineqconicproblem!(model::SCSMathProgModel, c, A, b, G, h, cones)
