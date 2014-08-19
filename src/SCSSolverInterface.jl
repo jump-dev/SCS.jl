@@ -228,8 +228,6 @@ function orderconesforscs(A, b, cones)
             if scs_A == nothing
                 scs_A = A[:, idxs]
             else
-                println(idxs)
-                println(size(A))
                 scs_A = [scs_A A[:, idxs]]
             end
             fwd_map[idxs] = cur_index:cur_index + length(idxs) - 1
@@ -299,7 +297,6 @@ function orderconesforscs(A, b, cones)
     num_expprimal = 0
     for (cone, idxs) in cones
         if cone == :ExpPrimal
-            println(idxs)
             if scs_A == nothing
                 scs_A = A[:, idxs]
             else
@@ -421,8 +418,6 @@ function loadineqconicproblem!(model::SCSMathProgModel, c, A, b, cones)
 
     scs_A, scs_b, cones, fwd_map, diag_G, num_free, f, l,
         q, qsize, s, ssize, ep, ed = orderconesforscs(A', b, cones)
-
-    println("ssize=",ssize)
 
     scs_A = full(scs_A') .* diag_G
 
