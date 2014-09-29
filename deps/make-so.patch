@@ -1,4 +1,0 @@
-46a47,49
-> libscsdir.so: $(OBJECTS) $(DIRSRC)/private.o  $(DIRECT_OBJECTS)
-> 	$(CC) -o libscsdir.so $(OBJECTS) $(DIRSRC)/private.o  $(DIRECT_OBJECTS) -shared
-> 
