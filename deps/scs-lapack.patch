@@ -1,0 +1,4 @@
+68c68
+< USE_LAPACK = 0
+---
+> USE_LAPACK = 1

@@ -19,6 +19,7 @@ provides(SimpleBuild,
     CreateDirectory(joinpath(prefix, "lib"))
     FileRule(joinpath(prefix, "lib", "libscsdir.dylib"), @build_steps begin
       ChangeDirectory(srcdir)
+      `cat ${BinDeps.depsdir(scs)}/scs-lapack.patch` |> `patch scs.mk`
       `cat ${BinDeps.depsdir(scs)}/scs.patch` |> `patch scs.mk`
       `make`
       `mv out/libscsdir.dylib $prefix/lib`
