@@ -8,7 +8,7 @@
 #############################################################################
 
 using Base.Test
-importall MathProgBase
+using MathProgBase.SolverInterface
 using SCS
 
 s = SCSSolver()

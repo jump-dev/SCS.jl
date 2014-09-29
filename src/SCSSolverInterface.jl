@@ -7,8 +7,7 @@
 # MathProgBase.jl interface for the SCS.jl solver wrapper
 #############################################################################
 
-require(joinpath(Pkg.dir("MathProgBase"), "src", "MathProgSolverInterface.jl"))
-importall MathProgSolverInterface
+importall MathProgBase.SolverInterface
 import Base.convert
 
 function convert(x::Type{Int64}, y::UnitRange{Int64})
@@ -140,19 +139,18 @@ function loadproblem!(m::SCSMathProgModel, A, collb, colub, obj, rowlb, rowub, s
 end
 
 function optimize!(m::SCSMathProgModel)
-  solution = SCS_solve(m.m, m.n, m.A, m.b, m.c, m.f, m.l, m.q, m.qsize,
-      m.s, m.ssize, m.ep, m.ed)
+    solution = SCS_solve(m.m, m.n, m.A, m.b, m.c, m.f, m.l, m.q, m.qsize, m.s, m.ssize, m.ep, m.ed)
 
-  m.solve_stat = solution.status
-  m.primal_sol = solution.x[m.fwd_map]
+    m.solve_stat = solution.status
+    m.primal_sol = solution.x[m.fwd_map]
 
-  # TODO: Do we need to do some sort of mapping for the dual solution?
-  m.dual_sol = solution.y
+    # TODO: Do we need to do some sort of mapping for the dual solution?
+    m.dual_sol = solution.y
 
-  # TODO: Get the right slack variables in the right order
-  m.slack = solution.s
+    # TODO: Get the right slack variables in the right order
+    m.slack = solution.s
 
-  m.obj_val = dot(m.c, m.primal_sol) * (m.orig_sense == :Max ? -1 : +1)
+    m.obj_val = dot(m.c, m.primal_sol) * (m.orig_sense == :Max ? -1 : +1)
 end
 
 status(m::SCSMathProgModel) = m.solve_stat
@@ -185,7 +183,7 @@ function orderconesforscs(A, b, cones)
     # First, count the total number of variables
     num_vars = 0
     for (cone, idxs) in cones
-       num_vars += length(idxs)
+        num_vars += length(idxs)
     end
 
     fwd_map = Array(Int, num_vars)
@@ -437,10 +435,6 @@ function loadineqconicproblem!(model::SCSMathProgModel, c, A, b, cones)
     model.l         = l
     # TODO: fix
     model.fwd_map   = 1:n
-
-    if model.m < model.n
-        error("m must be greater than equal to n")
-    end
 end
 
 function loadineqconicproblem!(model::SCSMathProgModel, c, A, b, G, h, cones)

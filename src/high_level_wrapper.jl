@@ -29,7 +29,7 @@ function create_scs_data(;m::Clong=nothing, n::Clong=nothing, A::Ptr{SCSMatrix}=
         cg_rate=convert(Cdouble, 1.5)::Cdouble, verbose=1::Clong,
         normalize=1::Clong, warm_start=0::Clong)
 
-    data = SCSData(m, n, A, b, c, max_iters, eps, alpha, rho_x, scale, cg_rate, verbose, normalize, warm_start)
+    data = SCSData(m, n, A, b, c, max_iters, eps, alpha, rho_x, cg_rate, verbose, normalize, scale, warm_start)
     return data
 end
 

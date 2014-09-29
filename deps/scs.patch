@@ -1,4 +1,8 @@
-26c26
+45c45
 < # CFLAGS += -DDLONG # use longs rather than ints
 ---
 > CFLAGS += -DDLONG # use longs rather than ints
+68c68
+< USE_LAPACK = 0
+---
+> USE_LAPACK = 1

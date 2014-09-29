@@ -7,7 +7,7 @@ SCSVecOrMatOrSparse = Union(VecOrMat, SparseMatrixCSC{Float64,Int64})
 immutable SCSMatrix
     values::Ptr{Cdouble}
     rowval::Ptr{Clong}
-    colptr::Ptr{Clong}
+colptr::Ptr{Clong}
 end
 
 
@@ -27,13 +27,13 @@ immutable SCSData
     alpha::Cdouble
     # x equality constraint scaling
     rho_x::Cdouble
-    # if normalized, rescales by this factor
-    scale::Cdouble
     # for indirect, tolerance goes down like (1/iter)^CG_RATE: 1.5
     cg_rate::Cdouble
     verbose::Clong
     # 0 or 1
     normalize::Clong
+    # if normalized, rescales by this factor
+    scale::Cdouble
     # 0 or 1
     warm_start::Clong
 end
@@ -59,6 +59,8 @@ immutable SCSInfo
     dobj::Cdouble
     resPri::Cdouble
     resDual::Cdouble
+    resInfeas::Cdouble
+    resUnbdd::Cdouble
     relGap::Cdouble
     setupTime::Cdouble
     solveTime::Cdouble
@@ -92,6 +94,7 @@ immutable SCSWork
     nm_b::Cdouble
     nm_c::Cdouble
     meanNormRowA::Cdouble
+    meanNormColA::Cdouble
     D::Ptr{Cdouble}
     E::Ptr{Cdouble}
     p::Ptr{Void}

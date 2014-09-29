@@ -3,7 +3,7 @@ export SCS_init, SCS_solve, SCS_finish
 
 function SCS_init(data::SCSData, cone::SCSCone)
     # Initialize the info struct
-    info = SCSInfo(0, convert(Int128, 0), convert(Int128, 0), 0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
+    info = SCSInfo(0, convert(Int128, 0), convert(Int128, 0), 0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
 
     p_work = ccall((:scs_init, SCS.scs), Ptr{SCSWork},
         (Ptr{SCSData}, Ptr{SCSCone}, Ptr{SCSInfo}),
