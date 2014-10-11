@@ -179,6 +179,7 @@ function orderconesforscs(A, b, cones)
     # TODO: Instead of concatenating, probably a better idea to allocate
     # all the memory at once and just insert
     scs_A = nothing
+    scs_b = nothing
 
     # First, count the total number of variables
     num_vars = 0
@@ -195,8 +196,10 @@ function orderconesforscs(A, b, cones)
         if cone == :Free
             if scs_A == nothing
                 scs_A = A[:, [idxs...]]
+                scs_b = b[idxs...]
             else
                 scs_A = [scs_A A[:, idxs]]
+                scs_b = [scs_b; b[idxs]]
             end
             fwd_map[idxs] = cur_index:cur_index + length(idxs) - 1
             cur_index += length(idxs)
@@ -210,8 +213,11 @@ function orderconesforscs(A, b, cones)
         if cone == :Zero
             if scs_A == nothing
                 scs_A = A[:, idxs]
+                scs_b = b[idxs...]
+
             else
                 scs_A = [scs_A A[:, idxs]]
+                scs_b = [scs_b; b[idxs]]
             end
             fwd_map[idxs] = cur_index:cur_index + length(idxs) - 1
             cur_index += length(idxs)
@@ -225,8 +231,10 @@ function orderconesforscs(A, b, cones)
         if cone == :NonNeg
             if scs_A == nothing
                 scs_A = A[:, idxs]
+                scs_b = b[idxs...]
             else
                 scs_A = [scs_A A[:, idxs]]
+                scs_b = [scs_b; b[idxs]]
             end
             fwd_map[idxs] = cur_index:cur_index + length(idxs) - 1
             cur_index += length(idxs)
@@ -238,8 +246,10 @@ function orderconesforscs(A, b, cones)
         if cone == :NonPos
             if scs_A == nothing
                 scs_A = -A[:, idxs]
+                scs_b = b[idxs...]
             else
                 scs_A = [scs_A A[:, idxs]]
+                scs_b = [scs_b; b[idxs]]
             end
             fwd_map[idxs] = cur_index:cur_index + length(idxs) - 1
 
@@ -257,8 +267,10 @@ function orderconesforscs(A, b, cones)
         if cone == :SOC
             if scs_A == nothing
                 scs_A = A[:, idxs]
+                scs_b = b[idxs...]
             else
                 scs_A = [scs_A A[:, idxs]]
+                scs_b = [scs_b; b[idxs]]
             end
             fwd_map[idxs] = cur_index:cur_index + length(idxs) - 1
             cur_index += length(idxs)
@@ -274,8 +286,10 @@ function orderconesforscs(A, b, cones)
         if cone == :SDP
             if scs_A == nothing
                 scs_A = A[:, idxs]
+                scs_b = b[idxs...]
             else
                 scs_A = [scs_A A[:, idxs]]
+                scs_b = [scs_b; b[idxs]]
             end
             fwd_map[idxs] = cur_index:cur_index + length(idxs) - 1
             cur_index += length(idxs)
@@ -283,7 +297,7 @@ function orderconesforscs(A, b, cones)
             # n must be a square integer
             n = length(idxs)
             try
-                sqrt_n = convert(Int, sqrt(n))
+                sqrt_n = convert(Int, sqrt(n));
                 len_sqrt_sdp_size += 1
                 push!(sqrt_sdp_sizes, sqrt_n)
             catch
@@ -297,8 +311,10 @@ function orderconesforscs(A, b, cones)
         if cone == :ExpPrimal
             if scs_A == nothing
                 scs_A = A[:, idxs]
+                scs_b = b[idxs...]
             else
                 scs_A = [scs_A A[:, idxs]]
+                scs_b = [scs_b; b[idxs]]
             end
 
             if length(idxs) % 3 != 0
@@ -316,8 +332,10 @@ function orderconesforscs(A, b, cones)
         if cone == :ExpDual
             if scs_A == nothing
                 scs_A = A[:, idxs]
+                scs_b = b[idxs...]
             else
                 scs_A = [scs_A A[:, idxs]]
+                scs_b = [scs_b; b[idxs]]
             end
 
             if length(idxs) % 3 != 0
@@ -329,7 +347,7 @@ function orderconesforscs(A, b, cones)
             num_expdual += length(idxs) / 3
         end
     end
-    return scs_A, b[:], cones, fwd_map, diag_G, num_free, num_zero, num_lin, soc_sizes,
+    return scs_A, scs_b, cones, fwd_map, diag_G, num_free, num_zero, num_lin, soc_sizes,
            len_soc_sizes, sqrt_sdp_sizes, len_sqrt_sdp_size, num_expprimal, num_expdual
 end
 
@@ -435,29 +453,6 @@ function loadineqconicproblem!(model::SCSMathProgModel, c, A, b, cones)
     model.l         = l
     # TODO: fix
     model.fwd_map   = 1:n
-end
 
-function loadineqconicproblem!(model::SCSMathProgModel, c, A, b, G, h, cones)
-    # IneqMathProgBase form             SCS form
-    # min c'x                           min c'x
-    # st  A x = b                       st  A x + s = b
-    #     h - G x in K                      s in K
-    #
-    # We rewrite it as [A; G]x  + s = [b; h]
-    # and call the form specified above
-
-    m, n  = size(A)
-    # Convert idxs to an array
-    new_cones = (Symbol, Array)[]
-    for (cone, idxs) in cones
-        idxs = [idxs...] + m
-        push!(new_cones, (cone, idxs))
-    end
-    push!(new_cones, (:Zero, 1:m))
-
-
-    scs_A = [A; G]
-    scs_b = [b; h]
-
-    loadineqconicproblem!(model, c, scs_A, scs_b, new_cones)
+    return model
 end
