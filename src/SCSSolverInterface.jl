@@ -163,6 +163,7 @@ getsolution(m::SCSMathProgModel) = m.primal_sol
 # - loadconicproblem!
 # http://mathprogbasejl.readthedocs.org/en/latest/conic.html
 
+# TODO: Will only work for loadineqconic for now
 function orderconesforscs(A, b, cones)
     # Order the cones as:
     # Free, Zero, NonNeg (NonPos are converted), SOC, SDP, ExpPrimal, ExpDual

@@ -12,7 +12,6 @@ using MathProgBase.SolverInterface
 using SCS
 
 s = SCSSolver()
-
 # Problem 1 - all vars in nonneg cone
 # min -3x - 2y - 4z
 # st    x +  y +  z == 3
