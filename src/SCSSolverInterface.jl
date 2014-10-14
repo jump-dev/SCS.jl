@@ -197,7 +197,7 @@ function orderconesforscs(A, b, cones)
         if cone == :Free
             if scs_A == nothing
                 scs_A = A[:, [idxs...]]
-                scs_b = b[idxs...]
+                scs_b = b[[idxs...]]
             else
                 scs_A = [scs_A A[:, idxs]]
                 scs_b = [scs_b; b[idxs]]
@@ -214,7 +214,7 @@ function orderconesforscs(A, b, cones)
         if cone == :Zero
             if scs_A == nothing
                 scs_A = A[:, idxs]
-                scs_b = b[idxs...]
+                scs_b = b[[idxs...]]
 
             else
                 scs_A = [scs_A A[:, idxs]]
@@ -232,7 +232,7 @@ function orderconesforscs(A, b, cones)
         if cone == :NonNeg
             if scs_A == nothing
                 scs_A = A[:, idxs]
-                scs_b = b[idxs...]
+                scs_b = b[[idxs...]]
             else
                 scs_A = [scs_A A[:, idxs]]
                 scs_b = [scs_b; b[idxs]]
@@ -247,7 +247,7 @@ function orderconesforscs(A, b, cones)
         if cone == :NonPos
             if scs_A == nothing
                 scs_A = -A[:, idxs]
-                scs_b = b[idxs...]
+                scs_b = b[[idxs...]]
             else
                 scs_A = [scs_A A[:, idxs]]
                 scs_b = [scs_b; b[idxs]]
@@ -268,7 +268,7 @@ function orderconesforscs(A, b, cones)
         if cone == :SOC
             if scs_A == nothing
                 scs_A = A[:, idxs]
-                scs_b = b[idxs...]
+                scs_b = b[[idxs...]]
             else
                 scs_A = [scs_A A[:, idxs]]
                 scs_b = [scs_b; b[idxs]]
@@ -287,7 +287,7 @@ function orderconesforscs(A, b, cones)
         if cone == :SDP
             if scs_A == nothing
                 scs_A = A[:, idxs]
-                scs_b = b[idxs...]
+                scs_b = b[[idxs...]]
             else
                 scs_A = [scs_A A[:, idxs]]
                 scs_b = [scs_b; b[idxs]]
@@ -312,7 +312,7 @@ function orderconesforscs(A, b, cones)
         if cone == :ExpPrimal
             if scs_A == nothing
                 scs_A = A[:, idxs]
-                scs_b = b[idxs...]
+                scs_b = b[[idxs...]]
             else
                 scs_A = [scs_A A[:, idxs]]
                 scs_b = [scs_b; b[idxs]]
@@ -333,7 +333,7 @@ function orderconesforscs(A, b, cones)
         if cone == :ExpDual
             if scs_A == nothing
                 scs_A = A[:, idxs]
-                scs_b = b[idxs...]
+                scs_b = b[[idxs...]]
             else
                 scs_A = [scs_A A[:, idxs]]
                 scs_b = [scs_b; b[idxs]]
