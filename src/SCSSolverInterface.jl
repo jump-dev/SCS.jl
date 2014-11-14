@@ -258,7 +258,6 @@ function orderconesforscs(A_in, b_in, c_cones, v_cones)
             n = length(idxs)
             isinteger(sqrt(n)) || error("number of SDP variables must be square")
             sqrt_n = convert(Int, sqrt(n));
-            len_sqrt_sdp_size += 1
             push!(sqrt_sdp_sizes, sqrt_n)
         end
     end
@@ -331,7 +330,6 @@ loadconicproblem!(model::SCSMathProgModel, c, A, b, constr_cones, var_cones) =
 function loadconicproblem!(model::SCSMathProgModel, c, A::SparseMatrixCSC, b, constr_cones, var_cones)
     # TODO (if it matters): make this more efficient for sparse A
 
-    # We don't support SOCRotated
     # TODO: We should support SOCRotated
     bad_cones = [:SOCRotated]
     for cone_vars in constr_cones
@@ -350,37 +348,7 @@ function loadconicproblem!(model::SCSMathProgModel, c, A::SparseMatrixCSC, b, co
     scs_A, scs_b, num_free, f, l, q, s, ep, ed = 
         orderconesforscs(A, b, c_cones, v_cones)
 
-    # MathProgBase form             SCS form
-    # min c'x                       min c'x
-    # st  A x = b                   st  A x  + s= b
-    #       x in K                      s in K
-    #
-    # So, we translate MathProgBase form to SCS form as follows:
-    #
-    # min c'x
-    # st [A; G] x + [0; s] = b
-    #            s in K
-    # For most cases, G is simply -I
-    # Some of the diagonal entries of G are actually 1 instead of -1
-    # since SCS doesn't accept NonPos, hence they are converted
-    # we maintain variable `diag_G` which keeps track of which diagonal
-    # entries are 1 and which are -1
-    # Also, since we don't specify entries in the :Free cone, so G is more
-    # like [0 -I]
-    #
-    # TODO: Make this comment more clear
-
-#    diag_G = diag_G[num_free + 1 : end]
     m, n = size(scs_A)
-
-    # [A; -I] x + [0; s] = b has the first m cones as Zero cones
-#    f += m
-
-#    rows_G = n - num_free
-#    G = [spzeros(rows_G, num_free) -spdiagm(diag_G)]
-
-#    scs_A = [scs_A; G]
-#    scs_b = [b; zeros(rows_G, 1)]
 
     model.n         = n
     model.m         = m # + rows_G
@@ -396,48 +364,6 @@ function loadconicproblem!(model::SCSMathProgModel, c, A::SparseMatrixCSC, b, co
     model.orig_sense = :Min
     model.f         = f
     model.l         = l
-    println("model = $model")
-    println("A = $(full(scs_A))")
     return model
 end
 
-function loadineqconicproblem!(model::SCSMathProgModel, c, A, b, cones)
-    # IneqMathProgBase form             SCS form
-    # min c'x                           min c'x
-    # st  A x = b                       st  A x + s = b
-    #     s in K                            s in K
-    # Hence, not much needs to be done here.
-
-    bad_cones = [:SOCRotated]
-    for cone_vars in cones
-        cone_vars[1] in bad_cones && error("Cone type $(cone_vars[1]) not supported")
-    end
-
-    m, n  = size(A)
-    # Convert idxs to an array
-    cones = [(cone, [idxs...]) for (cone, idxs) in cones]
-
-    scs_A, scs_b, cones, fwd_map, diag_G, num_free, f, l,
-        q, qsize, s, ssize, ep, ed = orderconesforscs(A', b, cones)
-
-    scs_A = full(scs_A') .* diag_G
-
-    model.n         = n
-    model.m         = size(scs_A, 1)
-    model.A         = scs_A
-    model.b         = scs_b[:]
-    model.c         = c[:]
-    model.q         = q
-    model.qsize     = qsize
-    model.s         = s
-    model.ssize     = ssize
-    model.ep        = ep
-    model.ed        = ed
-    model.orig_sense = :Min
-    model.f         = f
-    model.l         = l
-    # TODO: fix
-    model.fwd_map   = 1:n
-
-    return model
-end
