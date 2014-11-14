@@ -161,16 +161,14 @@ getsolution(m::SCSMathProgModel) = m.primal_sol
 # - loadconicproblem!
 # http://mathprogbasejl.readthedocs.org/en/latest/conic.html
 
-# TODO: Will only work for loadineqconic for now
 function orderconesforscs(A_in, b_in, c_cones, v_cones)
     # Order the cones as:
     # Free, Zero, NonNeg (NonPos are converted), SOC, SDP, ExpPrimal, ExpDual
     #
     # Returns:
-    # - scs_A (A ordered as needed), b, cones
-    # - diag_G (see loadconicproblem as to why it is needed)
-    # - num_free, num_zero, num_linear, soc_sizes, len_soc_sizes, sqrt_sdp_sizes,
-    # - len_sqrt_sdp_size, num_expprimal, num_expdual
+    # - scs_A (A ordered as needed), b
+    # - num_free, num_zero, num_linear, soc_sizes, soc_sizes, sqrt_sdp_sizes,
+    # - sqrt_sdp_size, num_expprimal, num_expdual
 
     m, n = size(A_in)
     A = spzeros(0, n)
@@ -276,7 +274,7 @@ function orderconesforscs(A_in, b_in, c_cones, v_cones)
     num_expprimal = 0
     for (cone, idxs) in c_cones
         if cone == :ExpPrimal
-            length(idxs) % 3 == 0 || 
+            length(idxs) % 3 == 0 ||
                 error("Number of ExpPrimal variables must be a multiple of 3")
             A = [A; A_in[idxs,:]]
             b = [b; b_in[idxs,:]]
@@ -286,7 +284,7 @@ function orderconesforscs(A_in, b_in, c_cones, v_cones)
     end
     for (cone, idxs) in v_cones
         if cone == :ExpPrimal
-            length(idxs) % 3 == 0 || 
+            length(idxs) % 3 == 0 ||
                 error("Number of ExpPrimal variables must be a multiple of 3")
             nidx = length(idxs)
             A = [A; -sparse(1:nidx, idxs, ones(nidx), nidx, num_vars)]
@@ -313,8 +311,8 @@ function orderconesforscs(A_in, b_in, c_cones, v_cones)
                 error("Number of ExpDual variables must be a multiple of 3")
             nidx = length(idxs)
             A = [A; -sparse(1:nidx, idxs, ones(nidx), nidx, num_vars)]
-            b = [b; zeros(nidx)] 
-            
+            b = [b; zeros(nidx)]
+
             num_expdual += div(length(idxs), 3)
         end
     end
@@ -323,13 +321,12 @@ function orderconesforscs(A_in, b_in, c_cones, v_cones)
            sqrt_sdp_sizes, num_expprimal, num_expdual
 end
 
-loadconicproblem!(model::SCSMathProgModel, c, A, b, constr_cones, var_cones) = 
+
+loadconicproblem!(model::SCSMathProgModel, c, A, b, constr_cones, var_cones) =
     loadconicproblem!(model, c, sparse(A), b, constr_cones, var_cones)
 
 
 function loadconicproblem!(model::SCSMathProgModel, c, A::SparseMatrixCSC, b, constr_cones, var_cones)
-    # TODO (if it matters): make this more efficient for sparse A
-
     # TODO: We should support SOCRotated
     bad_cones = [:SOCRotated]
     for cone_vars in constr_cones
@@ -343,9 +340,7 @@ function loadconicproblem!(model::SCSMathProgModel, c, A::SparseMatrixCSC, b, co
     c_cones = [(cone, [idxs...]) for (cone, idxs) in constr_cones]
     v_cones = [(cone, [idxs...]) for (cone, idxs) in var_cones]
 
-    println("v_cones = $v_cones")
-
-    scs_A, scs_b, num_free, f, l, q, s, ep, ed = 
+    scs_A, scs_b, num_free, f, l, q, s, ep, ed =
         orderconesforscs(A, b, c_cones, v_cones)
 
     m, n = size(scs_A)
