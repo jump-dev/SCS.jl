@@ -100,6 +100,13 @@ immutable SCSWork
     p::Ptr{Void}
 end
 
+const status_map = {
+    1 => :Optimal,
+    -2 => :Infeasible,
+    -1 => :Unbounded,
+    -3 => :Indeterminate,
+    -4 => :Error
+}
 
 type Solution
     x::Array{Float64, 1}
@@ -107,14 +114,6 @@ type Solution
     s::Array{Float64, 1}
     status::Symbol
     ret_val::Int64
-
-    const status_map = {
-        1 => :Optimal,
-        -2 => :Infeasible,
-        -1 => :Unbounded,
-        -3 => :Indeterminate,
-        -4 => :Error
-    }
 
     function Solution(x::Array{Float64, 1}, y::Array{Float64, 1}, s::Array{Float64, 1}, ret_val::Int64)
         if haskey(status_map, ret_val)
