@@ -44,13 +44,12 @@ type SCSMathProgModel <: AbstractMathProgModel
     primal_sol::Vector{Float64}
     dual_sol::Vector{Float64}
     slack::Vector{Float64}
-    fwd_map::Vector{Int}                # To reorder solution if we solved
-end                                     # using the conic interface
+end
 
 SCSMathProgModel() = SCSMathProgModel(0, 0, spzeros(0, 0), Int[], Int[],
                                       0, 0, Int[], 0, Int[], 0, 0, 0,
                                       :Min, :NotSolved, 0.0, Float64[], Float64[],
-                                      Float64[],Int[])
+                                      Float64[])
 
 #############################################################################
 # Begin implementation of the MPB low-level interface
@@ -135,14 +134,13 @@ function loadproblem!(m::SCSMathProgModel, A, collb, colub, obj, rowlb, rowub, s
     m.ep        = 0
     m.ed        = 0
     m.orig_sense = sense                # Original objective sense
-    m.fwd_map   = [1:nvar]              # Identity mapping
 end
 
 function optimize!(m::SCSMathProgModel)
     solution = SCS_solve(m.m, m.n, m.A, m.b, m.c, m.f, m.l, m.q, m.qsize, m.s, m.ssize, m.ep, m.ed)
 
     m.solve_stat = solution.status
-    m.primal_sol = solution.x[m.fwd_map]
+    m.primal_sol = solution.x
 
     # TODO: Do we need to do some sort of mapping for the dual solution?
     m.dual_sol = solution.y
@@ -164,209 +162,193 @@ getsolution(m::SCSMathProgModel) = m.primal_sol
 # http://mathprogbasejl.readthedocs.org/en/latest/conic.html
 
 # TODO: Will only work for loadineqconic for now
-function orderconesforscs(A, b, cones)
+function orderconesforscs(A_in, b_in, c_cones, v_cones)
     # Order the cones as:
     # Free, Zero, NonNeg (NonPos are converted), SOC, SDP, ExpPrimal, ExpDual
     #
     # Returns:
     # - scs_A (A ordered as needed), b, cones
-    # - fwd_map (mapping to reorder the solution)
     # - diag_G (see loadconicproblem as to why it is needed)
     # - num_free, num_zero, num_linear, soc_sizes, len_soc_sizes, sqrt_sdp_sizes,
     # - len_sqrt_sdp_size, num_expprimal, num_expdual
 
-    m, n = size(A)
-
-    # TODO: Instead of concatenating, probably a better idea to allocate
-    # all the memory at once and just insert
-    scs_A = nothing
-    scs_b = nothing
+    m, n = size(A_in)
+    A = spzeros(0, n)
+    b = zeros(0)
 
     # First, count the total number of variables
     num_vars = 0
-    for (cone, idxs) in cones
+    for (_, idxs) in v_cones
         num_vars += length(idxs)
     end
 
-    fwd_map = Array(Int, num_vars)
-    diag_G = ones(num_vars, 1)
-    cur_index = 1
-
     num_free = 0
-    for (cone, idxs) in cones
+    for (cone, idxs) in c_cones
         if cone == :Free
-            if scs_A == nothing
-                scs_A = A[:, [idxs...]]
-                scs_b = b[[idxs...]]
-            else
-                scs_A = [scs_A A[:, idxs]]
-                scs_b = [scs_b; b[idxs]]
-            end
-            fwd_map[idxs] = cur_index:cur_index + length(idxs) - 1
-            cur_index += length(idxs)
+            error("Why are you passing in a free constraint?")
+        end
+    end
+    for (cone, idxs) in v_cones
+        if cone == :Free
             num_free += length(idxs)
         end
     end
 
-    # num zero cones
     num_zero = 0
-    for (cone, idxs) in cones
+    for (cone, idxs) in c_cones
         if cone == :Zero
-            if scs_A == nothing
-                scs_A = A[:, idxs]
-                scs_b = b[[idxs...]]
-
-            else
-                scs_A = [scs_A A[:, idxs]]
-                scs_b = [scs_b; b[idxs]]
-            end
-            fwd_map[idxs] = cur_index:cur_index + length(idxs) - 1
-            cur_index += length(idxs)
+            A = [A; A_in[idxs,:]]
+            b = [b; b_in[idxs,:]]
             num_zero += length(idxs)
         end
     end
+    for (cone, idxs) in v_cones
+        if cone == :Zero
+            nidx = length(idxs)
+            A = [A; sparse(1:nidx, idxs, ones(nidx), nidx, num_vars)]
+            b = [b; zeros(nidx)]
+            num_zero += nidx
+        end
+    end
 
-    # num linear cones
     num_lin = 0
-    for (cone, idxs) in cones
+    for (cone, idxs) in c_cones
+        if cone == :NonNeg || cone == :NonPos
+            A = [A; A_in[idxs,:]]
+            b = [b; b_in[idxs,:]]
+            num_lin += length(idxs)
+        end
+    end
+    for (cone, idxs) in v_cones
         if cone == :NonNeg
-            if scs_A == nothing
-                scs_A = A[:, idxs]
-                scs_b = b[[idxs...]]
-            else
-                scs_A = [scs_A A[:, idxs]]
-                scs_b = [scs_b; b[idxs]]
-            end
-            fwd_map[idxs] = cur_index:cur_index + length(idxs) - 1
-            cur_index += length(idxs)
-            num_lin += length(idxs)
+            nidx = length(idxs)
+            A = [A; -sparse(1:nidx, idxs, ones(nidx), nidx, num_vars)]
+            b = [b; zeros(nidx)]
+            num_lin += nidx
+        elseif cone == :NonPos
+            A = [A; sparse(1:nidx, idxs, ones(nidx), nidx, num_vars)]
+            b = [b; zeros(nidx)]
+            num_lin += nidx
         end
     end
 
-    for (cone, idxs) in cones
-        if cone == :NonPos
-            if scs_A == nothing
-                scs_A = -A[:, idxs]
-                scs_b = b[[idxs...]]
-            else
-                scs_A = [scs_A A[:, idxs]]
-                scs_b = [scs_b; b[idxs]]
-            end
-            fwd_map[idxs] = cur_index:cur_index + length(idxs) - 1
-
-            # Convert NonPos to NonNeg for slack variables
-            diag_G[cur_index:cur_index + length(idxs) - 1] = -1
-            cur_index += length(idxs)
-            num_lin += length(idxs)
-        end
-    end
-
-    # SOC cone
     soc_sizes = Int64[]
-    len_soc_sizes = 0
-    for (cone, idxs) in cones
+    for (cone, idxs) in c_cones
         if cone == :SOC
-            if scs_A == nothing
-                scs_A = A[:, idxs]
-                scs_b = b[[idxs...]]
-            else
-                scs_A = [scs_A A[:, idxs]]
-                scs_b = [scs_b; b[idxs]]
-            end
-            fwd_map[idxs] = cur_index:cur_index + length(idxs) - 1
-            cur_index += length(idxs)
-            len_soc_sizes += 1
+            A = [A; A_in[idxs,:]]
+            b = [b; b_in[idxs,:]]
             push!(soc_sizes, length(idxs))
         end
     end
+    for (cone, idxs) in v_cones
+        if cone == :SOC
+            nidx = length(idxs)
+            A = [A; -sparse(1:nidx, idxs, ones(nidx), nidx, num_vars)]
+            b = [b; zeros(nidx)]
+            push!(soc_sizes, nidx)
+        end
+    end
 
-    # SDP cone
     sqrt_sdp_sizes = Int64[]
-    len_sqrt_sdp_size = 0
-    for (cone, idxs) in cones
+    for (cone, idxs) in c_cones
         if cone == :SDP
-            if scs_A == nothing
-                scs_A = A[:, idxs]
-                scs_b = b[[idxs...]]
-            else
-                scs_A = [scs_A A[:, idxs]]
-                scs_b = [scs_b; b[idxs]]
-            end
-            fwd_map[idxs] = cur_index:cur_index + length(idxs) - 1
-            cur_index += length(idxs)
-
+            A = [A; A_in[idxs,:]]
+            b = [b; b_in[idxs,:]]
             # n must be a square integer
             n = length(idxs)
-            try
-                sqrt_n = convert(Int, sqrt(n));
-                len_sqrt_sdp_size += 1
-                push!(sqrt_sdp_sizes, sqrt_n)
-            catch
-                error("number of SDP variables must be square")
-            end
+            isinteger(sqrt(n)) || error("number of SDP variables must be square")
+            sqrt_n = convert(Int, sqrt(n));
+            len_sqrt_sdp_size += 1
+            push!(sqrt_sdp_sizes, sqrt_n)
+        end
+    end
+    for (cone, idxs) in v_cones
+        if cone == :SDP
+            nidx = length(idxs)
+            A = [A; -sparse(1:nidx, idxs, ones(nidx), nidx, num_vars)]
+            b = [b; zeros(nidx)]
+             # n must be a square integer
+            isinteger(sqrt(nidx)) || error("number of SDP variables must be square")
+            sqrt_n = convert(Int, sqrt(nidx));
+            push!(sqrt_sdp_sizes, sqrt_n)
         end
     end
 
     num_expprimal = 0
-    for (cone, idxs) in cones
+    for (cone, idxs) in c_cones
         if cone == :ExpPrimal
-            if scs_A == nothing
-                scs_A = A[:, idxs]
-                scs_b = b[[idxs...]]
-            else
-                scs_A = [scs_A A[:, idxs]]
-                scs_b = [scs_b; b[idxs]]
-            end
-
-            if length(idxs) % 3 != 0
+            length(idxs) % 3 == 0 || 
                 error("Number of ExpPrimal variables must be a multiple of 3")
-            end
+            A = [A; A_in[idxs,:]]
+            b = [b; b_in[idxs,:]]
 
-            fwd_map[idxs] = cur_index:cur_index + length(idxs) - 1
-            cur_index += length(idxs)
-            num_expprimal += length(idxs) / 3
+            num_expprimal += div(length(idxs), 3)
+        end
+    end
+    for (cone, idxs) in v_cones
+        if cone == :ExpPrimal
+            length(idxs) % 3 == 0 || 
+                error("Number of ExpPrimal variables must be a multiple of 3")
+            nidx = length(idxs)
+            A = [A; -sparse(1:nidx, idxs, ones(nidx), nidx, num_vars)]
+            b = [b; zeros(nidx)]
+
+            num_expprimal += div(length(idxs), 3)
         end
     end
 
     num_expdual = 0
-    for (cone, idxs) in cones
+    for (cone, idxs) in c_cones
         if cone == :ExpDual
-            if scs_A == nothing
-                scs_A = A[:, idxs]
-                scs_b = b[[idxs...]]
-            else
-                scs_A = [scs_A A[:, idxs]]
-                scs_b = [scs_b; b[idxs]]
-            end
-
-            if length(idxs) % 3 != 0
+            length(idxs) % 3 == 0 ||
                 error("Number of ExpDual variables must be a multiple of 3")
-            end
+            A = [A; A_in[idxs,:]]
+            b = [b; b_in[idxs,:]]
 
-            fwd_map[idxs] = cur_index:cur_index + length(idxs) - 1
-            cur_index += length(idxs)
-            num_expdual += length(idxs) / 3
+            num_expdual += div(length(idxs), 3)
         end
     end
-    return scs_A, scs_b, cones, fwd_map, diag_G, num_free, num_zero, num_lin, soc_sizes,
-           len_soc_sizes, sqrt_sdp_sizes, len_sqrt_sdp_size, num_expprimal, num_expdual
+    for (cone, idxs) in v_cones
+        if cone == :ExpDual
+            length(idxs) % 3 == 0 ||
+                error("Number of ExpDual variables must be a multiple of 3")
+            nidx = length(idxs)
+            A = [A; -sparse(1:nidx, idxs, ones(nidx), nidx, num_vars)]
+            b = [b; zeros(nidx)] 
+            
+            num_expdual += div(length(idxs), 3)
+        end
+    end
+
+    return A, b, num_free, num_zero, num_lin, soc_sizes,
+           sqrt_sdp_sizes, num_expprimal, num_expdual
 end
 
-function loadconicproblem!(model::SCSMathProgModel, c, A, b, cones)
+loadconicproblem!(model::SCSMathProgModel, c, A, b, constr_cones, var_cones) = 
+    loadconicproblem!(model, c, sparse(A), b, constr_cones, var_cones)
+
+
+function loadconicproblem!(model::SCSMathProgModel, c, A::SparseMatrixCSC, b, constr_cones, var_cones)
     # TODO (if it matters): make this more efficient for sparse A
 
     # We don't support SOCRotated
     # TODO: We should support SOCRotated
     bad_cones = [:SOCRotated]
-    for cone_vars in cones
+    for cone_vars in constr_cones
+        cone_vars[1] in bad_cones && error("Cone type $(cone_vars[1]) not supported")
+    end
+    for cone_vars in var_cones
         cone_vars[1] in bad_cones && error("Cone type $(cone_vars[1]) not supported")
     end
 
     # Convert idxs to an array
-    cones = [(cone, [idxs...]) for (cone, idxs) in cones]
+    c_cones = [(cone, [idxs...]) for (cone, idxs) in constr_cones]
+    v_cones = [(cone, [idxs...]) for (cone, idxs) in var_cones]
 
-    scs_A, scs_b, cones, fwd_map, diag_G, num_free, f, l,
-        q, qsize, s, ssize, ep, ed = orderconesforscs(A, b, cones)
+    println("v_cones = $v_cones")
+
+    scs_A, scs_b, num_free, f, l, q, s, ep, ed = 
+        orderconesforscs(A, b, c_cones, v_cones)
 
     # MathProgBase form             SCS form
     # min c'x                       min c'x
@@ -388,33 +370,35 @@ function loadconicproblem!(model::SCSMathProgModel, c, A, b, cones)
     #
     # TODO: Make this comment more clear
 
-    diag_G = diag_G[num_free + 1 : end]
+#    diag_G = diag_G[num_free + 1 : end]
     m, n = size(scs_A)
 
     # [A; -I] x + [0; s] = b has the first m cones as Zero cones
-    f += m
+#    f += m
 
-    rows_G = n - num_free
-    G = [zeros(rows_G, num_free) -diagm(diag_G)]
+#    rows_G = n - num_free
+#    G = [spzeros(rows_G, num_free) -spdiagm(diag_G)]
 
-    scs_A = [scs_A; G]
-    scs_b = [b; zeros(rows_G, 1)]
+#    scs_A = [scs_A; G]
+#    scs_b = [b; zeros(rows_G, 1)]
 
     model.n         = n
-    model.m         = m + rows_G
+    model.m         = m # + rows_G
     model.A         = scs_A
     model.b         = scs_b[:]
     model.c         = c[:]
     model.q         = q
-    model.qsize     = qsize
+    model.qsize     = length(q)
     model.s         = s
-    model.ssize     = ssize
+    model.ssize     = length(s)
     model.ep        = ep
     model.ed        = ed
     model.orig_sense = :Min
     model.f         = f
     model.l         = l
-    model.fwd_map   = fwd_map
+    println("model = $model")
+    println("A = $(full(scs_A))")
+    return model
 end
 
 function loadineqconicproblem!(model::SCSMathProgModel, c, A, b, cones)
