@@ -1,20 +1,14 @@
-language: cpp
-compiler:
-  - clang
+language: julia
+os:
+  - linux
+  - osx
+julia:
+  - release
+  - nightly
 notifications:
   email: false
-env:
-  matrix:
-    - JULIAVERSION="julianightlies"
-before_install:
-  - sudo add-apt-repository ppa:staticfloat/julia-deps -y
-  - sudo add-apt-repository ppa:staticfloat/${JULIAVERSION} -y
-  - sudo apt-get update -qq -y
-  - sudo apt-get install libpcre3-dev julia -y
 script:
-  - julia -e 'Pkg.init(); run(`ln -s $(pwd()) $(Pkg.dir("SCS"))`); Pkg.pin("SCS"); Pkg.resolve(); Pkg.build("SCS")'
-  - julia -e 'using SCS; @assert isdefined(:SCS); @assert typeof(SCS) === Module'
-  - if [ $JULIAVERSION = "julianightlies" ]; then julia --code-coverage test/runtests.jl; fi
-  - if [ $JULIAVERSION = "juliareleases" ]; then julia test/runtests.jl; fi
+  - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
+  - julia -e 'Pkg.clone(pwd()); Pkg.build("SCS"); Pkg.test("SCS"; coverage=true)'
 after_success:
 - julia -e 'cd(Pkg.dir("SCS")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())'
