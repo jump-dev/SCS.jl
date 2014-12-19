@@ -3,39 +3,42 @@ using BinDeps
 @BinDeps.setup
 
 @unix_only begin
-    scs = library_dependency("scs", aliases=["libscsdir"])
+    scs = library_dependency("scs", aliases=["libscsdir64","libscsdir"])
 end
 
-provides(Sources, URI("https://github.com/cvxgrp/scs/archive/master.zip"),
-    [scs], os=:Unix, unpacked_dir="scs-master")
+@osx_only begin
+    using Homebrew
+    provides(Homebrew.HB, "scs", scs, os = :Darwin)
+end
+
+version = "1.0.7"
+
+provides(Sources, URI("https://github.com/cvxgrp/scs/archive/v$version.tar.gz"),
+    [scs], os=:Unix, unpacked_dir="scs-$version")
 
 prefix = joinpath(BinDeps.depsdir(scs), "usr")
-srcdir = joinpath(BinDeps.depsdir(scs), "src", "scs-master/")
+srcdir = joinpath(BinDeps.depsdir(scs), "src", "scs-$version/")
 
+libname = "libscsdir.$(Sys.dlext)"
+
+@osx_only begin
+    ldflags = "-undefined suppress -flat_namespace"
+    ENV["LDFLAGS"] = ldflags
+end
+cflags = "-DDLONG -DLAPACK_LIB_FOUND"
+if Base.blas_vendor() == :openblas64
+    cflags = "$cflags -DBLAS64 -DBLASSUFFIX=_64_"
+end
+ENV["CFLAGS"] = cflags
 
 provides(SimpleBuild,
     (@build_steps begin
         GetSources(scs)
         CreateDirectory(joinpath(prefix, "lib"))
-        FileRule(joinpath(prefix, "lib", "libscsdir.dylib"), @build_steps begin
+        FileRule(joinpath(prefix, "lib", libname), @build_steps begin
             ChangeDirectory(srcdir)
-            `cat ${BinDeps.depsdir(scs)}/scs-lapack.patch` |> `patch scs.mk`
-            `cat ${BinDeps.depsdir(scs)}/scs.patch` |> `patch scs.mk`
-            `make`
-            `mv out/libscsdir.dylib $prefix/lib`
-        end)
-    end), [scs], os=:Darwin)
-
-
-provides(SimpleBuild,
-    (@build_steps begin
-        GetSources(scs)
-        CreateDirectory(joinpath(prefix, "lib"))
-        FileRule(joinpath(prefix, "lib", "libscsdir.so"), @build_steps begin
-        ChangeDirectory(srcdir)
-            `cat ${BinDeps.depsdir(scs)}/scs.patch` |> `patch scs.mk`
-            `make`
-            `mv out/libscsdir.so $prefix/lib`
+            `make out/$libname`
+            `mv out/$libname $prefix/lib`
         end)
     end), [scs], os=:Unix)
 
