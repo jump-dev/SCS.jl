@@ -1,26 +1,26 @@
 export SCSMatrix, SCSData, SCSSolution, SCSInfo, SCSCone, SCSWork, SCSVecOrMatOrSparse
 
 
-SCSVecOrMatOrSparse = Union(VecOrMat, SparseMatrixCSC{Float64,Int64})
+SCSVecOrMatOrSparse = Union(VecOrMat, SparseMatrixCSC{Float64,Int})
 
 
 immutable SCSMatrix
     values::Ptr{Cdouble}
-    rowval::Ptr{Clong}
-    colptr::Ptr{Clong}
+    rowval::Ptr{Int}
+    colptr::Ptr{Int}
 end
 
 
 immutable SCSData
     # A has m rows, n cols
-    m::Clong
-    n::Clong
+    m::Int
+    n::Int
     A::Ptr{SCSMatrix}
     # b is of size m, c is of size n
     b::Ptr{Cdouble}
     c::Ptr{Cdouble}
     # max_iters to take
-    max_iters::Clong
+    max_iters::Int
     # convergence tolerance
     eps::Cdouble
     # relaxation parameter
@@ -29,13 +29,13 @@ immutable SCSData
     rho_x::Cdouble
     # for indirect, tolerance goes down like (1/iter)^CG_RATE: 1.5
     cg_rate::Cdouble
-    verbose::Clong
+    verbose::Int
     # 0 or 1
-    normalize::Clong
+    normalize::Int
     # if normalized, rescales by this factor
     scale::Cdouble
     # 0 or 1
-    warm_start::Clong
+    warm_start::Int
 end
 
 
@@ -47,14 +47,14 @@ end
 
 
 immutable SCSInfo
-    iter::Clong
+    iter::Int
     # We need to allocate 32 bytes for a character string, so we allocate 256 bits
     # of integer instead
     # TODO: Find a better way to do this
     status1::Int128
     status2::Int128
 
-    statusVal::Clong
+    statusVal::Int
     pobj::Cdouble
     dobj::Cdouble
     resPri::Cdouble
@@ -68,14 +68,14 @@ end
 
 
 immutable SCSCone
-    f::Clong # number of linear equality constraints
-    l::Clong # length of LP cone
-    q::Ptr{Clong} # array of second-order cone constraints
-    qsize::Clong # length of SOC array
-    s::Ptr{Clong} # array of semi-definite constraints
-    ssize::Clong # length of SD array
-    ep::Clong # number of primal exponential cone triples
-    ed::Clong # number of dual exponential cone triples
+    f::Int # number of linear equality constraints
+    l::Int # length of LP cone
+    q::Ptr{Int} # array of second-order cone constraints
+    qsize::Int # length of SOC array
+    s::Ptr{Int} # array of semi-definite constraints
+    ssize::Int # length of SD array
+    ep::Int # number of primal exponential cone triples
+    ed::Int # number of dual exponential cone triples
 end
 
 
@@ -113,9 +113,9 @@ type Solution
     y::Array{Float64, 1}
     s::Array{Float64, 1}
     status::Symbol
-    ret_val::Int64
+    ret_val::Int
 
-    function Solution(x::Array{Float64, 1}, y::Array{Float64, 1}, s::Array{Float64, 1}, ret_val::Int64)
+    function Solution(x::Array{Float64, 1}, y::Array{Float64, 1}, s::Array{Float64, 1}, ret_val::Int)
         if haskey(status_map, ret_val)
             return new(x, y, s, status_map[ret_val], ret_val)
         else

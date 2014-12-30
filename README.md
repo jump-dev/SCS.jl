@@ -38,9 +38,9 @@ The other problem data are
 The function is
 
 ```
-function SCS_solve(m::Int64, n::Int64, A::SCSVecOrMatOrSparse, b::Array{Float64,},
-    c::Array{Float64,}, f::Clong, l::Clong, q::Array{Int64,}, qsize::Clong, s::Array{Int64,},
-    ssize::Clong, ep::Clong, ed::Clong)
+function SCS_solve(m::Int, n::Int, A::SCSVecOrMatOrSparse, b::Array{Float64,},
+    c::Array{Float64,}, f::Int, l::Int, q::Array{Int,}, qsize::Int, s::Array{Int,},
+    ssize::Int, ep::Int, ed::Int)
 ```
 
 and it returns an object of type Solution, which contains the following fields
@@ -51,7 +51,7 @@ type Solution
   y::Array{Float64, 1}
   s::Array{Float64, 1}
   status::ASCIIString
-  ret_val::Int64
+  ret_val::Int
   ...
 ```
 
