@@ -1,5 +1,0 @@
-45c45
-< # CFLAGS += -DDLONG # use longs rather than ints
----
-> CFLAGS += -DDLONG # use longs rather than ints
-
