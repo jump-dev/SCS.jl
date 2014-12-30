@@ -1,6 +1,7 @@
 tests = ["direct.jl",
          "mpb_linear.jl",
-         "mpb_conic.jl"]
+         "mpb_conic.jl",
+         "options.jl"]
 
 println("Running tests:")
 

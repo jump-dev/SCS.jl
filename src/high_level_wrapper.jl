@@ -27,27 +27,30 @@ function create_scs_data(;m::Clong=nothing, n::Clong=nothing, A::Ptr{SCSMatrix}=
         eps=convert(Cdouble, 1e-5)::Cdouble, alpha=convert(Cdouble, 1.8)::Cdouble,
         rho_x=convert(Cdouble, 1e-3)::Cdouble, scale=convert(Cdouble, 5.0)::Cdouble,
         cg_rate=convert(Cdouble, 1.5)::Cdouble, verbose=1::Clong,
-        normalize=1::Clong, warm_start=0::Clong)
+        normalize=1::Clong, warm_start=0::Clong, options...)
+
+    for (k, v) in options
+        @eval(($k) = ($v))
+    end
 
     data = SCSData(m, n, A, b, c, max_iters, eps, alpha, rho_x, cg_rate, verbose, normalize, scale, warm_start)
-    return data
 end
 
 
 # Refer to comment above
-function create_scs_data(m::Clong, n::Clong, A::Ptr{SCSMatrix}, b::Ptr{Cdouble}, c::Ptr{Cdouble})
-    return create_scs_data(m=m, n=n, A=A, b=b, c=c)
+function create_scs_data(m::Clong, n::Clong, A::Ptr{SCSMatrix}, b::Ptr{Cdouble}, c::Ptr{Cdouble}; options...)
+    return create_scs_data(m=m, n=n, A=A, b=b, c=c; options...)
 end
 
 
 # Refer to comment above
 function create_scs_data(m::Int64, n::Int64, A::SCSVecOrMatOrSparse, b::Array{Float64,},
-        c::Array{Float64,})
+        c::Array{Float64,}; options...)
     if size(b, 1) != m || size(b, 2) != 1 || size(c, 1) != n || size(c, 2) != 1
         error("Size of b must be m x 1 and size of c must be n x 1")
     end
     A = [create_scs_matrix(A)]
-    return create_scs_data(m=m, n=n, A=pointer(A), b=pointer(b), c=pointer(c))
+    return create_scs_data(m=m, n=n, A=pointer(A), b=pointer(b), c=pointer(c); options...)
 end
 
 
@@ -111,8 +114,8 @@ end
 #
 function SCS_solve(m::Int64, n::Int64, A::SCSVecOrMatOrSparse, b::Array{Float64,},
         c::Array{Float64,}, f::Clong, l::Clong, q::Array{Int64,}, qsize::Clong, s::Array{Int64,},
-        ssize::Clong, ep::Clong, ed::Clong)
-    data = create_scs_data(m, n, A, b, c)
+        ssize::Clong, ep::Clong, ed::Clong; options...)
+    data = create_scs_data(m, n, A, b, c; options...)
     cone = create_scs_cone(f, l, q, qsize, s, ssize, ep, ed)
 
     status, solution, info, p_work = SCS_solve(data, cone)

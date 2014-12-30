@@ -1,0 +1,43 @@
+#############################################################################
+# SCS.jl
+# Wrapper around the SCS solver https://github.com/cvxgrp/scs
+# See http://github.com/JuliaOpt/SCS.jl
+#############################################################################
+# test/options.jl
+# Tests the ability to pass options
+#############################################################################
+
+using Base.Test
+using MathProgBase.SolverInterface
+using SCS
+
+
+# The normal test
+A = [1.0 1.0 0.0 0.0 0.0;
+     0.0 1.0 0.0 0.0 1.0;
+     0.0 0.0 1.0 1.0 1.0]
+collb = [0.0, 0.0, 0.0, 0.0, 0.0]
+colub = [Inf, Inf, Inf, Inf, Inf]
+obj   = [3.0, 4.0, 4.0, 9.0, 5.0]
+sense = :Max
+rowlb = [-Inf, -Inf, -Inf]
+rowub = [ 5.0,  3.0,  9.0]
+s = SCSSolver()
+m = MathProgBase.model(s)
+MathProgBase.loadproblem!(m, A, collb, colub, obj, rowlb, rowub, sense)
+MathProgBase.optimize!(m)
+@test_approx_eq_eps MathProgBase.getobjval(m) 99.0 1e-3
+
+# With max_iters = 1, it should not be solved
+s = SCSSolver(max_iters=1)
+m = MathProgBase.model(s)
+MathProgBase.loadproblem!(m, A, collb, colub, obj, rowlb, rowub, sense)
+MathProgBase.optimize!(m)
+@test MathProgBase.status(m) == :Unbounded
+
+# With eps = 1e-8, solution should be far more accurate
+s = SCSSolver(eps=1e-8)
+m = MathProgBase.model(s)
+MathProgBase.loadproblem!(m, A, collb, colub, obj, rowlb, rowub, sense)
+MathProgBase.optimize!(m)
+@test_approx_eq_eps MathProgBase.getobjval(m) 99.0 1e-5

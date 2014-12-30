@@ -7,7 +7,7 @@ SCSVecOrMatOrSparse = Union(VecOrMat, SparseMatrixCSC{Float64,Int64})
 immutable SCSMatrix
     values::Ptr{Cdouble}
     rowval::Ptr{Clong}
-colptr::Ptr{Clong}
+    colptr::Ptr{Clong}
 end
 
 

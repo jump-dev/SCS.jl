@@ -21,7 +21,9 @@ end
 # Define the MPB Solver and Model objects
 export SCSSolver
 immutable SCSSolver <: AbstractMathProgSolver
+    options
 end
+SCSSolver(;kwargs...) = SCSSolver(kwargs)
 
 type SCSMathProgModel <: AbstractMathProgModel
     m::Int64                            # Number of constraints
@@ -44,12 +46,13 @@ type SCSMathProgModel <: AbstractMathProgModel
     primal_sol::Vector{Float64}
     dual_sol::Vector{Float64}
     slack::Vector{Float64}
+    options
 end
 
-SCSMathProgModel() = SCSMathProgModel(0, 0, spzeros(0, 0), Int[], Int[],
+SCSMathProgModel(;kwargs...) = SCSMathProgModel(0, 0, spzeros(0, 0), Int[], Int[],
                                       0, 0, Int[], 0, Int[], 0, 0, 0,
                                       :Min, :NotSolved, 0.0, Float64[], Float64[],
-                                      Float64[])
+                                      Float64[], kwargs)
 
 #############################################################################
 # Begin implementation of the MPB low-level interface
@@ -60,7 +63,7 @@ SCSMathProgModel() = SCSMathProgModel(0, 0, spzeros(0, 0), Int[], Int[],
 # - status
 # http://mathprogbasejl.readthedocs.org/en/latest/lowlevel.html
 
-model(s::SCSSolver) = SCSMathProgModel()
+model(s::SCSSolver) = SCSMathProgModel(;s.options...)
 
 # Loads the provided problem data to set up the linear programming problem:
 # min c'x
@@ -137,7 +140,8 @@ function loadproblem!(m::SCSMathProgModel, A, collb, colub, obj, rowlb, rowub, s
 end
 
 function optimize!(m::SCSMathProgModel)
-    solution = SCS_solve(m.m, m.n, m.A, m.b, m.c, m.f, m.l, m.q, m.qsize, m.s, m.ssize, m.ep, m.ed)
+    solution = SCS_solve(m.m, m.n, m.A, m.b, m.c, m.f, m.l, m.q, m.qsize,
+                         m.s, m.ssize, m.ep, m.ed; m.options...)
 
     m.solve_stat = solution.status
     m.primal_sol = solution.x
