@@ -1,6 +1,7 @@
 # SCS
 
 [![Build Status](https://travis-ci.org/JuliaOpt/SCS.jl.png)](https://travis-ci.org/JuliaOpt/SCS.jl)
+[![Build status](https://ci.appveyor.com/api/projects/status/yb4yfg4oryw7yten/branch/master?svg=true)](https://ci.appveyor.com/project/karanveerm/scs-jl/branch/master)
 [![Coverage Status](https://coveralls.io/repos/karanveerm/SCS.jl/badge.png)](https://coveralls.io/r/karanveerm/SCS.jl)
 
 Julia wrapper around [SCS](https://github.com/cvxgrp/scs) for [CVX.jl](https://github.com/cvxgrp/CVX.jl).
