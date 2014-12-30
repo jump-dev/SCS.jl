@@ -10,11 +10,11 @@
 importall MathProgBase.MathProgSolverInterface
 import Base.convert
 
-function convert(x::Type{Int64}, y::UnitRange{Int64})
+function convert(x::Type{Int}, y::UnitRange{Int})
     if length(y) == 1
         return y[1]
     else
-        error("convert` has no method matching convert(::Type{Int64}, ::UnitRange{Int64})")
+        error("convert` has no method matching convert(::Type{Int}, ::UnitRange{Int})")
     end
 end
 #############################################################################
@@ -26,19 +26,19 @@ end
 SCSSolver(;kwargs...) = SCSSolver(kwargs)
 
 type SCSMathProgModel <: AbstractMathProgModel
-    m::Int64                            # Number of constraints
-    n::Int64                            # Number of variables
+    m::Int                            # Number of constraints
+    n::Int                            # Number of variables
     A::SparseMatrixCSC{Float64,Int}     # The A matrix (equalities)
     b::Vector{Float64}                  # RHS
     c::Vector{Float64}                  # The objective coeffs (always min)
-    f::Int64                            # number of zero cones
-    l::Int64                            # number of linear cones { x | x >= 0}
-    q::Array{Int64,}                    # Array of SOC sizes
-    qsize::Int64                        # Length of q
-    s::Array{Int64,}                    # Array of SDC sizes
-    ssize::Int64                        # Length of s
-    ep::Int64                           # Number of primal exponential cones
-    ed::Int64                           # Number of dual exponential cones
+    f::Int                            # number of zero cones
+    l::Int                            # number of linear cones { x | x >= 0}
+    q::Array{Int,}                    # Array of SOC sizes
+    qsize::Int                        # Length of q
+    s::Array{Int,}                    # Array of SDC sizes
+    ssize::Int                        # Length of s
+    ep::Int                           # Number of primal exponential cones
+    ed::Int                           # Number of dual exponential cones
     orig_sense::Symbol                  # Original objective sense
     # Post-solve
     solve_stat::Symbol
@@ -130,9 +130,9 @@ function loadproblem!(m::SCSMathProgModel, A, collb, colub, obj, rowlb, rowub, s
                                         # The objective coeffs (always min)
     m.f         = length(eqidx)
     m.l         = length(ineqidx)
-    m.q         = Int64[]
+    m.q         = Int[]
     m.qsize     = 0
-    m.s         = Int64[]
+    m.s         = Int[]
     m.ssize     = 0
     m.ep        = 0
     m.ed        = 0
@@ -234,7 +234,7 @@ function orderconesforscs(A_in, b_in, c_cones, v_cones)
         end
     end
 
-    soc_sizes = Int64[]
+    soc_sizes = Int[]
     for (cone, idxs) in c_cones
         if cone == :SOC
             A = [A; A_in[idxs,:]]
@@ -251,7 +251,7 @@ function orderconesforscs(A_in, b_in, c_cones, v_cones)
         end
     end
 
-    sqrt_sdp_sizes = Int64[]
+    sqrt_sdp_sizes = Int[]
     for (cone, idxs) in c_cones
         if cone == :SDP
             A = [A; A_in[idxs,:]]
