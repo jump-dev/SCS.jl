@@ -28,15 +28,18 @@ srcdir = joinpath(BinDeps.depsdir(scs), "src", "scs-$version/")
 
 libname = "libscsdir.$(Sys.dlext)"
 
+ldflags = ""
 @osx_only begin
-    ldflags = "-undefined suppress -flat_namespace"
-    ENV["LDFLAGS"] = ldflags
+    ldflags = "$ldflags -undefined suppress -flat_namespace"
 end
 cflags = "-DDLONG -DLAPACK_LIB_FOUND"
 if Base.blas_vendor() == :openblas64
     cflags = "$cflags -DBLAS64 -DBLASSUFFIX=_64_"
 end
-ENV["CFLAGS"] = cflags
+
+ENV2 = copy(ENV)
+ENV2["LDFLAGS"] = ldflags
+ENV2["CFLAGS"] = cflags
 
 provides(SimpleBuild,
     (@build_steps begin
@@ -44,7 +47,7 @@ provides(SimpleBuild,
         CreateDirectory(joinpath(prefix, "lib"))
         FileRule(joinpath(prefix, "lib", libname), @build_steps begin
             ChangeDirectory(srcdir)
-            `make out/$libname`
+            setenv(`make out/$libname`, ENV2)
             `mv out/$libname $prefix/lib`
         end)
     end), [scs], os=:Unix)
