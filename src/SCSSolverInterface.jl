@@ -163,6 +163,7 @@ getsolution(m::SCSMathProgModel) = m.primal_sol
 # Begin implementation of the MPB conic interface
 # Implements
 # - loadconicproblem!
+# - supportedcones
 # http://mathprogbasejl.readthedocs.org/en/latest/conic.html
 
 function orderconesforscs(A_in, b_in, c_cones, v_cones)
@@ -366,3 +367,4 @@ function loadconicproblem!(model::SCSMathProgModel, c, A::SparseMatrixCSC, b, co
     return model
 end
 
+supportedcones(s::SCSSolver) = [:Free, :Zero, :NonNeg, :NonPos, :SOC, :SDP, :ExpPrimal, :ExpDual]
