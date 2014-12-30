@@ -1,13 +1,13 @@
 # SCS
 
-[![Build Status](https://travis-ci.org/karanveerm/SCS.jl.png)](https://travis-ci.org/karanveerm/SCS.jl)
+[![Build Status](https://travis-ci.org/JuliaOpt/SCS.jl.png)](https://travis-ci.org/JuliaOpt/SCS.jl)
 [![Coverage Status](https://coveralls.io/repos/karanveerm/SCS.jl/badge.png)](https://coveralls.io/r/karanveerm/SCS.jl)
 
 Julia wrapper around [SCS](https://github.com/cvxgrp/scs) for [CVX.jl](https://github.com/cvxgrp/CVX.jl).
 
 ## High Level Wrapper
 
-The file [`high_level_wrapper.jl`](https://github.com/karanveerm/SCS.jl/blob/master/src/high_level_wrapper.jl) is thoroughly commented. Here is the basic usage
+The file [`high_level_wrapper.jl`](https://github.com/JuliaOpt/SCS.jl/blob/master/src/high_level_wrapper.jl) is thoroughly commented. Here is the basic usage
 
 We assume we are solving a problem of the form
 ```
@@ -59,4 +59,4 @@ Where `x` stores the optimal value of the primal variable, `y` stores the optima
 
 ## Low Level Wrapper
 
-The low level wrapper directly calls SCS and is also thoroughly documented in [low_level_wrapper.jl](https://github.com/karanveerm/SCS.jl/blob/master/src/low_level_wrapper.jl). The low level wrapper performs the pointer manipulation necessary for the direct C call.
+The low level wrapper directly calls SCS and is also thoroughly documented in [low_level_wrapper.jl](https://github.com/JuliaOpt/SCS.jl/blob/master/src/low_level_wrapper.jl). The low level wrapper performs the pointer manipulation necessary for the direct C call.
