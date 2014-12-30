@@ -21,7 +21,7 @@ function SCS_solve(p_work::Ptr{SCSWork}, data::SCSData, cone::SCSCone, info::SCS
 
     info_ptr = pointer([info])
 
-    status = ccall((:scs_solve, SCS.scs), Clong,
+    status = ccall((:scs_solve, SCS.scs), Int,
         (Ptr{SCSWork}, Ptr{SCSData}, Ptr{SCSCone}, Ptr{SCSSolution}, Ptr{SCSInfo}),
         p_work, &data, &cone, solution_ptr, info_ptr)
 

@@ -6,8 +6,8 @@ function create_scs_matrix(A::SCSVecOrMatOrSparse)
     A_sparse = sparse(A)
 
     values = A_sparse.nzval * 1.0
-    rowval = convert(Array{Clong, 1}, A_sparse.rowval .- 1)
-    colptr = convert(Array{Clong, 1}, A_sparse.colptr .- 1)
+    rowval = convert(Array{Int, 1}, A_sparse.rowval .- 1)
+    colptr = convert(Array{Int, 1}, A_sparse.colptr .- 1)
 
     return SCSMatrix(pointer(values), pointer(rowval), pointer(colptr))
 end
@@ -22,12 +22,12 @@ end
 # b is of length m x 1
 # c is of length n x 1
 # refer to create_scs_cone for K
-function create_scs_data(;m::Clong=nothing, n::Clong=nothing, A::Ptr{SCSMatrix}=nothing,
-        b::Ptr{Cdouble}=nothing,  c::Ptr{Cdouble}=nothing, max_iters=2500::Clong,
+function create_scs_data(;m::Int=nothing, n::Int=nothing, A::Ptr{SCSMatrix}=nothing,
+        b::Ptr{Cdouble}=nothing,  c::Ptr{Cdouble}=nothing, max_iters=2500::Int,
         eps=convert(Cdouble, 1e-5)::Cdouble, alpha=convert(Cdouble, 1.8)::Cdouble,
         rho_x=convert(Cdouble, 1e-3)::Cdouble, scale=convert(Cdouble, 5.0)::Cdouble,
-        cg_rate=convert(Cdouble, 1.5)::Cdouble, verbose=1::Clong,
-        normalize=1::Clong, warm_start=0::Clong, options...)
+        cg_rate=convert(Cdouble, 1.5)::Cdouble, verbose=1::Int,
+        normalize=1::Int, warm_start=0::Int, options...)
 
     for (k, v) in options
         @eval(($k) = ($v))
@@ -38,13 +38,13 @@ end
 
 
 # Refer to comment above
-function create_scs_data(m::Clong, n::Clong, A::Ptr{SCSMatrix}, b::Ptr{Cdouble}, c::Ptr{Cdouble}; options...)
+function create_scs_data(m::Int, n::Int, A::Ptr{SCSMatrix}, b::Ptr{Cdouble}, c::Ptr{Cdouble}; options...)
     return create_scs_data(m=m, n=n, A=A, b=b, c=c; options...)
 end
 
 
 # Refer to comment above
-function create_scs_data(m::Int64, n::Int64, A::SCSVecOrMatOrSparse, b::Array{Float64,},
+function create_scs_data(m::Int, n::Int, A::SCSVecOrMatOrSparse, b::Array{Float64,},
         c::Array{Float64,}; options...)
     if size(b, 1) != m || size(b, 2) != 1 || size(c, 1) != n || size(c, 2) != 1
         error("Size of b must be m x 1 and size of c must be n x 1")
@@ -72,15 +72,15 @@ end
 # s (array of SDCs sizes)
 # ep (num primal exponential cones)
 # ed (num dual exponential cones).
-function create_scs_cone(f::Clong, l::Clong, q::Ptr{Clong}, qsize::Clong, s::Ptr{Clong},
-        ssize::Clong, ep::Clong, ed::Clong)
+function create_scs_cone(f::Int, l::Int, q::Ptr{Int}, qsize::Int, s::Ptr{Int},
+        ssize::Int, ep::Int, ed::Int)
     return SCSCone(f, l, q, qsize, s, ssize, ep, ed)
 end
 
 
 # Refer to comment above
-function create_scs_cone(f::Clong, l::Clong, q::Array{Int64,}, qsize::Clong, s::Array{Int64,},
-        ssize::Clong, ep::Clong, ed::Clong)
+function create_scs_cone(f::Int, l::Int, q::Array{Int,}, qsize::Int, s::Array{Int,},
+        ssize::Int, ep::Int, ed::Int)
     return SCSCone(f, l, pointer(q), qsize, pointer(s), ssize, ep, ed)
 end
 
@@ -112,9 +112,9 @@ end
 # type Solution with
 # x, y, s, status (ASCII string), ret_val (numerical status)
 #
-function SCS_solve(m::Int64, n::Int64, A::SCSVecOrMatOrSparse, b::Array{Float64,},
-        c::Array{Float64,}, f::Clong, l::Clong, q::Array{Int64,}, qsize::Clong, s::Array{Int64,},
-        ssize::Clong, ep::Clong, ed::Clong; options...)
+function SCS_solve(m::Int, n::Int, A::SCSVecOrMatOrSparse, b::Array{Float64,},
+        c::Array{Float64,}, f::Int, l::Int, q::Array{Int,}, qsize::Int, s::Array{Int,},
+        ssize::Int, ep::Int, ed::Int; options...)
     data = create_scs_data(m, n, A, b, c; options...)
     cone = create_scs_cone(f, l, q, qsize, s, ssize, ep, ed)
 
