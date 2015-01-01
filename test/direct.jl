@@ -113,5 +113,4 @@ function feasible_sdp_conic()
     @assert sol.ret_val == 1
 end
 
-# Comment this out if you have BLAS/LAPACK working
-# feasible_sdp_conic();
+feasible_sdp_conic();
