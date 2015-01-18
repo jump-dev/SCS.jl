@@ -4,9 +4,48 @@
 [![Build status](https://ci.appveyor.com/api/projects/status/yb4yfg4oryw7yten/branch/master?svg=true)](https://ci.appveyor.com/project/karanveerm/scs-jl/branch/master)
 [![Coverage Status](https://coveralls.io/repos/JuliaOpt/SCS.jl/badge.png)](https://coveralls.io/r/JuliaOpt/SCS.jl)
 
-Julia wrapper around [SCS](https://github.com/cvxgrp/scs) for [CVX.jl](https://github.com/cvxgrp/CVX.jl).
+Julia wrapper for the [SCS](https://github.com/cvxgrp/scs) splitting cone solver. SCS can solve linear programs, second-order cone programs, semidefinite programs and exponential cone programs.
 
-## High Level Wrapper
+## Installation
+
+You can install SCS.jl through the Julia package manager:
+```julia
+julia> Pkg.add("SCS")
+```
+
+SCS.jl will automatically setup the SCS solver itself:
+ - On Linux it will build from source
+ - On OS X it will download a binary via [Homebrew.jl].
+ - On Windows it will download a binary.
+
+## Usage
+
+### MathProgBase wrapper
+SCS implements the solver-independent [MathProgBase](https://github.com/JuliaOpt/MathProgBase.jl) interface, and so can be used within modeling software like [Convex](https://github.com/JuliaOpt/Convex.jl) and [JuMP](https://github.com/JuliaOpt/JuMP.jl). The solver object is called `SCSSolver`. This interface can be used to solve LPs using `loadproblem!` and SOCPs, SDPs and exponential-cone programs through `loadconicproblem!`([documentation](http://mathprogbasejl.readthedocs.org/en/latest/conic.html)).
+
+### Options
+All SCS solver options can be set through the direct interface(documented below) and through MathProgBase.
+The list of options is defined the [`scs.h` header](https://github.com/cvxgrp/scs/blob/master/include/scs.h#L35), which we reproduce here:
+```
+max_iters       # maximum iterations to take: 2500 (default)
+eps             # convergence tolerance: 1e-3 (default)
+alpha           # relaxation parameter: 1.8 (default)
+rho_x           # x equality constraint scaling: 1e-3 (default)
+cg_rate         # for indirect, tolerance goes down like (1/iter)^cg_rate: 2 (default)
+verbose         # boolean, write out progress: 1 (default)
+normalize       # boolean, heuristic data rescaling: 1 (default)
+scale           # if normalized, rescales by this factor: 5 (default)
+warm_start      # boolean, warm start (put initial guess in Sol struct): 0 (default)
+```
+To use these settings you can either pass them as keyword arguments to `SCS_solve` (high level interface) or as arguments to the `SCSSolver` constructor (MathProgBase interface), e.g.
+```julia
+# Direct
+solution = SCS_solve(m, n, A, ..., ed; max_iters=10, verbose=0);
+# MathProgBase (with Convex)
+m = solve!(problem, SCSSolver(max_iters=10, verbose=0))
+```
+
+### High level wrapper
 
 The file [`high_level_wrapper.jl`](https://github.com/JuliaOpt/SCS.jl/blob/master/src/high_level_wrapper.jl) is thoroughly commented. Here is the basic usage
 
@@ -35,18 +74,19 @@ The other problem data are
 - `s` is the array of SDCs sizes
 - `ep` is the number of primal exponential cones
 - `ed` is the number of dual exponential cones.
+- `options` is a dictionary of options (see below).
 
 The function is
 
-```
+```julia
 function SCS_solve(m::Int, n::Int, A::SCSVecOrMatOrSparse, b::Array{Float64,},
     c::Array{Float64,}, f::Int, l::Int, q::Array{Int,}, qsize::Int, s::Array{Int,},
-    ssize::Int, ep::Int, ed::Int)
+    ssize::Int, ep::Int, ed::Int; options...)
 ```
 
 and it returns an object of type Solution, which contains the following fields
 
-```
+```julia
 type Solution
   x::Array{Float64, 1}
   y::Array{Float64, 1}
@@ -58,6 +98,43 @@ type Solution
 
 Where `x` stores the optimal value of the primal variable, `y` stores the optimal value of the dual variable, `s` is the slack variable, `status` gives information such as `solved`, `primal infeasible`, etc.
 
-## Low Level Wrapper
+### Low level wrapper
 
 The low level wrapper directly calls SCS and is also thoroughly documented in [low_level_wrapper.jl](https://github.com/JuliaOpt/SCS.jl/blob/master/src/low_level_wrapper.jl). The low level wrapper performs the pointer manipulation necessary for the direct C call.
+
+### Convex and JuMP examples
+This example shows how we can model a simple knapsack problem with Convex and use SCS to solve it.
+```julia
+using Convex, SCS
+items  = [:Gold, :Silver, :Bronze]
+values = [5.0, 3.0, 1.0]
+weights = [2.0, 1.5, 0.3]
+
+# Define a variable of size 3, each index representing an item
+x = Variable(3)
+p = maximize(x' * values, 0 <= x, x <= 1, x' * weights <= 3)
+solve!(p, SCSSolver())
+println([items x.value])
+
+# [:Gold 0.9999971880377178
+#  :Silver 0.46667637765641057
+#  :Bronze 0.9999998036351865]
+```
+
+This example shows how we can model a simple knapsack problem with JuMP and use SCS to solve it.
+```julia
+using JuMP, SCS
+items  = [:Gold, :Silver, :Bronze]
+values = [:Gold => 5.0,  :Silver => 3.0,  :Bronze => 1.0]
+weight = [:Gold => 2.0,  :Silver => 1.5,  :Bronze => 0.3]
+
+m = Model(solver=SCSSolver())
+@defVar(m, 0 <= take[items] <= 1)  # Define a variable for each item
+@setObjective(m, Max, sum{ values[item] * take[item], item in items})
+@addConstraint(m, sum{ weight[item] * take[item], item in items} <= 3)
+solve(m)
+println(getValue(take))
+# [Bronze] = 0.9999999496295456
+# [  Gold] = 0.99999492720597
+# [Silver] = 0.4666851698368782
+```
