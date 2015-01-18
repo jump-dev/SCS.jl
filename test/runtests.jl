@@ -1,4 +1,4 @@
-tests = [#"direct.jl",
+tests = ["direct.jl",
          "mpb_linear.jl",
          "options.jl"]
 
@@ -9,6 +9,7 @@ for curtest in tests
     include(curtest)
 end
 
+# conicEXPtest and conicSDPtest aren't tagged yet
 Pkg.checkout("MathProgBase")
 import SCS
 include(joinpath(Pkg.dir("MathProgBase"),"test","conicinterface.jl"))
