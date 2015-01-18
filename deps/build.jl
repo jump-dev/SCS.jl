@@ -2,7 +2,13 @@ using BinDeps
 
 @BinDeps.setup
 
-scs = library_dependency("scs", aliases=["libscsdir64","libscsdir"])
+if (@osx? (Base.blas_vendor() == :openblas64) : false)
+    aliases = ["libscsdir64"]
+else
+    aliases = ["libscsdir"]
+end
+
+scs = library_dependency("scs", aliases=aliases)
 
 @osx_only begin
     using Homebrew
