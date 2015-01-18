@@ -99,3 +99,35 @@ MathProgBase.optimize!(m)
 @test_approx_eq_eps MathProgBase.getsolution(m)[1] 1.0 1e-4
 @test_approx_eq_eps MathProgBase.getsolution(m)[2] 2.0 1e-4
 @test_approx_eq_eps MathProgBase.getsolution(m)[3] 3.29744 1e-4
+
+
+function is_symmetric(A::Matrix)
+  return all(A - A' .< 1e-4)
+end
+
+# Problem 5 - SDP
+# min y[1, 2]
+#  st y[2, 1] == 1
+#     y in SDP cone
+# If symmetricity constraint is working, y[1, 2] will be 1 else unbounded
+m = MathProgBase.model(s)
+c = [0, 1, 0, 0, 0, 0, 0, 0, 0];
+A = -eye(9)
+A = [A; [0, 0, 0, 1, 0, 0, 0, 0, 0]']
+b = zeros(size(A, 1), 1)
+b[10] = 1
+MathProgBase.loadconicproblem!(m, c, A, b, [(:SDP, 1:9), (:Zero, 10)], [(:Free, 1:9)])
+MathProgBase.optimize!(m)
+@test MathProgBase.status(m) == :Optimal
+@test is_symmetric(reshape(MathProgBase.getsolution(m), 3, 3))
+
+# Problem 6 - SDP
+# Same as problem 5, except we enforce :SDP on the var_cone
+m = MathProgBase.model(s)
+c = [0, 1, 0, 0, 0, 0, 0, 0, 0];
+A = [0, 0, 0, 1, 0, 0, 0, 0, 0]'
+b = [1]
+MathProgBase.loadconicproblem!(m, c, A, b, [(:Zero, 1:1)], [(:SDP, 1:9)])
+MathProgBase.optimize!(m)
+@test MathProgBase.status(m) == :Optimal
+@test is_symmetric(reshape(MathProgBase.getsolution(m), 3, 3))
