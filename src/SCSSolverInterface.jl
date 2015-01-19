@@ -46,13 +46,15 @@ type SCSMathProgModel <: AbstractMathProgModel
     primal_sol::Vector{Float64}
     dual_sol::Vector{Float64}
     slack::Vector{Float64}
+    row_map_ind::Vector{Int}
+    row_map_type::Vector{Symbol}
     options
 end
 
 SCSMathProgModel(;kwargs...) = SCSMathProgModel(0, 0, spzeros(0, 0), Int[], Int[],
                                       0, 0, Int[], 0, Int[], 0, 0, 0,
                                       :Min, :NotSolved, 0.0, Float64[], Float64[],
-                                      Float64[], kwargs)
+                                      Float64[], Int[], Symbol[], kwargs)
 
 #############################################################################
 # Begin implementation of the MPB low-level interface
@@ -146,7 +148,6 @@ function optimize!(m::SCSMathProgModel)
     m.solve_stat = solution.status
     m.primal_sol = solution.x
 
-    # TODO: Do we need to do some sort of mapping for the dual solution?
     m.dual_sol = solution.y
 
     # TODO: Get the right slack variables in the right order
@@ -178,6 +179,8 @@ function orderconesforscs(A_in, b_in, c_cones, v_cones)
     m, n = size(A_in)
     A = spzeros(0, n)
     b = zeros(0)
+    row_map_ind = zeros(Int, length(b_in))
+    row_map_type = Array(Symbol, length(b_in))
 
     # First, count the total number of variables
     num_vars = 0
@@ -200,6 +203,9 @@ function orderconesforscs(A_in, b_in, c_cones, v_cones)
     num_zero = 0
     for (cone, idxs) in c_cones
         if cone == :Zero
+            row_map_ind[idxs] = size(A, 1)+1:size(A, 1)+length(idxs)
+            row_map_type[idxs] = [cone for i in 1:length(idxs)]
+
             A = [A; A_in[idxs,:]]
             b = [b; b_in[idxs,:]]
             num_zero += length(idxs)
@@ -216,9 +222,19 @@ function orderconesforscs(A_in, b_in, c_cones, v_cones)
 
     num_lin = 0
     for (cone, idxs) in c_cones
-        if cone == :NonNeg || cone == :NonPos
+        if cone == :NonNeg
+            row_map_ind[idxs] = size(A, 1)+1:size(A, 1)+length(idxs)
+            row_map_type[idxs] = [cone for i in 1:length(idxs)]
+
             A = [A; A_in[idxs,:]]
             b = [b; b_in[idxs,:]]
+            num_lin += length(idxs)
+        elseif cone == :NonPos
+            row_map_ind[idxs] = size(A, 1)+1:size(A, 1)+length(idxs)
+            row_map_type[idxs] = [cone for i in 1:length(idxs)]
+
+            A = [A; -A_in[idxs,:]]
+            b = [b; -b_in[idxs,:]]
             num_lin += length(idxs)
         end
     end
@@ -238,6 +254,9 @@ function orderconesforscs(A_in, b_in, c_cones, v_cones)
     soc_sizes = Int[]
     for (cone, idxs) in c_cones
         if cone == :SOC
+            row_map_ind[idxs] = size(A, 1)+1:size(A, 1)+length(idxs)
+            row_map_type[idxs] = [cone for i in 1:length(idxs)]
+
             A = [A; A_in[idxs,:]]
             b = [b; b_in[idxs,:]]
             push!(soc_sizes, length(idxs))
@@ -255,6 +274,9 @@ function orderconesforscs(A_in, b_in, c_cones, v_cones)
     sqrt_sdp_sizes = Int[]
     for (cone, idxs) in c_cones
         if cone == :SDP
+            row_map_ind[idxs] = size(A, 1)+1:size(A, 1)+length(idxs)
+            row_map_type[idxs] = [cone for i in 1:length(idxs)]
+
             A = [A; A_in[idxs,:]]
             b = [b; b_in[idxs,:]]
             # n must be a square integer
@@ -281,6 +303,9 @@ function orderconesforscs(A_in, b_in, c_cones, v_cones)
         if cone == :ExpPrimal
             length(idxs) % 3 == 0 ||
                 error("Number of ExpPrimal variables must be a multiple of 3")
+            row_map_ind[idxs] = size(A, 1)+1:size(A, 1)+length(idxs)
+            row_map_type[idxs] = [cone for i in 1:length(idxs)]
+
             A = [A; A_in[idxs,:]]
             b = [b; b_in[idxs,:]]
 
@@ -302,6 +327,9 @@ function orderconesforscs(A_in, b_in, c_cones, v_cones)
     num_expdual = 0
     for (cone, idxs) in c_cones
         if cone == :ExpDual
+            row_map_ind[idxs] = size(A, 1)+1:size(A, 1)+length(idxs)
+            row_map_type[idxs] = [cone for i in 1:length(idxs)]
+
             length(idxs) % 3 == 0 ||
                 error("Number of ExpDual variables must be a multiple of 3")
             A = [A; A_in[idxs,:]]
@@ -323,7 +351,7 @@ function orderconesforscs(A_in, b_in, c_cones, v_cones)
     end
 
     return A, b, num_free, num_zero, num_lin, soc_sizes,
-           sqrt_sdp_sizes, num_expprimal, num_expdual
+           sqrt_sdp_sizes, num_expprimal, num_expdual, row_map_ind, row_map_type
 end
 
 
@@ -338,7 +366,7 @@ loadconicproblem!(model::SCSMathProgModel, c, A, b, constr_cones, var_cones) =
 # Let y = b - Ax and Y = reshape(y, n, n)
 # This function then returns a matrix G and vector h
 # s.t Gx + s == h, s in the zero cone enforces Y[i, j] == Y[j, i]
-function addsymmetricityconstraints(A, b)
+function addsymmetryconstraints(A, b)
     size_b = length(b)
     isinteger(sqrt(size_b)) || error("number of SDP variables must be square")
     n = convert(Int, sqrt(size_b));
@@ -385,7 +413,7 @@ function loadconicproblem!(model::SCSMathProgModel, c, A::SparseMatrixCSC, b, co
         # If Ax + s = b, s in SDP cone
         if cone_vars[1] == :SDP
             idxs = cone_vars[2]
-            G, h = addsymmetricityconstraints(A[idxs, :], b[idxs])
+            G, h = addsymmetryconstraints(A[idxs, :], b[idxs])
             cur_size = size(A, 1)
             A = [A; G]
             b = [b; h]
@@ -400,7 +428,7 @@ function loadconicproblem!(model::SCSMathProgModel, c, A::SparseMatrixCSC, b, co
             size_x = length(idxs)
 
             # Basically enforcing x = Ix + 0 is in SDP cone
-            G, h = addsymmetricityconstraints(eye(size_x), zeros(size_x, 1))
+            G, h = addsymmetryconstraints(eye(size_x), zeros(size_x, 1))
             cur_size = size(A, 1)
             A = [A; G]
             b = [b; h]
@@ -412,26 +440,40 @@ function loadconicproblem!(model::SCSMathProgModel, c, A::SparseMatrixCSC, b, co
     c_cones = [(cone, [idxs...]) for (cone, idxs) in constr_cones]
     v_cones = [(cone, [idxs...]) for (cone, idxs) in var_cones]
 
-    scs_A, scs_b, num_free, f, l, q, s, ep, ed =
+    scs_A, scs_b, num_free, f, l, q, s, ep, ed, row_map_ind, row_map_type =
         orderconesforscs(A, b, c_cones, v_cones)
 
     m, n = size(scs_A)
 
-    model.n         = n
-    model.m         = m # + rows_G
-    model.A         = scs_A
-    model.b         = scs_b[:]
-    model.c         = c[:]
-    model.q         = q
-    model.qsize     = length(q)
-    model.s         = s
-    model.ssize     = length(s)
-    model.ep        = ep
-    model.ed        = ed
-    model.orig_sense = :Min
-    model.f         = f
-    model.l         = l
+    model.n             = n
+    model.m             = m # + rows_G
+    model.A             = scs_A
+    model.b             = scs_b[:]
+    model.c             = c[:]
+    model.q             = q
+    model.qsize         = length(q)
+    model.s             = s
+    model.ssize         = length(s)
+    model.ep            = ep
+    model.ed            = ed
+    model.orig_sense    = :Min
+    model.f             = f
+    model.l             = l
+    model.row_map_ind   = row_map_ind
+    model.row_map_type  = row_map_type
     return model
 end
 
 supportedcones(s::SCSSolver) = [:Free, :Zero, :NonNeg, :NonPos, :SOC, :SDP, :ExpPrimal, :ExpDual]
+
+function getconicdual(m::SCSMathProgModel)
+    # TODO: Why am I flipping signs? Also, do I need to flip the signs for every cone that isnt NonNeg?
+    # Flipping signs seems to make it pass the MPB dual tests
+    dual = m.dual_sol[m.row_map_ind]
+    for i in 1:length(m.row_map_type)
+        if m.row_map_type[i] != :NonNeg
+            dual[i] = -dual[i]
+        end
+    end
+    return dual
+end
