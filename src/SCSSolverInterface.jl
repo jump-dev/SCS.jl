@@ -234,7 +234,7 @@ function orderconesforscs(A_in, b_in, c_cones, v_cones)
             row_map_type[idxs] = [cone for i in 1:length(idxs)]
 
             A = [A; -A_in[idxs,:]]
-            b = [b; b_in[idxs,:]]
+            b = [b; -b_in[idxs,:]]
             num_lin += length(idxs)
         end
     end
