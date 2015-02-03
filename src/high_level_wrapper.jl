@@ -9,7 +9,7 @@ function create_scs_matrix(m::Int, n::Int, A::SCSVecOrMatOrSparse)
     rowval = convert(Array{Int, 1}, A_sparse.rowval .- 1)
     colptr = convert(Array{Int, 1}, A_sparse.colptr .- 1)
 
-    return SCSMatrix(m, n, pointer(values), pointer(rowval), pointer(colptr))
+    return SCSMatrix(pointer(values), pointer(rowval), pointer(colptr), m, n)
 end
 
 

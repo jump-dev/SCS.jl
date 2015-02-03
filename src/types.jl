@@ -6,11 +6,11 @@ SCSVecOrMatOrSparse = Union(VecOrMat, SparseMatrixCSC{Float64,Int})
 
 
 immutable SCSMatrix
-    m::Int
-    n::Int
     values::Ptr{Cdouble}
     rowval::Ptr{Int}
     colptr::Ptr{Int}
+    m::Int
+    n::Int
 end
 
 
