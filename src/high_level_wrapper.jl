@@ -2,14 +2,14 @@ export create_scs_matrix, create_scs_data, create_scs_cone
 
 
 # Takes a vector or matrix or sparse matrix A and creates an SCSMatrix
-function create_scs_matrix(A::SCSVecOrMatOrSparse)
+function create_scs_matrix(m::Int, n::Int, A::SCSVecOrMatOrSparse)
     A_sparse = sparse(A)
 
     values = A_sparse.nzval * 1.0
     rowval = convert(Array{Int, 1}, A_sparse.rowval .- 1)
     colptr = convert(Array{Int, 1}, A_sparse.colptr .- 1)
 
-    return SCSMatrix(pointer(values), pointer(rowval), pointer(colptr))
+    return SCSMatrix(m, n, pointer(values), pointer(rowval), pointer(colptr))
 end
 
 
@@ -49,7 +49,7 @@ function create_scs_data(m::Int, n::Int, A::SCSVecOrMatOrSparse, b::Array{Float6
     if size(b, 1) != m || size(b, 2) != 1 || size(c, 1) != n || size(c, 2) != 1
         error("Size of b must be m x 1 and size of c must be n x 1")
     end
-    A = [create_scs_matrix(A)]
+    A = [create_scs_matrix(m, n, A)]
     return create_scs_data(m=m, n=n, A=pointer(A), b=pointer(b), c=pointer(c); options...)
 end
 
