@@ -27,7 +27,8 @@ provides(Sources, URI("https://github.com/cvxgrp/scs/archive/v$version.tar.gz"),
 # CFLAGS="-DDLONG -DLAPACK_LIB_FOUND" LDFLAGS="-L$HOME/julia32/usr/bin -lopenblas" make CC=i686-w64-mingw32-gcc out/libscsdir.dll
 # mv out bin32
 provides(Binaries, URI("http://sourceforge.net/projects/juliadeps-win/files/scs-$version.7z"),
-    [scs], unpacked_dir="bin$WORD_SIZE", os = :Windows)
+    [scs], unpacked_dir="bin$WORD_SIZE", os = :Windows,
+    SHA="3bd51b934c1b7bdaa10cf2ceebf2b09fee25b58866072299892d6586f8ced292")
 
 prefix = joinpath(BinDeps.depsdir(scs), "usr")
 srcdir = joinpath(BinDeps.depsdir(scs), "src", "scs-$version/")
