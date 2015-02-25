@@ -1,6 +1,6 @@
 module SCS
 
-if isfile(joinpath(Pkg.dir("SCS"), "deps", "deps.jl"))
+if isfile(joinpath(dirname(@__FILE__), "..", "deps", "deps.jl"))
     include("../deps/deps.jl")
 else
     error("SCS not properly installed. Please run Pkg.build(\"SCS\") and restart julia")
