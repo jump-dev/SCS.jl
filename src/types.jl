@@ -100,13 +100,13 @@ immutable SCSWork
     p::Ptr{Void}
 end
 
-const status_map = {
+const status_map = Dict{Int, Symbol}(
     1 => :Optimal,
     -2 => :Infeasible,
     -1 => :Unbounded,
     -3 => :Indeterminate,
     -4 => :Error
-}
+)
 
 type Solution
     x::Array{Float64, 1}
