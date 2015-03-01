@@ -23,8 +23,8 @@ end
 # c is of length n x 1
 # refer to create_scs_cone for K
 function create_scs_data(;m::Int=nothing, n::Int=nothing, A::Ptr{SCSMatrix}=nothing,
-        b::Ptr{Cdouble}=nothing,  c::Ptr{Cdouble}=nothing, max_iters=2500::Int,
-        eps=convert(Cdouble, 1e-5)::Cdouble, alpha=convert(Cdouble, 1.8)::Cdouble,
+        b::Ptr{Cdouble}=nothing,  c::Ptr{Cdouble}=nothing, max_iters=20000::Int,
+        eps=convert(Cdouble, 1e-4)::Cdouble, alpha=convert(Cdouble, 1.8)::Cdouble,
         rho_x=convert(Cdouble, 1e-3)::Cdouble, scale=convert(Cdouble, 5.0)::Cdouble,
         cg_rate=convert(Cdouble, 1.5)::Cdouble, verbose=1::Int,
         normalize=1::Int, warm_start=0::Int, options...)
