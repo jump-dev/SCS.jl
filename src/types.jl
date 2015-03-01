@@ -1,3 +1,4 @@
+using Compat
 export SCSMatrix, SCSData, SCSSolution, SCSInfo, SCSCone, SCSWork, SCSVecOrMatOrSparse
 
 
@@ -100,7 +101,7 @@ immutable SCSWork
     p::Ptr{Void}
 end
 
-const status_map = Dict{Int, Symbol}(
+@compat const status_map = Dict{Int, Symbol}(
     1 => :Optimal,
     -2 => :Infeasible,
     -1 => :Unbounded,
