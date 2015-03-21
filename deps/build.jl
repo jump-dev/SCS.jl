@@ -33,7 +33,11 @@ provides(Binaries, URI("http://sourceforge.net/projects/juliadeps-win/files/scs-
 prefix = joinpath(BinDeps.depsdir(scs), "usr")
 srcdir = joinpath(BinDeps.depsdir(scs), "src", "scs-$version/")
 
-libname = "libscsdir.$(Sys.dlext)"
+if VERSION < v"0.4.0-dev+3949"
+    libname = "libscsdir.$(Sys.dlext)"
+else
+    libname = "libscsdir.$(Libdl.dlext)"
+end
 
 ldflags = ""
 @osx_only begin
