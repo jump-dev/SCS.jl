@@ -478,9 +478,11 @@ function getconicdual(m::SCSMathProgModel)
     return dual
 end
 
-# primal dual warmstart (requires change to MathProgBase interface)
-function setwarmstart!(m::SCSMathProgModel, primal_sol; dual_sol=Float64[], kwargs...)
+# primal dual warmstart
+function setwarmstart!(m::SCSMathProgModel, primal_sol; dual_sol=Float64[], slack=Float64[], kwargs...)
     m.primal_sol = primal_sol
     m.dual_sol = dual_sol
+    m.slack = slack
+    push!(m.options, (:warm_start, 1))
     m
 end
