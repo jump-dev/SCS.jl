@@ -9,8 +9,6 @@ for curtest in tests
     include(curtest)
 end
 
-# conicEXPtest and conicSDPtest aren't tagged yet
-Pkg.checkout("MathProgBase")
 import SCS
 include(joinpath(Pkg.dir("MathProgBase"),"test","conicinterface.jl"))
 coniclineartest(SCS.SCSSolver(), duals=true, tol=1e-2)
