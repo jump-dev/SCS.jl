@@ -143,7 +143,8 @@ end
 
 function optimize!(m::SCSMathProgModel)
     solution = SCS_solve(m.m, m.n, m.A, m.b, m.c, m.f, m.l, m.q, m.qsize,
-                         m.s, m.ssize, m.ep, m.ed; m.options...)
+                         m.s, m.ssize, m.ep, m.ed,
+                         m.primal_sol, m.dual_sol, m.slack; m.options...)
 
     m.solve_stat = solution.status
     m.primal_sol = solution.x
@@ -478,11 +479,19 @@ function getconicdual(m::SCSMathProgModel)
     return dual
 end
 
-# primal dual warmstart
-function setwarmstart!(m::SCSMathProgModel, primal_sol; dual_sol=Float64[], slack=Float64[], kwargs...)
+# warmstart
+# kwargs can be `primal_sol`, `dual_sol`, and `slack`
+function setwarmstart!(m::SCSMathProgModel, primal_sol; kwargs...)
+    push!(m.options, (:warm_start, true))
     m.primal_sol = primal_sol
-    m.dual_sol = dual_sol
-    m.slack = slack
-    push!(m.options, (:warm_start, 1))
+    for (k,v) in kwargs
+        setfield!(m, k, v)
+    end
+
+    # check sizes to prevent segfaults
+    nconstr, nvar = size(m.A)
+    length(m.primal_sol) == nvar || (m.primal_sol = zeros(nvar))
+    length(m.dual_sol) == nconstr || (m.dual_sol = zeros(nconstr))
+    length(m.slack) == nconstr || (m.slack = zeros(nconstr))
     m
 end
