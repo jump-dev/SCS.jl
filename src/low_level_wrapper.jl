@@ -13,7 +13,8 @@ function SCS_init(data::SCSData, cone::SCSCone)
 end
 
 
-function SCS_solve(p_work::Ptr{SCSWork}, data::SCSData, cone::SCSCone, info::SCSInfo, solution::SCSSolution)
+function SCS_solve(p_work::Ptr{SCSWork}, data::SCSData, cone::SCSCone, info::SCSInfo, 
+                   solution::SCSSolution=SCSSolution(C_NULL, C_NULL, C_NULL))
     solution_ptr = pointer([solution])
 
     info_ptr = pointer([info])
