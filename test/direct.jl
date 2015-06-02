@@ -15,7 +15,7 @@ function low_level_scs()
     status, solution, info, p_work = SCS_solve(p_work, data, cone, info)
 
     @assert status == 1
-    SCS_finish(data, p_work)
+    SCS_finish(p_work)
 end
 
 low_level_scs();

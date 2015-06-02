@@ -1,5 +1,4 @@
-using Compat
-export SCSMatrix, SCSData, SCSSolution, SCSInfo, SCSCone, SCSWork, SCSVecOrMatOrSparse
+export SCSMatrix, SCSData, SCSSettings, SCSSolution, SCSInfo, SCSCone, SCSVecOrMatOrSparse
 
 
 SCSVecOrMatOrSparse = Union(VecOrMat, SparseMatrixCSC{Float64,Int})
@@ -14,6 +13,19 @@ immutable SCSMatrix
 end
 
 
+immutable SCSSettings
+    normalize::Int # boolean, heuristic data rescaling: 1
+    scale::Cdouble # if normalized, rescales by this factor: 5
+    rho_x::Cdouble # x equality constraint scaling: 1e-3
+    max_iters::Int # maximum iterations to take: 2500
+    eps::Cdouble # convergence tolerance: 1e-3
+    alpha::Cdouble # relaxation parameter: 1.8
+    cg_rate::Cdouble # for indirect, tolerance goes down like (1/iter)^cg_rate: 2
+    verbose::Int # boolean, write out progress: 1
+    warm_start::Int # boolean, warm start (put initial guess in Sol struct): 0
+end
+
+
 immutable SCSData
     # A has m rows, n cols
     m::Int
@@ -22,23 +34,7 @@ immutable SCSData
     # b is of size m, c is of size n
     b::Ptr{Cdouble}
     c::Ptr{Cdouble}
-    # max_iters to take
-    max_iters::Int
-    # convergence tolerance
-    eps::Cdouble
-    # relaxation parameter
-    alpha::Cdouble
-    # x equality constraint scaling
-    rho_x::Cdouble
-    # for indirect, tolerance goes down like (1/iter)^CG_RATE: 1.5
-    cg_rate::Cdouble
-    verbose::Int
-    # 0 or 1
-    normalize::Int
-    # if normalized, rescales by this factor
-    scale::Cdouble
-    # 0 or 1
-    warm_start::Int
+    stgs::Ptr{SCSSettings}
 end
 
 
@@ -79,30 +75,12 @@ immutable SCSCone
     ssize::Int # length of SD array
     ep::Int # number of primal exponential cone triples
     ed::Int # number of dual exponential cone triples
+    p::Ptr{Cdouble} # array of power cone params
+    psize::Int # length of power cone array
 end
 
 
-immutable SCSWork
-    u::Ptr{Cdouble}
-    v::Ptr{Cdouble}
-    u_t::Ptr{Cdouble}
-    u_prev::Ptr{Cdouble}
-    h::Ptr{Cdouble}
-    g::Ptr{Cdouble}
-    pr::Ptr{Cdouble}
-    dr::Ptr{Cdouble}
-    gTh::Cdouble
-    sc_b::Cdouble
-    sc_c::Cdouble
-    nm_b::Cdouble
-    nm_c::Cdouble
-    meanNormRowA::Cdouble
-    meanNormColA::Cdouble
-    D::Ptr{Cdouble}
-    E::Ptr{Cdouble}
-    p::Ptr{Void}
-end
-
+# TODO needs to be updated for newest constants
 @compat const status_map = Dict{Int, Symbol}(
     1 => :Optimal,
     -2 => :Infeasible,
