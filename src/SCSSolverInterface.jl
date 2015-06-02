@@ -160,6 +160,10 @@ status(m::SCSMathProgModel) = m.solve_stat
 getobjval(m::SCSMathProgModel) = m.obj_val
 getsolution(m::SCSMathProgModel) = m.primal_sol
 
+function invertsdconesize(p)
+    return (sqrt(8*p+1) - 1) / 2
+end
+
 #############################################################################
 # Begin implementation of the MPB conic interface
 # Implements
@@ -281,8 +285,8 @@ function orderconesforscs(A_in, b_in, c_cones, v_cones)
             b = [b; b_in[idxs,:]]
             # n must be a square integer
             n = length(idxs)
-            isinteger(sqrt(n)) || error("number of SDP variables must be square")
-            sqrt_n = convert(Int, sqrt(n));
+            isinteger(invertsdconesize(n)) || error("number of SDP variables must be n*(n+1)/2")
+            sqrt_n = convert(Int, invertsdconesize(n));
             push!(sqrt_sdp_sizes, sqrt_n)
         end
     end
@@ -292,8 +296,8 @@ function orderconesforscs(A_in, b_in, c_cones, v_cones)
             A = [A; -sparse(1:nidx, idxs, ones(nidx), nidx, num_vars)]
             b = [b; zeros(nidx)]
              # n must be a square integer
-            isinteger(sqrt(nidx)) || error("number of SDP variables must be square")
-            sqrt_n = convert(Int, sqrt(nidx));
+            isinteger(invertsdconesize(nidx)) || error("number of SDP variables must be n*(n+1)/2")
+            sqrt_n = convert(Int, invertsdconesize(nidx));
             push!(sqrt_sdp_sizes, sqrt_n)
         end
     end
@@ -359,46 +363,6 @@ loadconicproblem!(model::SCSMathProgModel, c, A, b, constr_cones, var_cones) =
     loadconicproblem!(model, c, sparse(A), b, constr_cones, var_cones)
 
 
-# TODO: At least for Convex.jl, we are guaranteed what A and b look like
-# This should allow us to make it far more efficient
-
-# Given an n x n matrix vectorized in the form Ax - b where x is an unknown variable
-# Let y = b - Ax and Y = reshape(y, n, n)
-# This function then returns a matrix G and vector h
-# s.t Gx + s == h, s in the zero cone enforces Y[i, j] == Y[j, i]
-function addsymmetryconstraints(A, b)
-    size_b = length(b)
-    isinteger(sqrt(size_b)) || error("number of SDP variables must be square")
-    n = convert(Int, sqrt(size_b));
-
-    # Enforcing Y[i, j] == Y[j, i] is equivalent to enforcing
-    # y[idx1] == y[idx2]; idx1 = n * (j - 1) + i; idx2 = n * (i - 1) + j
-    # this is equivalent to (A[idx1, :] - A[idx2, :])x == b[idx1] - b[idx2]
-    # and we're done
-
-    num_constraints = int(n * (n - 1) / 2)
-
-    G = spzeros(num_constraints, size(A, 2))
-    h = zeros(num_constraints, 1)
-
-    idx = 1
-    for i = 1:n
-        for j = 1:n
-            if i >= j
-                continue
-            end
-
-            idx1 = n * (j - 1) + i
-            idx2 = n * (i - 1) + j
-            h[idx, 1] = b[idx1] - b[idx2]
-            G[idx, :] = A[idx1, :] - A[idx2, :]
-            idx += 1
-        end
-    end
-    return G, h
-end
-
-
 function loadconicproblem!(model::SCSMathProgModel, c, A::SparseMatrixCSC, b, constr_cones, var_cones)
     # TODO: We should support SOCRotated
     bad_cones = [:SOCRotated]
@@ -407,33 +371,6 @@ function loadconicproblem!(model::SCSMathProgModel, c, A::SparseMatrixCSC, b, co
     end
     for cone_vars in var_cones
         cone_vars[1] in bad_cones && error("Cone type $(cone_vars[1]) not supported")
-    end
-
-    for cone_vars in constr_cones
-        # If Ax + s = b, s in SDP cone
-        if cone_vars[1] == :SDP
-            idxs = cone_vars[2]
-            G, h = addsymmetryconstraints(A[idxs, :], b[idxs])
-            cur_size = size(A, 1)
-            A = [A; G]
-            b = [b; h]
-            push!(constr_cones, (:Zero, cur_size + 1:size(A, 1)))
-        end
-    end
-
-    for cone_vars in var_cones
-        # If x in SDP cone
-        if cone_vars[1] == :SDP
-            idxs = cone_vars[2]
-            size_x = length(idxs)
-
-            # Basically enforcing x = Ix + 0 is in SDP cone
-            G, h = addsymmetryconstraints(eye(size_x), zeros(size_x, 1))
-            cur_size = size(A, 1)
-            A = [A; G]
-            b = [b; h]
-            push!(constr_cones, (:Zero, cur_size + 1:size(A, 1)))
-        end
     end
 
     # Convert idxs to an array

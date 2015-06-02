@@ -28,13 +28,6 @@ MathProgBase.loadproblem!(m, A, collb, colub, obj, rowlb, rowub, sense)
 MathProgBase.optimize!(m)
 @test_approx_eq_eps MathProgBase.getobjval(m) 99.0 1e-3
 
-# With max_iters = 1, it should not be solved
-s = SCSSolver(max_iters=1)
-m = MathProgBase.model(s)
-MathProgBase.loadproblem!(m, A, collb, colub, obj, rowlb, rowub, sense)
-MathProgBase.optimize!(m)
-@test MathProgBase.status(m) == :Unbounded
-
 # With eps = 1e-8, solution should be far more accurate
 s = SCSSolver(eps=1e-8)
 m = MathProgBase.model(s)
