@@ -164,6 +164,10 @@ function invertsdconesize(p)
     return (sqrt(8*p+1) - 1) / 2
 end
 
+function isintegertol(n)
+    return abs(n - convert(Int, n)) < 1e-16
+end
+
 #############################################################################
 # Begin implementation of the MPB conic interface
 # Implements
@@ -285,7 +289,7 @@ function orderconesforscs(A_in, b_in, c_cones, v_cones)
             b = [b; b_in[idxs,:]]
             # n must be a square integer
             n = length(idxs)
-            isinteger(invertsdconesize(n)) || error("number of SDP variables must be n*(n+1)/2")
+            isintegertol(invertsdconesize(n)) || error("number of SDP variables must be n*(n+1)/2")
             sqrt_n = convert(Int, invertsdconesize(n));
             push!(sqrt_sdp_sizes, sqrt_n)
         end
@@ -296,7 +300,7 @@ function orderconesforscs(A_in, b_in, c_cones, v_cones)
             A = [A; -sparse(1:nidx, idxs, ones(nidx), nidx, num_vars)]
             b = [b; zeros(nidx)]
              # n must be a square integer
-            isinteger(invertsdconesize(nidx)) || error("number of SDP variables must be n*(n+1)/2")
+            isintegertol(invertsdconesize(nidx)) || error("number of SDP variables must be n*(n+1)/2")
             sqrt_n = convert(Int, invertsdconesize(nidx));
             push!(sqrt_sdp_sizes, sqrt_n)
         end
