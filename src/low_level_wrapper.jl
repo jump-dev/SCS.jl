@@ -5,7 +5,7 @@ function SCS_init(data::SCSData, cone::SCSCone)
     # Initialize the info struct
     info = SCSInfo(0, convert(Int128, 0), convert(Int128, 0), 0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
 
-    p_work = ccall((:scs_init, SCS.scs), Ptr{SCSWork},
+    p_work = ccall((:scs_init, SCS.scs), Ptr{Void},
         (Ptr{SCSData}, Ptr{SCSCone}, Ptr{SCSInfo}),
         &data, &cone, &info)
 
@@ -13,7 +13,7 @@ function SCS_init(data::SCSData, cone::SCSCone)
 end
 
 
-function SCS_solve(p_work::Ptr{SCSWork}, data::SCSData, cone::SCSCone, info::SCSInfo)
+function SCS_solve(p_work::Ptr{Void}, data::SCSData, cone::SCSCone, info::SCSInfo)
     # Initialize the solution struct. Note that the pointers can be null since SCS will take care
     # of it for us
     solution = SCSSolution(C_NULL, C_NULL, C_NULL)
@@ -22,7 +22,7 @@ function SCS_solve(p_work::Ptr{SCSWork}, data::SCSData, cone::SCSCone, info::SCS
     info_ptr = pointer([info])
 
     status = ccall((:scs_solve, SCS.scs), Int,
-        (Ptr{SCSWork}, Ptr{SCSData}, Ptr{SCSCone}, Ptr{SCSSolution}, Ptr{SCSInfo}),
+        (Ptr{Void}, Ptr{SCSData}, Ptr{SCSCone}, Ptr{SCSSolution}, Ptr{SCSInfo}),
         p_work, &data, &cone, solution_ptr, info_ptr)
 
     solution = unsafe_load(solution_ptr)
@@ -38,8 +38,8 @@ function SCS_solve(data::SCSData, cone::SCSCone)
 end
 
 
-function SCS_finish(data::SCSData, p_work::Ptr{SCSWork})
+function SCS_finish(p_work::Ptr{Void})
     ccall((:scs_finish, SCS.scs), Void,
-        (Ptr{SCSData}, Ptr{SCSWork}),
-        &data, p_work)
+        (Ptr{Void}, ),
+        p_work)
 end
