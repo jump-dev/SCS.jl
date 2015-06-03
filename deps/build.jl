@@ -15,7 +15,7 @@ scs = library_dependency("scs", aliases=aliases)
     provides(Homebrew.HB, "scs", scs, os = :Darwin)
 end
 
-version = "1.0.7"
+version = "1.1.1" # how do we give a version range?
 
 provides(Sources, URI("https://github.com/cvxgrp/scs/archive/v$version.tar.gz"),
     [scs], os=:Unix, unpacked_dir="scs-$version")
