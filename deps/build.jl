@@ -21,10 +21,10 @@ provides(Sources, URI("https://github.com/cvxgrp/scs/archive/v$version.tar.gz"),
     [scs], os=:Unix, unpacked_dir="scs-$version")
 
 # Windows binaries built in Cygwin as follows:
-# CFLAGS="-DDLONG -DLAPACK_LIB_FOUND -DBLAS64 -DBLASSUFFIX=_64_" LDFLAGS="-L$HOME/julia/usr/bin -lopenblas" make CC=x86_64-w64-mingw32-gcc out/libscsdir.dll
+# CFLAGS="-DDLONG -DCOPYAMATRIX -DLAPACK_LIB_FOUND -DBLAS64 -DBLASSUFFIX=_64_" LDFLAGS="-L$HOME/julia/usr/bin -lopenblas" make CC=x86_64-w64-mingw32-gcc out/libscsdir.dll
 # mv out bin64
 # make clean
-# CFLAGS="-DDLONG -DLAPACK_LIB_FOUND" LDFLAGS="-L$HOME/julia32/usr/bin -lopenblas" make CC=i686-w64-mingw32-gcc out/libscsdir.dll
+# CFLAGS="-DDLONG -DCOPYAMATRIX -DLAPACK_LIB_FOUND" LDFLAGS="-L$HOME/julia32/usr/bin -lopenblas" make CC=i686-w64-mingw32-gcc out/libscsdir.dll
 # mv out bin32
 provides(Binaries, URI("http://sourceforge.net/projects/juliadeps-win/files/scs-$version.7z"),
     [scs], unpacked_dir="bin$WORD_SIZE", os = :Windows,
@@ -43,7 +43,7 @@ ldflags = ""
 @osx_only begin
     ldflags = "$ldflags -undefined suppress -flat_namespace"
 end
-cflags = "-DDLONG -DLAPACK_LIB_FOUND"
+cflags = "-DCOPYAMATRIX -DDLONG -DLAPACK_LIB_FOUND"
 if Base.blas_vendor() == :openblas64
     cflags = "$cflags -DBLAS64 -DBLASSUFFIX=_64_"
 end
