@@ -28,18 +28,18 @@ SCSSolver(;kwargs...) = SCSSolver(kwargs)
 type SCSMathProgModel <: AbstractMathProgModel
     m::Int                            # Number of constraints
     n::Int                            # Number of variables
-    A::SparseMatrixCSC{Float64,Int}     # The A matrix (equalities)
-    b::Vector{Float64}                  # RHS
-    c::Vector{Float64}                  # The objective coeffs (always min)
+    A::SparseMatrixCSC{Float64,Int}   # The A matrix (equalities)
+    b::Vector{Float64}                # RHS
+    c::Vector{Float64}                # The objective coeffs (always min)
     f::Int                            # number of zero cones
     l::Int                            # number of linear cones { x | x >= 0}
     q::Array{Int,}                    # Array of SOC sizes
     qsize::Int                        # Length of q
-    s::Array{Int,}                    # Array of SDC sizes
+    s::Array{Int,}                    # Array of SDP sizes
     ssize::Int                        # Length of s
     ep::Int                           # Number of primal exponential cones
     ed::Int                           # Number of dual exponential cones
-    orig_sense::Symbol                  # Original objective sense
+    orig_sense::Symbol                # Original objective sense
     # Post-solve
     solve_stat::Symbol
     obj_val::Float64
@@ -402,7 +402,38 @@ function loadconicproblem!(model::SCSMathProgModel, c, A::SparseMatrixCSC, b, co
     model.l             = l
     model.row_map_ind   = row_map_ind
     model.row_map_type  = row_map_type
+
+    # rescale model so that vector inner product on R^(n(n+1)/2) matches matrix inner product on S^n
+    # (rescale by default)
+    options = Dict(model.options)
+    if !haskey(options, :rescale) || options[:rescale] 
+        rescaleconicproblem!(model)
+    end
     return model
+end
+
+function rescaleconicproblem!(model::SCSMathProgModel)
+    SDPstartidx = model.f + model.l + sum(model.q)
+    for iSDP = 1:model.ssize
+        nSDP = model.s[iSDP]
+        sSDP = int(nSDP*(nSDP+1)/2)
+        SDPrange = SDPstartidx + 1 : SDPstartidx + sSDP
+        model.b[SDPrange] = rescaleSDP(model.b[SDPrange], nSDP, sqrt(2))
+        for i = 1:model.n
+            model.A[SDPrange,i] = rescaleSDP(model.A[SDPrange,i], nSDP, sqrt(2))
+        end
+    end
+    return model
+end
+
+function rescaleSDP(x, n, val)
+    # scale off-diagonals by val
+    M = zeros(n,n)
+    idx = find(tril(ones(n,n)))
+    M[idx] = x
+    dd = diag(M)
+    M = (M - diagm(dd))*val + diagm(dd)
+    return M[idx]
 end
 
 supportedcones(s::SCSSolver) = [:Free, :Zero, :NonNeg, :NonPos, :SOC, :SDP, :ExpPrimal, :ExpDual]
@@ -415,6 +446,22 @@ function getconicdual(m::SCSMathProgModel)
         if m.row_map_type[i] != :NonNeg
             dual[i] = -dual[i]
         end
+    end
+    # reverse the rescaling of the SDP variables
+    options = Dict(m.options)
+    if !haskey(options, :rescale) || options[:rescale] 
+        rescaleconicdual!(m, dual)
+    end
+    return dual
+end
+
+function rescaleconicdual!(model::SCSMathProgModel, dual)
+    SDPstartidx = model.f + model.l + sum(model.q)
+    for iSDP = 1:model.ssize
+        nSDP = model.s[iSDP]
+        sSDP = int(nSDP*(nSDP+1)/2)
+        SDPrange = SDPstartidx + 1 : SDPstartidx + sSDP
+        dual[SDPrange] = rescaleSDP(dual[SDPrange], nSDP, 1/sqrt(2))
     end
     return dual
 end
