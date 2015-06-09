@@ -143,7 +143,8 @@ end
 
 function optimize!(m::SCSMathProgModel)
     solution = SCS_solve(m.m, m.n, m.A, m.b, m.c, m.f, m.l, m.q, m.qsize,
-                         m.s, m.ssize, m.ep, m.ed; m.options...)
+                         m.s, m.ssize, m.ep, m.ed,
+                         m.primal_sol, m.dual_sol, m.slack; m.options...)
 
     m.solve_stat = solution.status
     m.primal_sol = solution.x
@@ -405,8 +406,7 @@ function loadconicproblem!(model::SCSMathProgModel, c, A::SparseMatrixCSC, b, co
 
     # rescale model so that vector inner product on R^(n(n+1)/2) matches matrix inner product on S^n
     # (rescale by default)
-    options = Dict(model.options)
-    if !haskey(options, :rescale) || options[:rescale] 
+    if !((:rescale, false) in model.options)
         rescaleconicproblem!(model)
     end
     return model
@@ -448,8 +448,7 @@ function getconicdual(m::SCSMathProgModel)
         end
     end
     # reverse the rescaling of the SDP variables
-    options = Dict(m.options)
-    if !haskey(options, :rescale) || options[:rescale] 
+    if !((:rescale, false) in m.options)
         rescaleconicdual!(m, dual)
     end
     return dual
@@ -464,4 +463,21 @@ function rescaleconicdual!(model::SCSMathProgModel, dual)
         dual[SDPrange] = rescaleSDP(dual[SDPrange], nSDP, 1/sqrt(2))
     end
     return dual
+end
+
+# warmstart
+# kwargs can be `primal_sol`, `dual_sol`, and `slack`
+function setwarmstart!(m::SCSMathProgModel, primal_sol; kwargs...)
+    push!(m.options, (:warm_start, true))
+    m.primal_sol = primal_sol
+    for (k,v) in kwargs
+        setfield!(m, k, v)
+    end
+
+    # check sizes to prevent segfaults
+    nconstr, nvar = size(m.A)
+    length(m.primal_sol) == nvar || (m.primal_sol = zeros(nvar))
+    length(m.dual_sol) == nconstr || (m.dual_sol = zeros(nconstr))
+    length(m.slack) == nconstr || (m.slack = zeros(nconstr))
+    m
 end

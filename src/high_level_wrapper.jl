@@ -121,11 +121,22 @@ end
 #
 function SCS_solve(m::Int, n::Int, A::SCSVecOrMatOrSparse, b::Array{Float64,},
         c::Array{Float64,}, f::Int, l::Int, q::Array{Int,}, qsize::Int, s::Array{Int,},
-        ssize::Int, ep::Int, ed::Int; options...)
+        ssize::Int, ep::Int, ed::Int,
+        primal_sol::Vector{Float64}=Float64[],
+        dual_sol::Vector{Float64}=Float64[],
+        slack::Vector{Float64}=Float64[]; 
+        options...)
+
     data = create_scs_data(m, n, A, b, c; options...)
     cone = create_scs_cone(f, l, q, qsize, s, ssize, ep, ed)
 
-    status, solution, info, p_work = SCS_solve(data, cone)
+    if (:warm_start, true) in options
+        solution = SCSSolution(pointer(primal_sol), pointer(dual_sol), pointer(slack))
+        status, solution, info, p_work = SCS_solve(data, cone, solution)
+    else
+        status, solution, info, p_work = SCS_solve(data, cone)
+    end
+    
     ptr_x = convert(Ptr{Float64}, solution.x)
     ptr_y = convert(Ptr{Float64}, solution.y)
     ptr_s = convert(Ptr{Float64}, solution.s)

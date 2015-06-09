@@ -13,10 +13,9 @@ function SCS_init(data::SCSData, cone::SCSCone)
 end
 
 
-function SCS_solve(p_work::Ptr{Void}, data::SCSData, cone::SCSCone, info::SCSInfo)
-    # Initialize the solution struct. Note that the pointers can be null since SCS will take care
-    # of it for us
-    solution = SCSSolution(C_NULL, C_NULL, C_NULL)
+
+function SCS_solve(p_work::Ptr{Void}, data::SCSData, cone::SCSCone, info::SCSInfo, 
+                   solution::SCSSolution=SCSSolution(C_NULL, C_NULL, C_NULL))
     solution_ptr = pointer([solution])
 
     info_ptr = pointer([info])
@@ -32,9 +31,9 @@ function SCS_solve(p_work::Ptr{Void}, data::SCSData, cone::SCSCone, info::SCSInf
 end
 
 
-function SCS_solve(data::SCSData, cone::SCSCone)
+function SCS_solve(data::SCSData, cone::SCSCone, solution::SCSSolution=SCSSolution(C_NULL, C_NULL, C_NULL))
     p_work, info = SCS_init(data, cone)
-    return SCS_solve(p_work, data, cone, info)
+    return SCS_solve(p_work, data, cone, info, solution)
 end
 
 
