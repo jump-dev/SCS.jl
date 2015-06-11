@@ -37,8 +37,8 @@ function create_scs_data(;m::Int=nothing, n::Int=nothing, A::Ptr{SCSMatrix}=noth
     for (k, v) in options
         @eval(($k) = ($v))
     end
-    stgs = [create_scs_settings(normalize, scale, rho_x, max_iters, eps, alpha, cg_rate, verbose, warm_start)]
-    return SCSData(m, n, A, b, c, stgs)
+    stgs = create_scs_settings(normalize, scale, rho_x, max_iters, eps, alpha, cg_rate, verbose, warm_start)
+    return SCSData(m, n, A, b, c, pointer([stgs]))
 end
 
 
