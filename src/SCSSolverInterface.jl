@@ -422,6 +422,7 @@ function rescaleconicproblem!(model::SCSMathProgModel)
         for i = 1:model.n
             model.A[SDPrange,i] = rescaleSDP(model.A[SDPrange,i], nSDP, sqrt(2))
         end
+        SDPstartidx += sSDP
     end
     return model
 end
