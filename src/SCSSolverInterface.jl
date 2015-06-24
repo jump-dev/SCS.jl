@@ -186,7 +186,8 @@ function orderconesforscs(A_in, b_in, c_cones, v_cones)
     # - sqrt_sdp_size, num_expprimal, num_expdual
 
     m, n = size(A_in)
-    A = spzeros(0, n)
+    A_in_t = A_in'
+    A_t = spzeros(n,0)
     b = zeros(0)
     row_map_ind = zeros(Int, length(b_in))
     row_map_type = Array(Symbol, length(b_in))
@@ -198,11 +199,36 @@ function orderconesforscs(A_in, b_in, c_cones, v_cones)
     end
 
     num_free = 0
+    zeroidx = Int[]
+    nonnegidx = Int[]
+    nonposidx = Int[]
+    socidx = Int[]
+    soc_sizes = Int[]
+    new_c_cones = Any[]
+
     for (cone, idxs) in c_cones
         if cone == :Free
             error("Why are you passing in a free constraint?")
         end
+        # merge some cones for efficiency
+        if cone == :Zero
+            append!(zeroidx, idxs)
+        elseif cone == :NonNeg
+            append!(nonnegidx, idxs)
+        elseif cone == :NonPos
+            append!(nonposidx, idxs)
+        elseif cone == :SOC
+            append!(socidx, idxs)
+            push!(soc_sizes, length(idxs))
+        else
+            push!(new_c_cones, (cone,idxs))
+        end
     end
+    length(zeroidx) > 0 && push!(new_c_cones, (:Zero, zeroidx))
+    length(nonnegidx) > 0 && push!(new_c_cones, (:NonNeg, nonnegidx))
+    length(nonposidx) > 0 && push!(new_c_cones, (:NonPos, nonposidx))
+    length(socidx) > 0 && push!(new_c_cones, (:SOC, socidx))
+
     for (cone, idxs) in v_cones
         if cone == :Free
             num_free += length(idxs)
@@ -210,12 +236,12 @@ function orderconesforscs(A_in, b_in, c_cones, v_cones)
     end
 
     num_zero = 0
-    for (cone, idxs) in c_cones
+    for (cone, idxs) in new_c_cones
         if cone == :Zero
-            row_map_ind[idxs] = size(A, 1)+1:size(A, 1)+length(idxs)
+            row_map_ind[idxs] = size(A_t, 2)+1:size(A_t, 2)+length(idxs)
             row_map_type[idxs] = [cone for i in 1:length(idxs)]
 
-            A = [A; A_in[idxs,:]]
+            A_t = [A_t A_in_t[:,idxs]]
             b = [b; b_in[idxs,:]]
             num_zero += length(idxs)
         end
@@ -223,26 +249,26 @@ function orderconesforscs(A_in, b_in, c_cones, v_cones)
     for (cone, idxs) in v_cones
         if cone == :Zero
             nidx = length(idxs)
-            A = [A; sparse(1:nidx, idxs, ones(nidx), nidx, num_vars)]
+            A_t = [A_t sparse(idxs, 1:nidx, ones(nidx), num_vars, nidx)]
             b = [b; zeros(nidx)]
             num_zero += nidx
         end
     end
 
     num_lin = 0
-    for (cone, idxs) in c_cones
+    for (cone, idxs) in new_c_cones
         if cone == :NonNeg
-            row_map_ind[idxs] = size(A, 1)+1:size(A, 1)+length(idxs)
+            row_map_ind[idxs] = size(A_t, 2)+1:size(A_t, 2)+length(idxs)
             row_map_type[idxs] = [cone for i in 1:length(idxs)]
 
-            A = [A; A_in[idxs,:]]
+            A_t = [A_t A_in_t[:,idxs]]
             b = [b; b_in[idxs,:]]
             num_lin += length(idxs)
         elseif cone == :NonPos
-            row_map_ind[idxs] = size(A, 1)+1:size(A, 1)+length(idxs)
+            row_map_ind[idxs] = size(A_t, 2)+1:size(A_t, 2)+length(idxs)
             row_map_type[idxs] = [cone for i in 1:length(idxs)]
 
-            A = [A; -A_in[idxs,:]]
+            A_t = [A_t -A_in_t[:,idxs]]
             b = [b; -b_in[idxs,:]]
             num_lin += length(idxs)
         end
@@ -250,43 +276,41 @@ function orderconesforscs(A_in, b_in, c_cones, v_cones)
     for (cone, idxs) in v_cones
         nidx = length(idxs)
         if cone == :NonNeg
-            A = [A; -sparse(1:nidx, idxs, ones(nidx), nidx, num_vars)]
+            A_t = [A_t -sparse(idxs, 1:nidx, ones(nidx), num_vars, nidx)]
             b = [b; zeros(nidx)]
             num_lin += nidx
         elseif cone == :NonPos
-            A = [A; sparse(1:nidx, idxs, ones(nidx), nidx, num_vars)]
+            A_t = [A_t sparse(idxs, 1:nidx, ones(nidx), num_vars, nidx)]
             b = [b; zeros(nidx)]
             num_lin += nidx
         end
     end
 
-    soc_sizes = Int[]
-    for (cone, idxs) in c_cones
+    for (cone, idxs) in new_c_cones
         if cone == :SOC
-            row_map_ind[idxs] = size(A, 1)+1:size(A, 1)+length(idxs)
+            row_map_ind[idxs] = size(A_t, 2)+1:size(A_t, 2)+length(idxs)
             row_map_type[idxs] = [cone for i in 1:length(idxs)]
 
-            A = [A; A_in[idxs,:]]
+            A_t = [A_t A_in_t[:,idxs]]
             b = [b; b_in[idxs,:]]
-            push!(soc_sizes, length(idxs))
         end
     end
     for (cone, idxs) in v_cones
         if cone == :SOC
             nidx = length(idxs)
-            A = [A; -sparse(1:nidx, idxs, ones(nidx), nidx, num_vars)]
+            A_t = [A_t -sparse(idxs, 1:nidx, ones(nidx), num_vars, nidx)]
             b = [b; zeros(nidx)]
             push!(soc_sizes, nidx)
         end
     end
 
     sqrt_sdp_sizes = Int[]
-    for (cone, idxs) in c_cones
+    for (cone, idxs) in new_c_cones
         if cone == :SDP
-            row_map_ind[idxs] = size(A, 1)+1:size(A, 1)+length(idxs)
+            row_map_ind[idxs] = size(A_t, 2)+1:size(A_t, 2)+length(idxs)
             row_map_type[idxs] = [cone for i in 1:length(idxs)]
 
-            A = [A; A_in[idxs,:]]
+            A_t = [A_t A_in_t[:,idxs]]
             b = [b; b_in[idxs,:]]
             # n must be a square integer
             n = length(idxs)
@@ -298,7 +322,7 @@ function orderconesforscs(A_in, b_in, c_cones, v_cones)
     for (cone, idxs) in v_cones
         if cone == :SDP
             nidx = length(idxs)
-            A = [A; -sparse(1:nidx, idxs, ones(nidx), nidx, num_vars)]
+            A_t = [A_t -sparse(idxs, 1:nidx, ones(nidx), num_vars, nidx)]
             b = [b; zeros(nidx)]
              # n must be a square integer
             isintegertol(invertsdconesize(nidx)) || error("number of SDP variables must be n*(n+1)/2")
@@ -308,14 +332,14 @@ function orderconesforscs(A_in, b_in, c_cones, v_cones)
     end
 
     num_expprimal = 0
-    for (cone, idxs) in c_cones
+    for (cone, idxs) in new_c_cones
         if cone == :ExpPrimal
             length(idxs) % 3 == 0 ||
                 error("Number of ExpPrimal variables must be a multiple of 3")
-            row_map_ind[idxs] = size(A, 1)+1:size(A, 1)+length(idxs)
+            row_map_ind[idxs] = size(A_t, 2)+1:size(A_t, 2)+length(idxs)
             row_map_type[idxs] = [cone for i in 1:length(idxs)]
 
-            A = [A; A_in[idxs,:]]
+            A_t = [A_t A_in_t[:,idxs]]
             b = [b; b_in[idxs,:]]
 
             num_expprimal += div(length(idxs), 3)
@@ -326,7 +350,7 @@ function orderconesforscs(A_in, b_in, c_cones, v_cones)
             length(idxs) % 3 == 0 ||
                 error("Number of ExpPrimal variables must be a multiple of 3")
             nidx = length(idxs)
-            A = [A; -sparse(1:nidx, idxs, ones(nidx), nidx, num_vars)]
+            A_t = [A_t -sparse(idxs, 1:nidx, ones(nidx), num_vars, nidx)]
             b = [b; zeros(nidx)]
 
             num_expprimal += div(length(idxs), 3)
@@ -334,14 +358,14 @@ function orderconesforscs(A_in, b_in, c_cones, v_cones)
     end
 
     num_expdual = 0
-    for (cone, idxs) in c_cones
+    for (cone, idxs) in new_c_cones
         if cone == :ExpDual
-            row_map_ind[idxs] = size(A, 1)+1:size(A, 1)+length(idxs)
+            row_map_ind[idxs] = size(A_t, 2)+1:size(A_t, 2)+length(idxs)
             row_map_type[idxs] = [cone for i in 1:length(idxs)]
 
             length(idxs) % 3 == 0 ||
                 error("Number of ExpDual variables must be a multiple of 3")
-            A = [A; A_in[idxs,:]]
+            A_t = [A_t A_in_t[:,idxs]]
             b = [b; b_in[idxs,:]]
 
             num_expdual += div(length(idxs), 3)
@@ -352,14 +376,14 @@ function orderconesforscs(A_in, b_in, c_cones, v_cones)
             length(idxs) % 3 == 0 ||
                 error("Number of ExpDual variables must be a multiple of 3")
             nidx = length(idxs)
-            A = [A; -sparse(1:nidx, idxs, ones(nidx), nidx, num_vars)]
+            A_t = [A_t -sparse(idxs, 1:nidx, ones(nidx), num_vars, nidx)]
             b = [b; zeros(nidx)]
 
             num_expdual += div(length(idxs), 3)
         end
     end
 
-    return A, b, num_free, num_zero, num_lin, soc_sizes,
+    return A_t', b, num_free, num_zero, num_lin, soc_sizes,
            sqrt_sdp_sizes, num_expprimal, num_expdual, row_map_ind, row_map_type
 end
 
