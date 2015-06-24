@@ -4,7 +4,9 @@
 [![Build status](https://ci.appveyor.com/api/projects/status/yb4yfg4oryw7yten/branch/master?svg=true)](https://ci.appveyor.com/project/karanveerm/scs-jl/branch/master)
 [![Coverage Status](https://coveralls.io/repos/JuliaOpt/SCS.jl/badge.png)](https://coveralls.io/r/JuliaOpt/SCS.jl)
 
-Julia wrapper for the [SCS](https://github.com/cvxgrp/scs) splitting cone solver. SCS can solve linear programs, second-order cone programs, semidefinite programs and exponential cone programs.
+Julia wrapper for the [SCS](https://github.com/cvxgrp/scs) splitting cone
+solver. SCS can solve linear programs, second-order cone programs, semidefinite
+programs, exponential cone programs, and power cone programs.
 
 ## Installation
 
