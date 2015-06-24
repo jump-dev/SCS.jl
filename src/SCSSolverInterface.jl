@@ -28,18 +28,18 @@ SCSSolver(;kwargs...) = SCSSolver(kwargs)
 type SCSMathProgModel <: AbstractMathProgModel
     m::Int                            # Number of constraints
     n::Int                            # Number of variables
-    A::SparseMatrixCSC{Float64,Int}     # The A matrix (equalities)
-    b::Vector{Float64}                  # RHS
-    c::Vector{Float64}                  # The objective coeffs (always min)
+    A::SparseMatrixCSC{Float64,Int}   # The A matrix (equalities)
+    b::Vector{Float64}                # RHS
+    c::Vector{Float64}                # The objective coeffs (always min)
     f::Int                            # number of zero cones
     l::Int                            # number of linear cones { x | x >= 0}
     q::Array{Int,}                    # Array of SOC sizes
     qsize::Int                        # Length of q
-    s::Array{Int,}                    # Array of SDC sizes
+    s::Array{Int,}                    # Array of SDP sizes
     ssize::Int                        # Length of s
     ep::Int                           # Number of primal exponential cones
     ed::Int                           # Number of dual exponential cones
-    orig_sense::Symbol                  # Original objective sense
+    orig_sense::Symbol                # Original objective sense
     # Post-solve
     solve_stat::Symbol
     obj_val::Float64
@@ -143,7 +143,8 @@ end
 
 function optimize!(m::SCSMathProgModel)
     solution = SCS_solve(m.m, m.n, m.A, m.b, m.c, m.f, m.l, m.q, m.qsize,
-                         m.s, m.ssize, m.ep, m.ed; m.options...)
+                         m.s, m.ssize, m.ep, m.ed,
+                         m.primal_sol, m.dual_sol, m.slack; m.options...)
 
     m.solve_stat = solution.status
     m.primal_sol = solution.x
@@ -159,6 +160,14 @@ end
 status(m::SCSMathProgModel) = m.solve_stat
 getobjval(m::SCSMathProgModel) = m.obj_val
 getsolution(m::SCSMathProgModel) = m.primal_sol
+
+function invertsdconesize(p)
+    return (sqrt(8*p+1) - 1) / 2
+end
+
+function isintegertol(n)
+    return abs(n - convert(Int, n)) < 1e-16
+end
 
 #############################################################################
 # Begin implementation of the MPB conic interface
@@ -265,8 +274,8 @@ function orderconesforscs(A_in, b_in, c_cones, v_cones)
         end
     end
     for (cone, idxs) in v_cones
+        nidx = length(idxs)
         if cone == :NonNeg
-            nidx = length(idxs)
             A_t = [A_t -sparse(idxs, 1:nidx, ones(nidx), num_vars, nidx)]
             b = [b; zeros(nidx)]
             num_lin += nidx
@@ -305,8 +314,8 @@ function orderconesforscs(A_in, b_in, c_cones, v_cones)
             b = [b; b_in[idxs,:]]
             # n must be a square integer
             n = length(idxs)
-            isinteger(sqrt(n)) || error("number of SDP variables must be square")
-            sqrt_n = convert(Int, sqrt(n));
+            isintegertol(invertsdconesize(n)) || error("number of SDP variables must be n*(n+1)/2")
+            sqrt_n = convert(Int, invertsdconesize(n));
             push!(sqrt_sdp_sizes, sqrt_n)
         end
     end
@@ -316,8 +325,8 @@ function orderconesforscs(A_in, b_in, c_cones, v_cones)
             A_t = [A_t -sparse(idxs, 1:nidx, ones(nidx), num_vars, nidx)]
             b = [b; zeros(nidx)]
              # n must be a square integer
-            isinteger(sqrt(nidx)) || error("number of SDP variables must be square")
-            sqrt_n = convert(Int, sqrt(nidx));
+            isintegertol(invertsdconesize(nidx)) || error("number of SDP variables must be n*(n+1)/2")
+            sqrt_n = convert(Int, invertsdconesize(nidx));
             push!(sqrt_sdp_sizes, sqrt_n)
         end
     end
@@ -383,46 +392,6 @@ loadconicproblem!(model::SCSMathProgModel, c, A, b, constr_cones, var_cones) =
     loadconicproblem!(model, c, sparse(A), b, constr_cones, var_cones)
 
 
-# TODO: At least for Convex.jl, we are guaranteed what A and b look like
-# This should allow us to make it far more efficient
-
-# Given an n x n matrix vectorized in the form Ax - b where x is an unknown variable
-# Let y = b - Ax and Y = reshape(y, n, n)
-# This function then returns a matrix G and vector h
-# s.t Gx + s == h, s in the zero cone enforces Y[i, j] == Y[j, i]
-function addsymmetryconstraints(A, b)
-    size_b = length(b)
-    isinteger(sqrt(size_b)) || error("number of SDP variables must be square")
-    n = convert(Int, sqrt(size_b));
-
-    # Enforcing Y[i, j] == Y[j, i] is equivalent to enforcing
-    # y[idx1] == y[idx2]; idx1 = n * (j - 1) + i; idx2 = n * (i - 1) + j
-    # this is equivalent to (A[idx1, :] - A[idx2, :])x == b[idx1] - b[idx2]
-    # and we're done
-
-    num_constraints = int(n * (n - 1) / 2)
-
-    G = spzeros(num_constraints, size(A, 2))
-    h = zeros(num_constraints, 1)
-
-    idx = 1
-    for i = 1:n
-        for j = 1:n
-            if i >= j
-                continue
-            end
-
-            idx1 = n * (j - 1) + i
-            idx2 = n * (i - 1) + j
-            h[idx, 1] = b[idx1] - b[idx2]
-            G[idx, :] = A[idx1, :] - A[idx2, :]
-            idx += 1
-        end
-    end
-    return G, h
-end
-
-
 function loadconicproblem!(model::SCSMathProgModel, c, A::SparseMatrixCSC, b, constr_cones, var_cones)
     # TODO: We should support SOCRotated
     bad_cones = [:SOCRotated]
@@ -431,33 +400,6 @@ function loadconicproblem!(model::SCSMathProgModel, c, A::SparseMatrixCSC, b, co
     end
     for cone_vars in var_cones
         cone_vars[1] in bad_cones && error("Cone type $(cone_vars[1]) not supported")
-    end
-
-    for cone_vars in constr_cones
-        # If Ax + s = b, s in SDP cone
-        if cone_vars[1] == :SDP
-            idxs = cone_vars[2]
-            G, h = addsymmetryconstraints(A[idxs, :], b[idxs])
-            cur_size = size(A, 1)
-            A = [A; G]
-            b = [b; h]
-            push!(constr_cones, (:Zero, cur_size + 1:size(A, 1)))
-        end
-    end
-
-    for cone_vars in var_cones
-        # If x in SDP cone
-        if cone_vars[1] == :SDP
-            idxs = cone_vars[2]
-            size_x = length(idxs)
-
-            # Basically enforcing x = Ix + 0 is in SDP cone
-            G, h = addsymmetryconstraints(eye(size_x), zeros(size_x, 1))
-            cur_size = size(A, 1)
-            A = [A; G]
-            b = [b; h]
-            push!(constr_cones, (:Zero, cur_size + 1:size(A, 1)))
-        end
     end
 
     # Convert idxs to an array
@@ -485,7 +427,38 @@ function loadconicproblem!(model::SCSMathProgModel, c, A::SparseMatrixCSC, b, co
     model.l             = l
     model.row_map_ind   = row_map_ind
     model.row_map_type  = row_map_type
+
+    # rescale model so that vector inner product on R^(n(n+1)/2) matches matrix inner product on S^n
+    # (rescale by default)
+    if !((:rescale, false) in model.options)
+        rescaleconicproblem!(model)
+    end
     return model
+end
+
+function rescaleconicproblem!(model::SCSMathProgModel)
+    SDPstartidx = model.f + model.l + sum(model.q)
+    for iSDP = 1:model.ssize
+        nSDP = model.s[iSDP]
+        sSDP = int(nSDP*(nSDP+1)/2)
+        SDPrange = SDPstartidx + 1 : SDPstartidx + sSDP
+        model.b[SDPrange] = rescaleSDP(model.b[SDPrange], nSDP, sqrt(2))
+        for i = 1:model.n
+            model.A[SDPrange,i] = rescaleSDP(model.A[SDPrange,i], nSDP, sqrt(2))
+        end
+        SDPstartidx += sSDP
+    end
+    return model
+end
+
+function rescaleSDP(x, n, val)
+    # scale off-diagonals by val
+    M = zeros(n,n)
+    idx = find(tril(ones(n,n)))
+    M[idx] = x
+    dd = diag(M)
+    M = (M - diagm(dd))*val + diagm(dd)
+    return M[idx]
 end
 
 supportedcones(s::SCSSolver) = [:Free, :Zero, :NonNeg, :NonPos, :SOC, :SDP, :ExpPrimal, :ExpDual]
@@ -499,5 +472,37 @@ function getconicdual(m::SCSMathProgModel)
             dual[i] = -dual[i]
         end
     end
+    # reverse the rescaling of the SDP variables
+    if !((:rescale, false) in m.options)
+        rescaleconicdual!(m, dual)
+    end
     return dual
+end
+
+function rescaleconicdual!(model::SCSMathProgModel, dual)
+    SDPstartidx = model.f + model.l + sum(model.q)
+    for iSDP = 1:model.ssize
+        nSDP = model.s[iSDP]
+        sSDP = int(nSDP*(nSDP+1)/2)
+        SDPrange = SDPstartidx + 1 : SDPstartidx + sSDP
+        dual[SDPrange] = rescaleSDP(dual[SDPrange], nSDP, 1/sqrt(2))
+    end
+    return dual
+end
+
+# warmstart
+# kwargs can be `primal_sol`, `dual_sol`, and `slack`
+function setwarmstart!(m::SCSMathProgModel, primal_sol; kwargs...)
+    push!(m.options, (:warm_start, true))
+    m.primal_sol = primal_sol
+    for (k,v) in kwargs
+        setfield!(m, k, v)
+    end
+
+    # check sizes to prevent segfaults
+    nconstr, nvar = size(m.A)
+    length(m.primal_sol) == nvar || (m.primal_sol = zeros(nvar))
+    length(m.dual_sol) == nconstr || (m.dual_sol = zeros(nconstr))
+    length(m.slack) == nconstr || (m.slack = zeros(nconstr))
+    m
 end

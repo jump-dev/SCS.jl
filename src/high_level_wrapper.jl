@@ -1,17 +1,22 @@
-export create_scs_matrix, create_scs_data, create_scs_cone
+export create_scs_matrix, create_scs_settings, create_scs_data, create_scs_cone
 
 
 # Takes a vector or matrix or sparse matrix A and creates an SCSMatrix
-function create_scs_matrix(A::SCSVecOrMatOrSparse)
+function create_scs_matrix(m::Int, n::Int, A::SCSVecOrMatOrSparse)
     A_sparse = sparse(A)
 
     values = A_sparse.nzval * 1.0
     rowval = convert(Array{Int, 1}, A_sparse.rowval .- 1)
     colptr = convert(Array{Int, 1}, A_sparse.colptr .- 1)
 
-    return SCSMatrix(pointer(values), pointer(rowval), pointer(colptr))
+    return SCSMatrix(pointer(values), pointer(rowval), pointer(colptr), m, n)
 end
 
+function create_scs_settings(normalize=1::Int, scale=converter(Cdouble, 5.0)::Cdouble, rho_x=convert(Cdouble,1e-3)::Cdouble,
+                        max_iters=2500::Int, eps=converter(Cdouble, 1e-3)::Cdouble, alpha=convert(Cdouble, 1.8)::Cdouble,
+                        cg_rate=convert(Cdouble,2)::Cdouble, verbose=1::Int, warm_start=0::Int)
+    return SCSSettings(normalize, scale, rho_x, max_iters, eps, alpha, cg_rate, verbose, warm_start)
+end
 
 # Create an SCSData type
 # We assume we are solving a problem of the form
@@ -26,14 +31,14 @@ function create_scs_data(;m::Int=nothing, n::Int=nothing, A::Ptr{SCSMatrix}=noth
         b::Ptr{Cdouble}=nothing,  c::Ptr{Cdouble}=nothing, max_iters=20000::Int,
         eps=convert(Cdouble, 1e-4)::Cdouble, alpha=convert(Cdouble, 1.8)::Cdouble,
         rho_x=convert(Cdouble, 1e-3)::Cdouble, scale=convert(Cdouble, 5.0)::Cdouble,
-        cg_rate=convert(Cdouble, 1.5)::Cdouble, verbose=1::Int,
+        cg_rate=convert(Cdouble, 2)::Cdouble, verbose=1::Int,
         normalize=1::Int, warm_start=0::Int, options...)
 
     for (k, v) in options
         @eval(($k) = ($v))
     end
-
-    data = SCSData(m, n, A, b, c, max_iters, eps, alpha, rho_x, cg_rate, verbose, normalize, scale, warm_start)
+    stgs = create_scs_settings(normalize, scale, rho_x, max_iters, eps, alpha, cg_rate, verbose, warm_start)
+    return SCSData(m, n, A, b, c, pointer([stgs]))
 end
 
 
@@ -49,7 +54,7 @@ function create_scs_data(m::Int, n::Int, A::SCSVecOrMatOrSparse, b::Array{Float6
     if size(b, 1) != m || size(b, 2) != 1 || size(c, 1) != n || size(c, 2) != 1
         error("Size of b must be m x 1 and size of c must be n x 1")
     end
-    A = [create_scs_matrix(A)]
+    A = [create_scs_matrix(m, n, A)]
     return create_scs_data(m=m, n=n, A=pointer(A), b=pointer(b), c=pointer(c); options...)
 end
 
@@ -72,16 +77,18 @@ end
 # s (array of SDCs sizes)
 # ep (num primal exponential cones)
 # ed (num dual exponential cones).
+# TODO(update to use power cones)
 function create_scs_cone(f::Int, l::Int, q::Ptr{Int}, qsize::Int, s::Ptr{Int},
         ssize::Int, ep::Int, ed::Int)
-    return SCSCone(f, l, q, qsize, s, ssize, ep, ed)
+    return SCSCone(f, l, q, qsize, s, ssize, ep, ed, C_NULL, 0)
 end
 
 
 # Refer to comment above
+# TODO(update to use power cones)
 function create_scs_cone(f::Int, l::Int, q::Array{Int,}, qsize::Int, s::Array{Int,},
         ssize::Int, ep::Int, ed::Int)
-    return SCSCone(f, l, pointer(q), qsize, pointer(s), ssize, ep, ed)
+    return SCSCone(f, l, pointer(q), qsize, pointer(s), ssize, ep, ed, C_NULL, 0)
 end
 
 
@@ -114,20 +121,31 @@ end
 #
 function SCS_solve(m::Int, n::Int, A::SCSVecOrMatOrSparse, b::Array{Float64,},
         c::Array{Float64,}, f::Int, l::Int, q::Array{Int,}, qsize::Int, s::Array{Int,},
-        ssize::Int, ep::Int, ed::Int; options...)
+        ssize::Int, ep::Int, ed::Int,
+        primal_sol::Vector{Float64}=Float64[],
+        dual_sol::Vector{Float64}=Float64[],
+        slack::Vector{Float64}=Float64[]; 
+        options...)
+
     data = create_scs_data(m, n, A, b, c; options...)
     cone = create_scs_cone(f, l, q, qsize, s, ssize, ep, ed)
 
-    status, solution, info, p_work = SCS_solve(data, cone)
-
+    if (:warm_start, true) in options
+        solution = SCSSolution(pointer(primal_sol), pointer(dual_sol), pointer(slack))
+        status, solution, info, p_work = SCS_solve(data, cone, solution)
+    else
+        status, solution, info, p_work = SCS_solve(data, cone)
+    end
+    
     ptr_x = convert(Ptr{Float64}, solution.x)
     ptr_y = convert(Ptr{Float64}, solution.y)
     ptr_s = convert(Ptr{Float64}, solution.s)
 
-    x = copy(pointer_to_array(ptr_x, n))
-    y = copy(pointer_to_array(ptr_y, m))
-    s = copy(pointer_to_array(ptr_s, m))
+    x = pointer_to_array(ptr_x, n, true)
+    y = pointer_to_array(ptr_y, m, true)
+    s = pointer_to_array(ptr_s, m, true)
 
-    SCS_finish(data, p_work)
+    SCS_finish(p_work)
     return Solution(x, y, s, status)
+
 end
