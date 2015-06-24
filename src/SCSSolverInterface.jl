@@ -248,8 +248,8 @@ function orderconesforscs(A_in, b_in, c_cones, v_cones)
         end
     end
     for (cone, idxs) in v_cones
+        nidx = length(idxs)
         if cone == :NonNeg
-            nidx = length(idxs)
             A = [A; -sparse(1:nidx, idxs, ones(nidx), nidx, num_vars)]
             b = [b; zeros(nidx)]
             num_lin += nidx
