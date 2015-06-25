@@ -15,7 +15,7 @@ scs = library_dependency("scs", aliases=aliases)
     provides(Homebrew.HB, "scs", scs, os = :Darwin)
 end
 
-version = "1.1.1" # how do we give a version range?
+version = "1.1.5" # how do we give a version range?
 
 provides(Sources, URI("https://github.com/cvxgrp/scs/archive/v$version.tar.gz"),
     [scs], os=:Unix, unpacked_dir="scs-$version")
@@ -28,7 +28,7 @@ provides(Sources, URI("https://github.com/cvxgrp/scs/archive/v$version.tar.gz"),
 # mv out bin32
 provides(Binaries, URI("http://sourceforge.net/projects/juliadeps-win/files/scs-$version.7z"),
     [scs], unpacked_dir="bin$WORD_SIZE", os = :Windows,
-    SHA="3bd51b934c1b7bdaa10cf2ceebf2b09fee25b58866072299892d6586f8ced292")
+    SHA="ac3f36aa5349f41aef83a141cc25bc3d595a6731dcf397af2ebc9bdeff10d101")
 
 prefix = joinpath(BinDeps.depsdir(scs), "usr")
 srcdir = joinpath(BinDeps.depsdir(scs), "src", "scs-$version/")
