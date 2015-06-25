@@ -159,7 +159,7 @@ end
 
 status(m::SCSMathProgModel) = m.solve_stat
 getobjval(m::SCSMathProgModel) = m.obj_val
-getsolution(m::SCSMathProgModel) = m.primal_sol
+getsolution(m::SCSMathProgModel) = copy(m.primal_sol)
 
 function invertsdconesize(p)
     return (sqrt(8*p+1) - 1) / 2
