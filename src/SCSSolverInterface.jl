@@ -141,6 +141,15 @@ function loadproblem!(m::SCSMathProgModel, A, collb, colub, obj, rowlb, rowub, s
     m.orig_sense = sense                # Original objective sense
 end
 
+function setsense!(m::SCSMathProgModel, sns::Symbol)
+    if m.orig_sense != sns
+        sns == :Min || sns == :Max || error("Unrecognized sense $sns")
+        m.orig_sense = m
+        m.c *= -1
+    end
+    nothing
+end
+
 function optimize!(m::SCSMathProgModel)
     solution = SCS_solve(m.m, m.n, m.A, m.b, m.c, m.f, m.l, m.q, m.qsize,
                          m.s, m.ssize, m.ep, m.ed,
