@@ -144,7 +144,7 @@ end
 function setsense!(m::SCSMathProgModel, sns::Symbol)
     if m.orig_sense != sns
         sns == :Min || sns == :Max || error("Unrecognized sense $sns")
-        m.orig_sense = m
+        m.orig_sense = sns
         m.c *= -1
     end
     nothing
