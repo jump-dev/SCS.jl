@@ -77,18 +77,15 @@ end
 # s (array of SDCs sizes)
 # ep (num primal exponential cones)
 # ed (num dual exponential cones).
-# TODO(update to use power cones)
 function create_scs_cone(f::Int, l::Int, q::Ptr{Int}, qsize::Int, s::Ptr{Int},
-        ssize::Int, ep::Int, ed::Int)
-    return SCSCone(f, l, q, qsize, s, ssize, ep, ed, C_NULL, 0)
+        ssize::Int, ep::Int, ed::Int, p::Ptr{Float64}, psize::Int)
+    return SCSCone(f, l, q, qsize, s, ssize, ep, ed, p, psize)
 end
 
-
 # Refer to comment above
-# TODO(update to use power cones)
 function create_scs_cone(f::Int, l::Int, q::Array{Int,}, qsize::Int, s::Array{Int,},
-        ssize::Int, ep::Int, ed::Int)
-    return SCSCone(f, l, pointer(q), qsize, pointer(s), ssize, ep, ed, C_NULL, 0)
+        ssize::Int, ep::Int, ed::Int, p::Array{Float64,}, psize::Int)
+    return SCSCone(f, l, pointer(q), qsize, pointer(s), ssize, ep, ed, p, psize)
 end
 
 
@@ -121,14 +118,14 @@ end
 #
 function SCS_solve(m::Int, n::Int, A::SCSVecOrMatOrSparse, b::Array{Float64,},
         c::Array{Float64,}, f::Int, l::Int, q::Array{Int,}, qsize::Int, s::Array{Int,},
-        ssize::Int, ep::Int, ed::Int,
+        ssize::Int, ep::Int, ed::Int, p::Array{Float64,}, psize::Int,
         primal_sol::Vector{Float64}=Float64[],
         dual_sol::Vector{Float64}=Float64[],
         slack::Vector{Float64}=Float64[]; 
         options...)
 
     data = create_scs_data(m, n, A, b, c; options...)
-    cone = create_scs_cone(f, l, q, qsize, s, ssize, ep, ed)
+    cone = create_scs_cone(f, l, q, qsize, s, ssize, ep, ed, p, psize)
 
     if (:warm_start, true) in options
         solution = SCSSolution(pointer(primal_sol), pointer(dual_sol), pointer(slack))
@@ -148,4 +145,16 @@ function SCS_solve(m::Int, n::Int, A::SCSVecOrMatOrSparse, b::Array{Float64,},
     SCS_finish(p_work)
     return Solution(x, y, s, status)
 
+end
+
+# for legacy API maintenance, sets power cones to zero
+function SCS_solve(m::Int, n::Int, A::SCSVecOrMatOrSparse, b::Array{Float64,},
+        c::Array{Float64,}, f::Int, l::Int, q::Array{Int,}, qsize::Int, s::Array{Int,},
+        ssize::Int, ep::Int, ed::Int,
+        primal_sol::Vector{Float64}=Float64[],
+        dual_sol::Vector{Float64}=Float64[],
+        slack::Vector{Float64}=Float64[];
+        options...)
+        return SCS_solve(m, n, A, b, c, f, l, q, qsize, s, ssize,
+        ep, ed, Float64[], 0, primal_sol, dual_sol, slack; options...)
 end
