@@ -85,7 +85,7 @@ end
 # Refer to comment above
 function create_scs_cone(f::Int, l::Int, q::Array{Int,}, qsize::Int, s::Array{Int,},
         ssize::Int, ep::Int, ed::Int, p::Array{Float64,}, psize::Int)
-    return SCSCone(f, l, pointer(q), qsize, pointer(s), ssize, ep, ed, p, psize)
+    return SCSCone(f, l, pointer(q), qsize, pointer(s), ssize, ep, ed, pointer(p), psize)
 end
 
 
