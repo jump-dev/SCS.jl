@@ -13,9 +13,7 @@ function SCS_init(data::SCSData, cone::SCSCone)
 end
 
 
-
-function SCS_solve(p_work::Ptr{Void}, data::SCSData, cone::SCSCone, info::SCSInfo, 
-                   solution::SCSSolution=SCSSolution(C_NULL, C_NULL, C_NULL))
+function SCS_solve(p_work::Ptr{Void}, data::SCSData, cone::SCSCone, info::SCSInfo, solution::SCSSolution)
     solution_ptr = pointer([solution])
 
     info_ptr = pointer([info])
@@ -31,7 +29,13 @@ function SCS_solve(p_work::Ptr{Void}, data::SCSData, cone::SCSCone, info::SCSInf
 end
 
 
-function SCS_solve(data::SCSData, cone::SCSCone, solution::SCSSolution=SCSSolution(C_NULL, C_NULL, C_NULL))
+function SCS_solve(p_work::Ptr{Void}, data::SCSData, cone::SCSCone, info::SCSInfo)
+    solution = SCSSolution(pointer(zeros(data.n)), pointer(zeros(data.m)), pointer(zeros(data.m)))
+    return SCS_solve(p_work, data, cone, info, solution)
+end
+
+
+function SCS_solve(data::SCSData, cone::SCSCone, solution::SCSSolution)
     p_work, info = SCS_init(data, cone)
     return SCS_solve(p_work, data, cone, info, solution)
 end
