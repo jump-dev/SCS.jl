@@ -128,20 +128,16 @@ function SCS_solve(m::Int, n::Int, A::SCSVecOrMatOrSparse, b::Array{Float64,},
     cone = create_scs_cone(f, l, q, qsize, s, ssize, ep, ed, p, psize)
 
     if (:warm_start, true) in options
-        solution = SCSSolution(pointer(primal_sol), pointer(dual_sol), pointer(slack))
-        status, solution, info, p_work = SCS_solve(data, cone, solution)
+        x = primal_sol
+        y = dual_sol
+        s = slack
     else
-        status, solution, info, p_work = SCS_solve(data, cone)
+        x = zeros(n)
+        y = zeros(m)
+        s = zeros(m)
     end
-    
-    ptr_x = convert(Ptr{Float64}, solution.x)
-    ptr_y = convert(Ptr{Float64}, solution.y)
-    ptr_s = convert(Ptr{Float64}, solution.s)
-
-    x = pointer_to_array(ptr_x, n, true)
-    y = pointer_to_array(ptr_y, m, true)
-    s = pointer_to_array(ptr_s, m, true)
-
+    solution = SCSSolution(pointer(x), pointer(y), pointer(s))
+    status, solution, info, p_work = SCS_solve(data, cone, solution)
     SCS_finish(p_work)
     return Solution(x, y, s, status)
 
