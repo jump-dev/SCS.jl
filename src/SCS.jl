@@ -7,7 +7,7 @@ else
 end
 
 if VERSION >= v"0.4.0-dev+3844"
-    import Base.Libdl: RTLD_LAZY, RTLD_DEEPBIND, RTLD_GLOBAL
+    import Base.Libdl: RTLD_LAZY, RTLD_DEEPBIND, RTLD_GLOBAL, dlopen
 end
 
 function __init__()
