@@ -46,7 +46,7 @@ warm_start      # boolean, warm start (put initial guess in Sol struct): 0 (defa
 To use these settings you can either pass them as keyword arguments to `SCS_solve` (high level interface) or as arguments to the `SCSSolver` constructor (MathProgBase interface), e.g.
 ```julia
 # Direct
-solution = SCS_solve(m, n, A, ..., ed; max_iters=10, verbose=0);
+solution = SCS_solve(m, n, A, ..., psize; max_iters=10, verbose=0);
 # MathProgBase (with Convex)
 m = solve!(problem, SCSSolver(max_iters=10, verbose=0))
 ```
@@ -68,6 +68,7 @@ where K is a product cone of
 - second-order cones `{ (t,x) | ||x||_2 <= t }`,
 - semi-definite cones `{ X | X psd }`, and
 - exponential cones `{(x,y,z) | y e^(x/y) <= z, y>0 }`.
+- power cone `{(x,y,z) | x^a * y^(1-a) >= |z|, x>=0, y>=0}`
 
 The other problem data are
 
@@ -79,7 +80,8 @@ The other problem data are
 - `q` is the array of SOCs sizes
 - `s` is the array of SDCs sizes
 - `ep` is the number of primal exponential cones
-- `ed` is the number of dual exponential cones.
+- `ed` is the number of dual exponential cones
+- `p` is the array of power cone parameters
 - `options` is a dictionary of options (see below).
 
 The function is
@@ -87,7 +89,7 @@ The function is
 ```julia
 function SCS_solve(m::Int, n::Int, A::SCSVecOrMatOrSparse, b::Array{Float64,},
     c::Array{Float64,}, f::Int, l::Int, q::Array{Int,}, qsize::Int, s::Array{Int,},
-    ssize::Int, ep::Int, ed::Int; options...)
+    ssize::Int, ep::Int, ed::Int, p::Array{Float64,}, psize::Int; options...)
 ```
 
 and it returns an object of type Solution, which contains the following fields

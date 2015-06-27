@@ -1,4 +1,9 @@
-export SCS_init, SCS_solve, SCS_finish
+export SCS_init, SCS_solve, SCS_finish, SCS_version
+
+
+function SCS_version()
+    return bytestring(ccall((:scs_version, SCS.scs), Cstring, ()))
+end
 
 
 function SCS_init(data::SCSData, cone::SCSCone)
