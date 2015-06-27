@@ -15,10 +15,10 @@ scs = library_dependency("scs", aliases=aliases)
     provides(Homebrew.HB, "scs", scs, os = :Darwin)
 end
 
-version = "1.1.5" # how do we give a version range?
+include("../src/version.jl")
 
-provides(Sources, URI("https://github.com/cvxgrp/scs/archive/v$version.tar.gz"),
-    [scs], os=:Unix, unpacked_dir="scs-$version")
+provides(Sources, URI("https://github.com/cvxgrp/scs/archive/v$scs_version.tar.gz"),
+    [scs], os=:Unix, unpacked_dir="scs-$scs_version")
 
 # Windows binaries built in Cygwin as follows:
 # CFLAGS="-DDLONG -DCOPYAMATRIX -DLAPACK_LIB_FOUND -DCTRLC=1 -DBLAS64 -DBLASSUFFIX=_64_" LDFLAGS="-L$HOME/julia/usr/bin -lopenblas" make CC=x86_64-w64-mingw32-gcc out/libscsdir.dll
@@ -26,12 +26,12 @@ provides(Sources, URI("https://github.com/cvxgrp/scs/archive/v$version.tar.gz"),
 # make clean
 # CFLAGS="-DDLONG -DCOPYAMATRIX -DLAPACK_LIB_FOUND -DCTRLC=1" LDFLAGS="-L$HOME/julia32/usr/bin -lopenblas" make CC=i686-w64-mingw32-gcc out/libscsdir.dll
 # mv out bin32
-provides(Binaries, URI("http://sourceforge.net/projects/juliadeps-win/files/scs-$version.7z"),
+provides(Binaries, URI("http://sourceforge.net/projects/juliadeps-win/files/scs-$scs_version.7z"),
     [scs], unpacked_dir="bin$WORD_SIZE", os = :Windows,
     SHA="ac3f36aa5349f41aef83a141cc25bc3d595a6731dcf397af2ebc9bdeff10d101")
 
 prefix = joinpath(BinDeps.depsdir(scs), "usr")
-srcdir = joinpath(BinDeps.depsdir(scs), "src", "scs-$version/")
+srcdir = joinpath(BinDeps.depsdir(scs), "src", "scs-$scs_version/")
 
 if VERSION < v"0.4.0-dev+3844"
     libname = "libscsdir.$(Sys.dlext)"
