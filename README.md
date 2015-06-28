@@ -31,7 +31,7 @@ SCS implements the solver-independent [MathProgBase](https://github.com/JuliaOpt
 
 ### Options
 All SCS solver options can be set through the direct interface(documented below) and through MathProgBase.
-The list of options is defined the [`scs.h` header](https://github.com/cvxgrp/scs/blob/master/include/scs.h#L35), which we reproduce here:
+The list of options is defined the [`scs.h` header](https://github.com/cvxgrp/scs/blob/master/include/scs.h#L30), which we reproduce here:
 ```
 max_iters       # maximum iterations to take: 2500 (default)
 eps             # convergence tolerance: 1e-3 (default)
@@ -66,11 +66,11 @@ where K is a product cone of
 - zero cones,
 - linear cones `{ x | x >= 0 }`,
 - second-order cones `{ (t,x) | ||x||_2 <= t }`,
-- semi-definite cones `{ X | X psd }`, and
-- exponential cones `{(x,y,z) | y e^(x/y) <= z, y>0 }`.
-- power cone `{(x,y,z) | x^a * y^(1-a) >= |z|, x>=0, y>=0}`
+- semi-definite cones `{ X | X psd }`,
+- exponential cones `{(x,y,z) | y e^(x/y) <= z, y>0 }`, and
+- power cone `{(x,y,z) | x^a * y^(1-a) >= |z|, x>=0, y>=0}`.
 
-The other problem data are
+The problem data are
 
 - `A` is the matrix with m rows and n cols
 - `b` is of length m x 1
