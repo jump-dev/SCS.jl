@@ -31,7 +31,7 @@ SCS implements the solver-independent [MathProgBase](https://github.com/JuliaOpt
 
 ### Options
 All SCS solver options can be set through the direct interface(documented below) and through MathProgBase.
-The list of options is defined the [`scs.h` header](https://github.com/cvxgrp/scs/blob/master/include/scs.h#L30), which we reproduce here:
+The list of options is defined the [`scs.h` header](https://github.com/cvxgrp/scs/blob/0f9f51d663efd75b9d55d9f6524da75baa498aee/include/scs.h#L30), which we reproduce here:
 ```
 max_iters       # maximum iterations to take: 2500 (default)
 eps             # convergence tolerance: 1e-3 (default)
