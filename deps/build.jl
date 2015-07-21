@@ -26,7 +26,7 @@ provides(Sources, URI("https://github.com/cvxgrp/scs/archive/v$scs_version.tar.g
 # make clean
 # CFLAGS="-DDLONG -DCOPYAMATRIX -DLAPACK_LIB_FOUND -DCTRLC=1" LDFLAGS="-L$HOME/julia32/usr/bin -lopenblas" make CC=i686-w64-mingw32-gcc out/libscsdir.dll
 # mv out bin32
-provides(Binaries, URI("http://sourceforge.net/projects/juliadeps-win/files/scs-$scs_version.7z"),
+provides(Binaries, URI("https://cache.e.ip.saba.us/https://bintray.com/artifact/download/tkelman/generic/scs-$scs_version.7z"),
     [scs], unpacked_dir="bin$WORD_SIZE", os = :Windows,
     SHA="ac3f36aa5349f41aef83a141cc25bc3d595a6731dcf397af2ebc9bdeff10d101")
 
