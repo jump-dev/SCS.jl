@@ -63,4 +63,4 @@ provides(SimpleBuild,
         end)
     end), [scs], os=:Unix)
 
-@BinDeps.install [:scs => :scs]
+@BinDeps.install Dict([(:scs, :scs)])
