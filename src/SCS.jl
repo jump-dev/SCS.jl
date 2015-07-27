@@ -16,7 +16,8 @@ function __init__()
     # default binaries need access to Julia's lapack symbols
     @unix_only dlopen(Base.liblapack_name, RTLD_LAZY|RTLD_DEEPBIND|RTLD_GLOBAL)
     if SCS_version() != scs_version
-        error("Current SCS version installed is $(SCS_version()), but we require version $scs_version. On Linux and Windows, delete the contents of the `~/.julia/v0.3/SCS/deps` directory except for the files `build.jl` and `.gitignore`, then rerun Pkg.build(\"SCS\"). On OS X, run `using Homebrew; Homebrew.update()` in Julia.")
+        depsdir = realpath(joinpath(dirname(@__FILE__),"..","deps"))
+        error("Current SCS version installed is $(SCS_version()), but we require version $scs_version. On Linux and Windows, delete the contents of the `$depsdir` directory except for the files `build.jl` and `.gitignore`, then rerun Pkg.build(\"SCS\"). On OS X, run `using Homebrew; Homebrew.update()` in Julia.")
     end
 end
 
