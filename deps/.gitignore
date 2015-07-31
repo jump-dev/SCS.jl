@@ -2,3 +2,5 @@ deps.jl
 downloads/
 src/
 usr/
+bin32/
+bin64/
