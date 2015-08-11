@@ -474,6 +474,12 @@ supportedcones(s::SCSSolver) = [:Free, :Zero, :NonNeg, :NonPos, :SOC, :SDP, :Exp
 
 function getconicdual(m::SCSMathProgModel)
     dual = m.dual_sol[m.row_map_ind]
+    # flip sign for NonPos since it's treated as NonNeg by SCS
+    for i in 1:length(m.row_map_type)
+        if m.row_map_type[i] == :NonPos
+            dual[i] = -dual[i]
+        end
+    end
     # undo the rescaling of the SDP variables
     if !((:rescale, false) in m.options)
         rescaleconicdual!(m, dual)
