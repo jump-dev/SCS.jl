@@ -473,15 +473,8 @@ end
 supportedcones(s::SCSSolver) = [:Free, :Zero, :NonNeg, :NonPos, :SOC, :SDP, :ExpPrimal, :ExpDual]
 
 function getconicdual(m::SCSMathProgModel)
-    # TODO: Why am I flipping signs? Also, do I need to flip the signs for every cone that isnt NonNeg?
-    # Flipping signs seems to make it pass the MPB dual tests
     dual = m.dual_sol[m.row_map_ind]
-    for i in 1:length(m.row_map_type)
-        if m.row_map_type[i] != :NonNeg
-            dual[i] = -dual[i]
-        end
-    end
-    # reverse the rescaling of the SDP variables
+    # undo the rescaling of the SDP variables
     if !((:rescale, false) in m.options)
         rescaleconicdual!(m, dual)
     end
