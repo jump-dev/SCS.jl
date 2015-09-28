@@ -2,7 +2,7 @@ using Compat
 export SCSMatrix, SCSData, SCSSettings, SCSSolution, SCSInfo, SCSCone, SCSVecOrMatOrSparse
 
 
-SCSVecOrMatOrSparse = Union(VecOrMat, SparseMatrixCSC{Float64,Int})
+SCSVecOrMatOrSparse = @compat(Union{VecOrMat, SparseMatrixCSC{Float64,Int}})
 
 
 immutable SCSMatrix
@@ -40,9 +40,9 @@ end
 
 
 immutable SCSSolution
-    x::Ptr{None}
-    y::Ptr{None}
-    s::Ptr{None}
+    x::Ptr{Void}
+    y::Ptr{Void}
+    s::Ptr{Void}
 end
 
 
