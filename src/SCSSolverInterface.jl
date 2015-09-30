@@ -449,7 +449,7 @@ function rescaleconicproblem!(model::SCSMathProgModel)
     SDPstartidx = model.f + model.l + sum(model.q)
     for iSDP = 1:model.ssize
         nSDP = model.s[iSDP]
-        sSDP = int(nSDP*(nSDP+1)/2)
+        sSDP = div(nSDP*(nSDP+1),2)
         SDPrange = SDPstartidx + 1 : SDPstartidx + sSDP
         model.b[SDPrange] = rescaleSDP(model.b[SDPrange], nSDP, sqrt(2))
         for i = 1:model.n
@@ -491,7 +491,7 @@ function rescaleconicdual!(model::SCSMathProgModel, dual)
     SDPstartidx = model.f + model.l + sum(model.q)
     for iSDP = 1:model.ssize
         nSDP = model.s[iSDP]
-        sSDP = int(nSDP*(nSDP+1)/2)
+        sSDP = div(nSDP*(nSDP+1),2)
         SDPrange = SDPstartidx + 1 : SDPstartidx + sSDP
         dual[SDPrange] = rescaleSDP(dual[SDPrange], nSDP, 1/sqrt(2))
     end
