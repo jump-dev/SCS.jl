@@ -7,7 +7,7 @@
 # MathProgBase.jl interface for the SCS.jl solver wrapper
 #############################################################################
 
-importall MathProgBase.MathProgSolverInterface
+importall MathProgBase.SolverInterface
 import Base.convert
 
 function convert(x::Type{Int}, y::UnitRange{Int})
