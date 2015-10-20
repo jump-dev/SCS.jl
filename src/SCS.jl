@@ -1,3 +1,5 @@
+isdefined(Base, :__precompile__) && __precompile__()
+
 module SCS
 
 if isfile(joinpath(dirname(@__FILE__), "..", "deps", "deps.jl"))
