@@ -15,10 +15,11 @@ scs = library_dependency("scs", aliases=aliases)
     provides(Homebrew.HB, "scs", scs, os = :Darwin)
 end
 
-include("../src/version.jl")
+version = "1.1.8"
+win_version = "1.1.5"
 
-provides(Sources, URI("https://github.com/cvxgrp/scs/archive/v$scs_version.tar.gz"),
-    [scs], os=:Unix, unpacked_dir="scs-$scs_version")
+provides(Sources, URI("https://github.com/cvxgrp/scs/archive/v$version.tar.gz"),
+    [scs], os=:Unix, unpacked_dir="scs-$version")
 
 # Windows binaries built in Cygwin as follows:
 # CFLAGS="-DDLONG -DCOPYAMATRIX -DLAPACK_LIB_FOUND -DCTRLC=1 -DBLAS64 -DBLASSUFFIX=_64_" LDFLAGS="-L$HOME/julia/usr/bin -lopenblas64_" make CC=x86_64-w64-mingw32-gcc out/libscsdir.dll
@@ -26,18 +27,14 @@ provides(Sources, URI("https://github.com/cvxgrp/scs/archive/v$scs_version.tar.g
 # make clean
 # CFLAGS="-DDLONG -DCOPYAMATRIX -DLAPACK_LIB_FOUND -DCTRLC=1" LDFLAGS="-L$HOME/julia32/usr/bin -lopenblas" make CC=i686-w64-mingw32-gcc out/libscsdir.dll
 # mv out bin32
-provides(Binaries, URI("https://cache.e.ip.saba.us/https://bintray.com/artifact/download/tkelman/generic/scs-$scs_version-r2.7z"),
+provides(Binaries, URI("https://cache.e.ip.saba.us/https://bintray.com/artifact/download/tkelman/generic/scs-$win_version-r2.7z"),
     [scs], unpacked_dir="bin$WORD_SIZE", os = :Windows,
     SHA="62bb4feeb7d2cd3db595f05b86a20fc93cfdef23311e2e898e18168189072d02")
 
 prefix = joinpath(BinDeps.depsdir(scs), "usr")
-srcdir = joinpath(BinDeps.depsdir(scs), "src", "scs-$scs_version/")
+srcdir = joinpath(BinDeps.depsdir(scs), "src", "scs-$version/")
 
-if VERSION < v"0.4.0-dev+3844"
-    libname = "libscsdir.$(Sys.dlext)"
-else
-    libname = "libscsdir.$(Libdl.dlext)"
-end
+libname = "libscsdir.$(Libdl.dlext)"
 
 ldflags = ""
 @osx_only begin

@@ -1,8 +1,7 @@
-using Compat
 export SCSMatrix, SCSData, SCSSettings, SCSSolution, SCSInfo, SCSCone, SCSVecOrMatOrSparse
 
 
-SCSVecOrMatOrSparse = @compat(Union{VecOrMat, SparseMatrixCSC{Float64,Int}})
+SCSVecOrMatOrSparse = Union{VecOrMat, SparseMatrixCSC{Float64,Int}}
 
 
 immutable SCSMatrix
@@ -82,7 +81,7 @@ end
 
 
 # TODO needs to be updated for newest constants
-@compat const status_map = Dict{Int, Symbol}(
+const status_map = Dict{Int, Symbol}(
     1 => :Optimal,
     -2 => :Infeasible,
     -1 => :Unbounded,

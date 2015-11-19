@@ -33,9 +33,9 @@ type SCSMathProgModel <: AbstractMathProgModel
     c::Vector{Float64}                # The objective coeffs (always min)
     f::Int                            # number of zero cones
     l::Int                            # number of linear cones { x | x >= 0}
-    q::Array{Int,}                    # Array of SOC sizes
+    q::Vector{Int}                    # Array of SOC sizes
     qsize::Int                        # Length of q
-    s::Array{Int,}                    # Array of SDP sizes
+    s::Vector{Int}                    # Array of SDP sizes
     ssize::Int                        # Length of s
     ep::Int                           # Number of primal exponential cones
     ed::Int                           # Number of dual exponential cones
