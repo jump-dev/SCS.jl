@@ -15,10 +15,6 @@ solver = SCSSolver()
 objtol = 1e-4
 primaltol = 1e-4
 
-# Stub some methods
-MathProgBase.getreducedcosts(m::SCS.SCSMathProgModel) = nothing
-MathProgBase.getconstrduals(m::SCS.SCSMathProgModel) = nothing
-
 # min -x
 # s.t. 2x + y <= 1.5
 # x,y >= 0
@@ -57,8 +53,7 @@ obj   = [3.0, 4.0, 4.0, 9.0, 5.0]
 sense = :Max
 rowlb = [-Inf, -Inf, -Inf]
 rowub = [ 5.0,  3.0,  9.0]
-s = SCSSolver()
-m = MathProgBase.model(s)
+m = MathProgBase.LinearQuadraticModel(solver)
 MathProgBase.loadproblem!(m, A, collb, colub, obj, rowlb, rowub, sense)
 MathProgBase.optimize!(m)
 @test_approx_eq_eps MathProgBase.getobjval(m) 99.0 1e-3

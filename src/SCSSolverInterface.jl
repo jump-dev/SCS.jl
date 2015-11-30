@@ -25,7 +25,7 @@ immutable SCSSolver <: AbstractMathProgSolver
 end
 SCSSolver(;kwargs...) = SCSSolver(kwargs)
 
-type SCSMathProgModel <: AbstractMathProgModel
+type SCSMathProgModel <: AbstractConicModel
     m::Int                            # Number of constraints
     n::Int                            # Number of variables
     A::SparseMatrixCSC{Float64,Int}   # The A matrix (equalities)
@@ -59,88 +59,16 @@ SCSMathProgModel(;kwargs...) = SCSMathProgModel(0, 0, spzeros(0, 0), Int[], Int[
 #############################################################################
 # Begin implementation of the MPB low-level interface
 # Implements
-# - model
+# - ConicModel
 # - loadproblem!
 # - optimize!
 # - status
 # http://mathprogbasejl.readthedocs.org/en/latest/lowlevel.html
 
-model(s::SCSSolver) = SCSMathProgModel(;s.options...)
+ConicModel(s::SCSSolver) = SCSMathProgModel(;s.options...)
+LinearQuadraticModel(s::SCSSolver) = ConicToLPQPBridge(ConicModel(s))
 
-# Loads the provided problem data to set up the linear programming problem:
-# min c'x
-# st  lb <= Ax <= ub
-#      l <=  x <= u
-# where sense = :Min or :Max
-function loadproblem!(m::SCSMathProgModel, A, collb, colub, obj, rowlb, rowub, sense)
-    (nvar = length(collb)) == length(colub) || error("Unequal lengths for column bounds")
-    (nrow = length(rowlb)) == length(rowub) || error("Unequal lengths for row bounds")
-
-    # Turn variable bounds into constraints
-    # Inefficient, because keeps allocating memory!
-    # Would need to batch, get tricky...
-    for j = 1:nvar
-        if collb[j] != -Inf
-            # Variable has lower bound
-            newrow = zeros(1, nvar)
-            newrow[j] = -1.0
-            A = vcat(A, newrow)
-            rowlb = vcat(rowlb, -Inf)
-            rowub = vcat(rowub, -collb[j])
-            nrow += 1
-        end
-        if colub[j] != +Inf
-            # Variable has upper bound
-            newrow = zeros(1, nvar)
-            newrow[j] = 1.0
-            A = vcat(A, newrow)
-            rowlb = vcat(rowlb, -Inf)
-            rowub = vcat(rowub, colub[j])
-            nrow += 1
-        end
-    end
-
-    eqidx   = Int[]      # Equality row indicies
-    ineqidx = Int[]      # Inequality row indicies
-    eqbnd   = Float64[]  # Bounds for equality rows
-    ineqbnd = Float64[]  # Bounds for inequality row
-    for it in 1:nrow
-        # Equality constraint
-        if rowlb[it] == rowub[it]
-            push!(eqidx, it)
-            push!(eqbnd, rowlb[it])
-        # Range constraint - not supported
-        elseif rowlb[it] != -Inf && rowub[it] != Inf
-            error("Ranged constraints unsupported!")
-        # Less-than constraint
-        elseif rowlb[it] == -Inf
-            push!(ineqidx, it)
-            push!(ineqbnd, rowub[it])
-        # Greater-than constraint - flip sign so only have <= constraints
-        else
-            push!(ineqidx, it)
-            push!(ineqbnd, -rowlb[it])
-            A[it,:] *= -1 # flip signs so we have Ax<=b
-        end
-    end
-
-    m.n         = nvar                              # Number of variables
-    m.m         = length(ineqidx) + length(eqidx)   # Number of inequalities Gx <=_K h
-    m.A         = sparse([A[eqidx,:]; A[ineqidx,:]])
-    m.b         = [eqbnd; ineqbnd]
-    m.c         = (sense == :Max) ? obj * -1 : obj[:]
-                                        # The objective coeffs (always min)
-    m.f         = length(eqidx)
-    m.l         = length(ineqidx)
-    m.q         = Int[]
-    m.qsize     = 0
-    m.s         = Int[]
-    m.ssize     = 0
-    m.ep        = 0
-    m.ed        = 0
-    m.orig_sense = sense                # Original objective sense
-end
-
+#=
 function setsense!(m::SCSMathProgModel, sns::Symbol)
     if m.orig_sense != sns
         sns == :Min || sns == :Max || error("Unrecognized sense $sns")
@@ -149,6 +77,7 @@ function setsense!(m::SCSMathProgModel, sns::Symbol)
     end
     nothing
 end
+=#
 
 function optimize!(m::SCSMathProgModel)
     solution = SCS_solve(m.m, m.n, m.A, m.b, m.c, m.f, m.l, m.q, m.qsize,
@@ -397,11 +326,11 @@ function orderconesforscs(A_in, b_in, c_cones, v_cones)
 end
 
 
-loadconicproblem!(model::SCSMathProgModel, c, A, b, constr_cones, var_cones) =
-    loadconicproblem!(model, c, sparse(A), b, constr_cones, var_cones)
+loadproblem!(model::SCSMathProgModel, c, A, b, constr_cones, var_cones) =
+    loadproblem!(model, c, sparse(A), b, constr_cones, var_cones)
 
 
-function loadconicproblem!(model::SCSMathProgModel, c, A::SparseMatrixCSC, b, constr_cones, var_cones)
+function loadproblem!(model::SCSMathProgModel, c, A::SparseMatrixCSC, b, constr_cones, var_cones)
     # TODO: We should support SOCRotated
     bad_cones = [:SOCRotated]
     for cone_vars in constr_cones
@@ -472,7 +401,7 @@ end
 
 supportedcones(s::SCSSolver) = [:Free, :Zero, :NonNeg, :NonPos, :SOC, :SDP, :ExpPrimal, :ExpDual]
 
-function getconicdual(m::SCSMathProgModel)
+function getdual(m::SCSMathProgModel)
     dual = m.dual_sol[m.row_map_ind]
     # flip sign for NonPos since it's treated as NonNeg by SCS
     for i in 1:length(m.row_map_type)
