@@ -28,6 +28,8 @@ SCSSolver(;kwargs...) = SCSSolver(kwargs)
 type SCSMathProgModel <: AbstractConicModel
     m::Int                            # Number of constraints
     n::Int                            # Number of variables
+    input_numconstr::Int
+    input_numvar::Int
     A::SparseMatrixCSC{Float64,Int}   # The A matrix (equalities)
     b::Vector{Float64}                # RHS
     c::Vector{Float64}                # The objective coeffs (always min)
@@ -51,7 +53,7 @@ type SCSMathProgModel <: AbstractConicModel
     options
 end
 
-SCSMathProgModel(;kwargs...) = SCSMathProgModel(0, 0, spzeros(0, 0), Int[], Int[],
+SCSMathProgModel(;kwargs...) = SCSMathProgModel(0, 0, 0, 0, spzeros(0, 0), Int[], Int[],
                                       0, 0, Int[], 0, Int[], 0, 0, 0,
                                       :Min, :NotSolved, 0.0, Float64[], Float64[],
                                       Float64[], Int[], Symbol[], kwargs)
@@ -63,7 +65,9 @@ SCSMathProgModel(;kwargs...) = SCSMathProgModel(0, 0, spzeros(0, 0), Int[], Int[
 # - loadproblem!
 # - optimize!
 # - status
-# http://mathprogbasejl.readthedocs.org/en/latest/lowlevel.html
+# - numvar
+# - numconstr
+# http://mathprogbasejl.readthedocs.org/en/latest/solverinterface.html
 
 ConicModel(s::SCSSolver) = SCSMathProgModel(;s.options...)
 LinearQuadraticModel(s::SCSSolver) = ConicToLPQPBridge(ConicModel(s))
@@ -365,6 +369,8 @@ function loadproblem!(model::SCSMathProgModel, c, A::SparseMatrixCSC, b, constr_
     model.l             = l
     model.row_map_ind   = row_map_ind
     model.row_map_type  = row_map_type
+    model.input_numconstr = size(A,1)
+    model.input_numvar    = size(A,2)
 
     # rescale model so that vector inner product on R^(n(n+1)/2) matches matrix inner product on S^n
     # (rescale by default)
@@ -373,6 +379,9 @@ function loadproblem!(model::SCSMathProgModel, c, A::SparseMatrixCSC, b, constr_
     end
     return model
 end
+
+numvar(model::SCSMathProgModel) = model.input_numvar
+numconstr(model::SCSMathProgModel) = model.input_numconstr
 
 function rescaleconicproblem!(model::SCSMathProgModel)
     SDPstartidx = model.f + model.l + sum(model.q)
