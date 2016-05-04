@@ -50,13 +50,14 @@ type SCSMathProgModel <: AbstractConicModel
     slack::Vector{Float64}
     row_map_ind::Vector{Int}
     row_map_type::Vector{Symbol}
+    row_sdp::Vector{Vector{Int}}   # list of constraint sdp indices
     options
 end
 
 SCSMathProgModel(;kwargs...) = SCSMathProgModel(0, 0, 0, 0, spzeros(0, 0), Int[], Int[],
                                       0, 0, Int[], 0, Int[], 0, 0, 0,
                                       :Min, :NotSolved, 0.0, Float64[], Float64[],
-                                      Float64[], Int[], Symbol[], kwargs)
+                                      Float64[], Int[], Symbol[], Array(Vector{Int},0), kwargs)
 
 #############################################################################
 # Begin implementation of the MPB low-level interface
@@ -247,10 +248,12 @@ function orderconesforscs(A_in, b_in, c_cones, v_cones)
     end
 
     sqrt_sdp_sizes = Int[]
+    row_sdp = Array(Vector{Int},0)
     for (cone, idxs) in new_c_cones
         if cone == :SDP
             row_map_ind[idxs] = size(A_t, 2)+1:size(A_t, 2)+length(idxs)
             row_map_type[idxs] = [cone for i in 1:length(idxs)]
+            push!(row_sdp, convert(Vector{Int},idxs))
 
             A_t = [A_t A_in_t[:,idxs]]
             b = [b; b_in[idxs,:]]
@@ -326,7 +329,7 @@ function orderconesforscs(A_in, b_in, c_cones, v_cones)
     end
 
     return A_t', b, num_free, num_zero, num_lin, soc_sizes,
-           sqrt_sdp_sizes, num_expprimal, num_expdual, row_map_ind, row_map_type
+           sqrt_sdp_sizes, num_expprimal, num_expdual, row_map_ind, row_map_type, row_sdp
 end
 
 
@@ -348,7 +351,7 @@ function loadproblem!(model::SCSMathProgModel, c, A::SparseMatrixCSC, b, constr_
     c_cones = [(cone, [idxs...]) for (cone, idxs) in constr_cones]
     v_cones = [(cone, [idxs...]) for (cone, idxs) in var_cones]
 
-    scs_A, scs_b, num_free, f, l, q, s, ep, ed, row_map_ind, row_map_type =
+    scs_A, scs_b, num_free, f, l, q, s, ep, ed, row_map_ind, row_map_type, row_sdp =
         orderconesforscs(A, b, c_cones, v_cones)
 
     m, n = size(scs_A)
@@ -369,6 +372,7 @@ function loadproblem!(model::SCSMathProgModel, c, A::SparseMatrixCSC, b, constr_
     model.l             = l
     model.row_map_ind   = row_map_ind
     model.row_map_type  = row_map_type
+    model.row_sdp       = row_sdp
     model.input_numconstr = size(A,1)
     model.input_numvar    = size(A,2)
 
@@ -426,11 +430,8 @@ function getdual(m::SCSMathProgModel)
 end
 
 function rescaleconicdual!(model::SCSMathProgModel, dual)
-    SDPstartidx = model.f + model.l + sum(model.q)
-    for iSDP = 1:model.ssize
-        nSDP = model.s[iSDP]
-        sSDP = div(nSDP*(nSDP+1),2)
-        SDPrange = SDPstartidx + 1 : SDPstartidx + sSDP
+    for SDPrange in model.row_sdp
+        nSDP = round(Int,invertsdconesize(length(SDPrange)))
         dual[SDPrange] = rescaleSDP(dual[SDPrange], nSDP, 1/sqrt(2))
     end
     return dual
