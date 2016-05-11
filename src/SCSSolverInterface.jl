@@ -372,41 +372,11 @@ function loadproblem!(model::SCSMathProgModel, c, A::SparseMatrixCSC, b, constr_
     model.input_numconstr = size(A,1)
     model.input_numvar    = size(A,2)
 
-    # rescale model so that vector inner product on R^(n(n+1)/2) matches matrix inner product on S^n
-    # (rescale by default)
-    if !((:rescale, false) in model.options)
-        rescaleconicproblem!(model)
-    end
     return model
 end
 
 numvar(model::SCSMathProgModel) = model.input_numvar
 numconstr(model::SCSMathProgModel) = model.input_numconstr
-
-function rescaleconicproblem!(model::SCSMathProgModel)
-    SDPstartidx = model.f + model.l + sum(model.q)
-    for iSDP = 1:model.ssize
-        nSDP = model.s[iSDP]
-        sSDP = div(nSDP*(nSDP+1),2)
-        SDPrange = SDPstartidx + 1 : SDPstartidx + sSDP
-        model.b[SDPrange] = rescaleSDP(model.b[SDPrange], nSDP, sqrt(2))
-        for i = 1:model.n
-            model.A[SDPrange,i] = rescaleSDP(model.A[SDPrange,i], nSDP, sqrt(2))
-        end
-        SDPstartidx += sSDP
-    end
-    return model
-end
-
-function rescaleSDP(x, n, val)
-    # scale off-diagonals by val
-    M = zeros(n,n)
-    idx = find(tril(ones(n,n)))
-    M[idx] = x
-    dd = diag(M)
-    M = (M - diagm(dd))*val + diagm(dd)
-    return M[idx]
-end
 
 supportedcones(s::SCSSolver) = [:Free, :Zero, :NonNeg, :NonPos, :SOC, :SDP, :ExpPrimal, :ExpDual]
 
@@ -417,21 +387,6 @@ function getdual(m::SCSMathProgModel)
         if m.row_map_type[i] == :NonPos
             dual[i] = -dual[i]
         end
-    end
-    # undo the rescaling of the SDP variables
-    if !((:rescale, false) in m.options)
-        rescaleconicdual!(m, dual)
-    end
-    return dual
-end
-
-function rescaleconicdual!(model::SCSMathProgModel, dual)
-    SDPstartidx = model.f + model.l + sum(model.q)
-    for iSDP = 1:model.ssize
-        nSDP = model.s[iSDP]
-        sSDP = div(nSDP*(nSDP+1),2)
-        SDPrange = SDPstartidx + 1 : SDPstartidx + sSDP
-        dual[SDPrange] = rescaleSDP(dual[SDPrange], nSDP, 1/sqrt(2))
     end
     return dual
 end
