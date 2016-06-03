@@ -27,7 +27,7 @@ SCS.jl will automatically setup the SCS solver itself:
 ## Usage
 
 ### MathProgBase wrapper
-SCS implements the solver-independent [MathProgBase](https://github.com/JuliaOpt/MathProgBase.jl) interface, and so can be used within modeling software like [Convex](https://github.com/JuliaOpt/Convex.jl) and [JuMP](https://github.com/JuliaOpt/JuMP.jl). The solver object is called `SCSSolver`. This interface can be used to solve LPs using `loadproblem!` and SOCPs, SDPs and exponential-cone programs through `loadconicproblem!`([documentation](http://mathprogbasejl.readthedocs.org/en/latest/conic.html)).
+SCS implements the solver-independent [MathProgBase](https://github.com/JuliaOpt/MathProgBase.jl) interface, and so can be used within modeling software like [Convex](https://github.com/JuliaOpt/Convex.jl) and [JuMP](https://github.com/JuliaOpt/JuMP.jl). The solver object is called `SCSSolver`.
 
 ### Options
 All SCS solver options can be set through the direct interface(documented below) and through MathProgBase.
