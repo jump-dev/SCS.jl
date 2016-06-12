@@ -2,7 +2,14 @@ using BinDeps
 
 @BinDeps.setup
 
-if (@osx? (Base.blas_vendor() == :openblas64) : false)
+if VERSION >= v"0.5.0-dev+4679"
+    blasvendor = Base.BLAS.vendor()
+else
+    blasvendor = Base.blas_vendor()
+end
+
+
+if (@osx? (blasvendor == :openblas64) : false)
     aliases = ["libscsdir64"]
 else
     aliases = ["libscsdir"]
@@ -41,7 +48,7 @@ ldflags = ""
     ldflags = "$ldflags -undefined suppress -flat_namespace"
 end
 cflags = "-DCOPYAMATRIX -DDLONG -DLAPACK_LIB_FOUND -DCTRLC=1"
-if Base.blas_vendor() == :openblas64
+if blasvendor == :openblas64
     cflags = "$cflags -DBLAS64 -DBLASSUFFIX=_64_"
 end
 
