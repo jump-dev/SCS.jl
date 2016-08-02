@@ -2,6 +2,8 @@ __precompile__()
 
 module SCS
 
+import Compat: unsafe_string
+
 if isfile(joinpath(dirname(@__FILE__), "..", "deps", "deps.jl"))
     include("../deps/deps.jl")
 else
