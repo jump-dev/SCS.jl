@@ -9,7 +9,7 @@ else
 end
 
 
-if (@osx? (blasvendor == :openblas64) : false)
+if (is_apple() ? (blasvendor == :openblas64) : false)
     aliases = ["libscsdir64"]
 else
     aliases = ["libscsdir"]
@@ -17,7 +17,7 @@ end
 
 scs = library_dependency("scs", aliases=aliases)
 
-@osx_only begin
+if is_apple()
     using Homebrew
     provides(Homebrew.HB, "scs", scs, os = :Darwin)
 end
@@ -35,7 +35,7 @@ provides(Sources, URI("https://github.com/cvxgrp/scs/archive/v$version.tar.gz"),
 # CFLAGS="-DDLONG -DCOPYAMATRIX -DLAPACK_LIB_FOUND -DCTRLC=1" LDFLAGS="-L$HOME/julia32/usr/bin -lopenblas" make CC=i686-w64-mingw32-gcc out/libscsdir.dll
 # mv out bin32
 provides(Binaries, URI("https://cache.julialang.org/https://bintray.com/artifact/download/tkelman/generic/scs-$win_version-r2.7z"),
-    [scs], unpacked_dir="bin$WORD_SIZE", os = :Windows,
+    [scs], unpacked_dir="bin$(Sys.WORD_SIZE)", os = :Windows,
     SHA="62bb4feeb7d2cd3db595f05b86a20fc93cfdef23311e2e898e18168189072d02")
 
 prefix = joinpath(BinDeps.depsdir(scs), "usr")
@@ -44,7 +44,7 @@ srcdir = joinpath(BinDeps.depsdir(scs), "src", "scs-$version/")
 libname = "libscsdir.$(Libdl.dlext)"
 
 ldflags = ""
-@osx_only begin
+if is_apple()
     ldflags = "$ldflags -undefined suppress -flat_namespace"
 end
 cflags = "-DCOPYAMATRIX -DDLONG -DLAPACK_LIB_FOUND -DCTRLC=1"
