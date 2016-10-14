@@ -2,6 +2,7 @@ __precompile__()
 
 module SCS
 
+using Compat
 import Compat: unsafe_string
 
 if isfile(joinpath(dirname(@__FILE__), "..", "deps", "deps.jl"))
