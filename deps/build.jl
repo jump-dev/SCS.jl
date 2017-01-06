@@ -52,6 +52,17 @@ cflags = "-DCOPYAMATRIX -DDLONG -DLAPACK_LIB_FOUND -DCTRLC=1"
 if blasvendor == :openblas64
     cflags = "$cflags -DBLAS64 -DBLASSUFFIX=_64_"
 end
+if blasvendor == :mkl
+    if Base.USE_BLAS64
+        cflags = "$cflags -DMKL_ILP64 -m64 -DBLAS64"
+        ldflags = "$ldflags -lmkl_intel_ilp64"
+    else
+        cflags = "$cflags -m32"
+        ldflags = "$ldflags -lmkl_intel"
+    end
+    cflags = "$cflags -fopenmp"
+    ldflags = "$ldflags -lmkl_gnu_thread -lmkl_rt -lmkl_core -lgomp"
+end
 
 ENV2 = copy(ENV)
 ENV2["LDFLAGS"] = ldflags
