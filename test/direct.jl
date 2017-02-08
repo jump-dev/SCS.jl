@@ -1,4 +1,5 @@
 using SCS
+using Base.Test
 
 # Solve a trivial problem
 A = reshape([1.0],(1,1))
@@ -14,7 +15,7 @@ function low_level_scs()
     p_work, info = SCS_init(data, cone)
     status, solution, info, p_work = SCS_solve(p_work, data, cone, info)
 
-    @assert status == 1
+    @test status == 1
     SCS_finish(p_work)
 end
 
@@ -45,7 +46,7 @@ function feasible_basic_conic()
     A = SparseMatrixCSC(m, n, colptr + 1, rowval + 1, vec(values))
 
     sol = SCS_solve(m, n, A, b, c, f, l, q, qsize, s, ssize, ep, ed)
-    @assert sol.ret_val == 1
+    @test sol.ret_val == 1
 end
 
 feasible_basic_conic();
@@ -101,7 +102,7 @@ function feasible_sdp_conic()
     A = SparseMatrixCSC(m, n, colptr + 1, rowval + 1, vec(values))
 
     sol = SCS_solve(m, n, A, b, c, f, l, q, qsize, s, ssize, ep, ed)
-    @assert sol.ret_val == 1
+    @test sol.ret_val == 1
 end
 
 feasible_sdp_conic();
@@ -130,7 +131,7 @@ function feasible_pow_conic()
     A = SparseMatrixCSC(m, n, colptr + 1, rowval + 1, vec(values))
 
     sol = SCS_solve(m, n, A, b, c, f, l, q, qsize, s, ssize, ep, ed, p, psize)
-    @assert sol.ret_val == 1
+    @test sol.ret_val == 1
 end
 
 feasible_pow_conic();
