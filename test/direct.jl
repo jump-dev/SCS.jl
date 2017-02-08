@@ -1,13 +1,13 @@
 using SCS
 
 # Solve a trivial problem
-A = [1.0]'
+A = reshape([1.0],(1,1))
 solution = SCS_solve(1, 1, A, [1.0], [1.0], 1, 0, [0], 0, [0], 0, 0, 0);
 @assert solution.ret_val == 1
 
 # Solve the same problem from the low-level interface
 function low_level_scs()
-    A = [1.0]'
+    A = reshape([1.0],(1,1))
     data = create_scs_data(1, 1, A, [1.0], [1.0])
     cone = create_scs_cone(1, 0, [0], 0, [0], 0, 0, 0, Float64[], 0)
 
