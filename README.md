@@ -4,8 +4,8 @@
 [![Build status](https://ci.appveyor.com/api/projects/status/yb4yfg4oryw7yten/branch/master?svg=true)](https://ci.appveyor.com/project/mlubin/scs-jl/branch/master)
 [![Coverage Status](https://coveralls.io/repos/JuliaOpt/SCS.jl/badge.svg?branch=master)](https://coveralls.io/r/JuliaOpt/SCS.jl?branch=master)
 
-[![SCS](http://pkg.julialang.org/badges/SCS_0.3.svg)](http://pkg.julialang.org/?pkg=SCS&ver=0.3)
-[![SCS](http://pkg.julialang.org/badges/SCS_0.4.svg)](http://pkg.julialang.org/?pkg=SCS&ver=0.4)
+[![SCS](http://pkg.julialang.org/badges/SCS_0.5.svg)](http://pkg.julialang.org/?pkg=SCS&ver=0.5)
+[![SCS](http://pkg.julialang.org/badges/SCS_0.6.svg)](http://pkg.julialang.org/?pkg=SCS&ver=0.6)
 
 
 Julia wrapper for the [SCS](https://github.com/cvxgrp/scs) splitting cone

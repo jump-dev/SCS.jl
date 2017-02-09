@@ -1,13 +1,8 @@
 using BinDeps
-using Compat
 
 @BinDeps.setup
 
-if VERSION >= v"0.5.0-dev+4679"
-    blasvendor = Base.BLAS.vendor()
-else
-    blasvendor = Base.blas_vendor()
-end
+blasvendor = Base.BLAS.vendor()
 
 
 if (is_apple() ? (blasvendor == :openblas64) : false)
