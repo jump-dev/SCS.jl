@@ -133,15 +133,15 @@ This example shows how we can model a simple knapsack problem with JuMP and use 
 ```julia
 using JuMP, SCS
 items  = [:Gold, :Silver, :Bronze]
-values = [:Gold => 5.0,  :Silver => 3.0,  :Bronze => 1.0]
-weight = [:Gold => 2.0,  :Silver => 1.5,  :Bronze => 0.3]
+values = Dict(:Gold => 5.0,  :Silver => 3.0,  :Bronze => 1.0)
+weight = Dict(:Gold => 2.0,  :Silver => 1.5,  :Bronze => 0.3)
 
 m = Model(solver=SCSSolver())
-@defVar(m, 0 <= take[items] <= 1)  # Define a variable for each item
-@setObjective(m, Max, sum{ values[item] * take[item], item in items})
-@addConstraint(m, sum{ weight[item] * take[item], item in items} <= 3)
+@variable(m, 0 <= take[items] <= 1)  # Define a variable for each item
+@objective(m, Max, sum( values[item] * take[item] for item in items))
+@constraint(m, sum( weight[item] * take[item] for item in items) <= 3)
 solve(m)
-println(getValue(take))
+println(getvalue(take))
 # [Bronze] = 0.9999999496295456
 # [  Gold] = 0.99999492720597
 # [Silver] = 0.4666851698368782
