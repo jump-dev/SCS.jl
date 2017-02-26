@@ -19,6 +19,9 @@ if is_apple()
 end
 
 version = "1.1.8"
+if is_linux()
+    version = "1.2.6"
+end
 win_version = "1.1.5"
 
 provides(Sources, URI("https://github.com/cvxgrp/scs/archive/v$version.tar.gz"),
