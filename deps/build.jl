@@ -4,14 +4,16 @@ using BinDeps
 
 blasvendor = Base.BLAS.vendor()
 
-
 if (is_apple() ? (blasvendor == :openblas64) : false)
     aliases = ["libscsdir64"]
 else
     aliases = ["libscsdir"]
 end
 
-scs = library_dependency("scs", aliases=aliases)
+
+libnames = ["libscsdir", "libscsindir"]
+scs = library_dependency("scs", aliases=[libnames[1]])
+scsindir = library_dependency("scsindir", aliases=[libnames[2]])
 
 if is_apple()
     using Homebrew
@@ -37,7 +39,7 @@ provides(Binaries, URI("https://cache.julialang.org/https://bintray.com/artifact
 prefix = joinpath(BinDeps.depsdir(scs), "usr")
 srcdir = joinpath(BinDeps.depsdir(scs), "src", "scs-$version/")
 
-libname = "libscsdir.$(Libdl.dlext)"
+libnames = [libname*".$(Libdl.dlext)" for libname in libnames]
 
 ldflags = ""
 if is_apple()
@@ -67,11 +69,19 @@ provides(SimpleBuild,
     (@build_steps begin
         GetSources(scs)
         CreateDirectory(joinpath(prefix, "lib"))
-        FileRule(joinpath(prefix, "lib", libname), @build_steps begin
-            ChangeDirectory(srcdir)
-            setenv(`make out/$libname`, ENV2)
-            `mv out/$libname $prefix/lib`
-        end)
-    end), [scs], os=:Unix)
+        FileRule(joinpath(prefix, "lib", libnames[1]), 
+            @build_steps begin
+                ChangeDirectory(srcdir)
+                setenv(`make out/$(libnames[1])`, ENV2)
+                `mv out/$(libnames[1]) $prefix/lib`
+            end)
+        FileRule(joinpath(prefix, "lib", libnames[2]), 
+            @build_steps begin
+                ChangeDirectory(srcdir)
+                setenv(`make out/$(libnames[2])`, ENV2)
+                `mv out/$(libnames[2]) $prefix/lib`
+            end)
+    end),
+    [scs, scsindir], os=:Unix)
 
-@BinDeps.install Dict([(:scs, :scs)])
+@BinDeps.install Dict(:scs => :scs, :scsindir => :scsindir)
