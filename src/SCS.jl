@@ -16,9 +16,12 @@ function __init__()
     if is_unix()
         dlopen(Base.liblapack_name, RTLD_LAZY|RTLD_DEEPBIND|RTLD_GLOBAL)
     end
-    if !(vnum.major == 1 && vnum.minor == 1)
+    if !(vnum.major == 1 && vnum.minor in [1,2])
         depsdir = realpath(joinpath(dirname(@__FILE__),"..","deps"))
-        error("Current SCS version installed is $(SCS_version()), but we require version 1.1.*. On Linux and Windows, delete the contents of the `$depsdir` directory except for the files `build.jl` and `.gitignore`, then rerun Pkg.build(\"SCS\"). On OS X, run `using Homebrew; Homebrew.update()` in Julia.")
+        error("Current SCS version installed is $(SCS_version()), but we require version 1.1.* or 1.2.*. On Linux and Windows, delete the contents of the `$depsdir` directory except for the files `build.jl` and `.gitignore`, then rerun Pkg.build(\"SCS\"). On OS X, run `using Homebrew; Homebrew.update()` in Julia.")
+    end
+    if is_linux() && vnum.major == 1 && vnum.minor == 1
+        warn("Current SCS version installed is $(SCS_version()), but a newer version (1.2.*) is available. To upgrade, delete the contents of the `$depsdir` directory except for the files `build.jl` and `.gitignore`, then rerun Pkg.build(\"SCS\").")
     end
 end
 
