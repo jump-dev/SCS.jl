@@ -20,7 +20,7 @@ scs = library_dependency("scs", aliases=aliases)
 
 if is_apple()
     using Homebrew
-    provides(Homebrew.HB, "scs", scs, os = :Darwin)
+    provides(Homebrew.HB, "scs118", scs, os = :Darwin)
 end
 
 version = "1.1.8"
