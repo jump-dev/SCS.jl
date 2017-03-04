@@ -124,6 +124,16 @@ function SCS_solve(m::Int, n::Int, A::SCSVecOrMatOrSparse, b::Array{Float64,},
         slack::Vector{Float64}=Float64[]; 
         options...)
 
+    if (:lin_solver, "indirect") in options
+        T = SCS.Indirect
+    # elseif (:lin_solver, "gpu") in options
+    #     T = SCS.IndirectGpu
+    else
+        T = SCS.Direct
+    end
+
+    options = [(a,b) for (a,b) in options if a≠:lin_solver]
+
     data = create_scs_data(m, n, A, b, c; options...)
     cone = create_scs_cone(f, l, q, qsize, s, ssize, ep, ed, p, psize)
 
