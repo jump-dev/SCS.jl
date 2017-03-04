@@ -11,7 +11,7 @@ using Base.Test
 using MathProgBase
 using SCS
 
-for solver in [SCSSolver(), SCSSolver(lin_solver="indirect")]
+for solver in [SCSSolver(), SCSSolver(linearsolver=SCS.Indirect)]
     objtol = 1e-4
     primaltol = 1e-4
 

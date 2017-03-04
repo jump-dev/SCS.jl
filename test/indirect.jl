@@ -3,7 +3,7 @@ using Base.Test
 
 # Solve a trivial problem
 A = reshape([1.0],(1,1))
-solution = SCS_solve(1, 1, A, [1.0], [1.0], 1, 0, [0], 0, [0], 0, 0, 0; lin_solver="indirect");
+solution = SCS_solve(1, 1, A, [1.0], [1.0], 1, 0, [0], 0, [0], 0, 0, 0; linearsolver=SCS.Indirect);
 @assert solution.ret_val == 1
 
 # Solve the same problem from the low-level interface
@@ -45,7 +45,7 @@ function feasible_basic_conic_indirect()
 
     A = SparseMatrixCSC(m, n, colptr + 1, rowval + 1, vec(values))
 
-    sol = SCS_solve(m, n, A, b, c, f, l, q, qsize, s, ssize, ep, ed; lin_solver="indirect")
+    sol = SCS_solve(m, n, A, b, c, f, l, q, qsize, s, ssize, ep, ed; linearsolver=SCS.Indirect)
     @test sol.ret_val == 1
 end
 
@@ -73,7 +73,7 @@ function feasible_exponential_conic_indirect()
 
     A = SparseMatrixCSC(m, n, colptr + 1, rowval + 1, vec(values))
 
-    sol = SCS_solve(m, n, A, b, c, f, l, q, qsize, s, ssize, ep, ed; lin_solver="indirect")
+    sol = SCS_solve(m, n, A, b, c, f, l, q, qsize, s, ssize, ep, ed; linearsolver=SCS.Indirect)
     @assert sol.ret_val == 1
 end
 
@@ -101,7 +101,7 @@ function feasible_sdp_conic_indirect()
 
     A = SparseMatrixCSC(m, n, colptr + 1, rowval + 1, vec(values))
 
-    sol = SCS_solve(m, n, A, b, c, f, l, q, qsize, s, ssize, ep, ed; lin_solver="indirect")
+    sol = SCS_solve(m, n, A, b, c, f, l, q, qsize, s, ssize, ep, ed; linearsolver=SCS.Indirect)
     @test sol.ret_val == 1
 end
 
@@ -130,7 +130,7 @@ function feasible_pow_conic_indirect()
 
     A = SparseMatrixCSC(m, n, colptr + 1, rowval + 1, vec(values))
 
-    sol = SCS_solve(m, n, A, b, c, f, l, q, qsize, s, ssize, ep, ed, p, psize; lin_solver="indirect")
+    sol = SCS_solve(m, n, A, b, c, f, l, q, qsize, s, ssize, ep, ed, p, psize; linearsolver=SCS.Indirect)
     @test sol.ret_val == 1
 end
 

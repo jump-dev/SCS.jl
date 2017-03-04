@@ -19,7 +19,7 @@ A = [1.0 1.0 0.0 0.0 0.0;
 collb = [0.0, 0.0, 0.0, 0.0, 0.0]
 obj   = [3.0, 4.0, 4.0, 9.0, 5.0]
 rowub = [ 5.0,  3.0,  9.0]
-for s in [SCSSolver(), SCSSolver(lin_solver="indirect")]
+for s in [SCSSolver(), SCSSolver(linearsolver=SCS.Indirect)]
     m = MathProgBase.ConicModel(s)
     MathProgBase.loadproblem!(m, -obj, A, rowub, [(:NonNeg,1:3)],[(:NonNeg,1:5)])
     MathProgBase.optimize!(m)
@@ -27,7 +27,7 @@ for s in [SCSSolver(), SCSSolver(lin_solver="indirect")]
 end
 
 # With eps = 1e-8, solution should be far more accurate
-for s in [SCSSolver(eps=1e-8), SCSSolver(eps=1e-8, lin_solver="indirect")]
+for s in [SCSSolver(eps=1e-8), SCSSolver(eps=1e-8, linearsolver=SCS.Indirect)]
     m = MathProgBase.ConicModel(s)
     MathProgBase.loadproblem!(m, -obj, A, rowub, [(:NonNeg,1:3)],[(:NonNeg,1:5)])
     MathProgBase.optimize!(m)
