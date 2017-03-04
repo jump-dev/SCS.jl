@@ -147,8 +147,8 @@ function SCS_solve(m::Int, n::Int, A::SCSVecOrMatOrSparse, b::Array{Float64,},
         s = zeros(m)
     end
     solution = SCSSolution(pointer(x), pointer(y), pointer(s))
-    status, solution, info, p_work = SCS_solve(data, cone, solution)
-    SCS_finish(p_work)
+    status, solution, info, p_work = SCS_solve(T, data, cone, solution)
+    SCS_finish(T, p_work)
     return Solution(x, y, s, status)
 
 end
