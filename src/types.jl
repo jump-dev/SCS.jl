@@ -104,3 +104,5 @@ type Solution
         end
     end
 end
+immutable Direct end
+immutable Indirect end
