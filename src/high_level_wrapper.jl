@@ -124,15 +124,9 @@ function SCS_solve(m::Int, n::Int, A::SCSVecOrMatOrSparse, b::Array{Float64,},
         slack::Vector{Float64}=Float64[]; 
         options...)
 
-    symbols = [s[1] for s in options]
-    if :linearsolver in symbols
-        if (:linearsolver, SCS.Direct) in options
-            T = SCS.Direct
-        elseif (:linearsolver, SCS.Indirect) in options
-            T = SCS.Indirect
-        else
-            throw(ArgumentError("linearsolver keyword arg must be $(SCS.Direct), or $(SCS.Indirect)"))
-        end
+    options_dict = Dict(options)
+    if :linearsolver in keys(options_dict)
+        T = options_dict[:linearsolver]
         options = [(a,b) for (a,b) in options if a≠:linearsolver]
     else
         T = SCS.Direct
