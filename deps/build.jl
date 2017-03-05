@@ -51,10 +51,9 @@ if blasvendor == :openblas64
 end
 if blasvendor == :mkl
     if Base.USE_BLAS64
-        cflags = "$cflags -DMKL_ILP64 -m64 -DBLAS64"
+        cflags = "$cflags -DMKL_ILP64 -DBLAS64"
         ldflags = "$ldflags -lmkl_intel_ilp64"
     else
-        cflags = "$cflags -m32"
         ldflags = "$ldflags -lmkl_intel"
     end
     cflags = "$cflags -fopenmp"
