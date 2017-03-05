@@ -4,14 +4,14 @@ using BinDeps
 
 blasvendor = Base.BLAS.vendor()
 
+libnames = ["libscsdir", "libscsindir"]
+
 if (is_apple() ? (blasvendor == :openblas64) : false)
-    aliases = ["libscsdir64"]
+    aliases = [libname*"64" for libname in libnames]
 else
-    aliases = ["libscsdir"]
+    aliases = libnames
 end
 
-
-libnames = ["libscsdir", "libscsindir"]
 scs = library_dependency("scs", aliases=[libnames[1]])
 scsindir = library_dependency("scsindir", aliases=[libnames[2]])
 
@@ -68,13 +68,13 @@ provides(SimpleBuild,
     (@build_steps begin
         GetSources(scs)
         CreateDirectory(joinpath(prefix, "lib"))
-        FileRule(joinpath(prefix, "lib", libnames[1]), 
+        FileRule(joinpath(prefix, "lib", libnames[1]),
             @build_steps begin
                 ChangeDirectory(srcdir)
                 setenv(`make out/$(libnames[1])`, ENV2)
                 `mv out/$(libnames[1]) $prefix/lib`
             end)
-        FileRule(joinpath(prefix, "lib", libnames[2]), 
+        FileRule(joinpath(prefix, "lib", libnames[2]),
             @build_steps begin
                 ChangeDirectory(srcdir)
                 setenv(`make out/$(libnames[2])`, ENV2)
