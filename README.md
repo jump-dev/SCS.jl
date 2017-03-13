@@ -82,7 +82,7 @@ The problem data are
 - `ep` is the number of primal exponential cones
 - `ed` is the number of dual exponential cones
 - `p` is the array of power cone parameters
-- `options` is a dictionary of options (see below).
+- `options` is a dictionary of options (see above).
 
 The function is
 
