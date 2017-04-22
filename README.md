@@ -147,6 +147,7 @@ println(getvalue(take))
 # [Silver] = 0.4666851698368782
 ```
 
-### Note on Multithreading
-On Linux, SCS.jl will build the SCS libraries with the support of OpenMP, i.e. multithreading. To allow usage of multiple threads set `OMP_NUM_THREADS` env variable to the desired number (roughly the number of physical cores).
-However, the usage of OpenMP threads in BLAS (hence in SCS) will be disabled as soon as a worker process is spawned, see function [`addprocs`](https://github.com/JuliaLang/julia/blob/v0.5.1/base/multi.jl#L1655). You can override this by calling `BLAS.set_num_threads` after the workers pool has been populated.
+### Note on Multi-threading
+Each iteration of SCS consists of two phases: solving the system of linear equations and the projection to cone. Multi-threading in the first phase requires linking of the SCSindirect library to OpenMP, which is performed by default during the internal build (on Linux). To allow usage of multiple threads set `OMP_NUM_THREADS` env variable to the desired number (roughly the number of physical cores).
+
+The use of multiple threads in the second phase depends on the Blas implementation. Note that, the usage of OpenMP threads in Blas  will be disabled as soon as a worker process is spawned, see function [`addprocs`](https://github.com/JuliaLang/julia/blob/v0.5.1/base/multi.jl#L1655). You can override this by calling `BLAS.set_num_threads` on each worker after workers pool has been populated.
