@@ -57,7 +57,7 @@ if blasvendor == :mkl
         ldflags = "$ldflags -lmkl_intel"
     end
     cflags = "$cflags -fopenmp"
-    ldflags = "$ldflags -lmkl_gnu_thread -lmkl_rt -lmkl_core -lgomp"
+    ldflags = "$ldflags -lmkl_gnu_thread -lmkl_rt -lmkl_core"
 end
 
 ENV2 = copy(ENV)
