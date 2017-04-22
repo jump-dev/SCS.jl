@@ -59,6 +59,9 @@ if blasvendor == :mkl
     ldflags = "$ldflags -lmkl_gnu_thread -lmkl_rt -lmkl_core"
 end
 
+cflags = "$cflags -DOPENMP -fopenmp"
+ldflags = "$ldflags -lgomp"
+
 ENV2 = copy(ENV)
 ENV2["LDFLAGS"] = ldflags
 ENV2["CFLAGS"] = cflags
