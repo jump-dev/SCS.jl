@@ -439,5 +439,5 @@ function setwarmstart!(m::SCSMathProgModel, primal_sol; kwargs...)
 end
 
 function setbvec!(m::SCSMathProgModel, b::Vector{Float64})
-    m.b[row_map_ind] = b
+    m.b[m.row_map_ind] = b
 end
