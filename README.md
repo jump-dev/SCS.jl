@@ -148,4 +148,5 @@ println(getvalue(take))
 ```
 
 ### Note on Multithreading
-SCS libraries will make use of multithreading through calls to (multithreaded) BLAS. However, the usage of OpenMP threads in BLAS (hence in SCS) will be disabled as soon as a worker process is spawned, see function [`addprocs`](https://github.com/JuliaLang/julia/blob/v0.5.1/base/multi.jl#L1655). You can override this by calling `BLAS.set_num_threads` after the workers pool has been populated.
+On Linux, SCS.jl will build the SCS libraries with the support of OpenMP, i.e. multithreading. To allow usage of multiple threads set `OMP_NUM_THREADS` env variable to the desired number (roughly the number of physical cores).
+However, the usage of OpenMP threads in BLAS (hence in SCS) will be disabled as soon as a worker process is spawned, see function [`addprocs`](https://github.com/JuliaLang/julia/blob/v0.5.1/base/multi.jl#L1655). You can override this by calling `BLAS.set_num_threads` after the workers pool has been populated.
