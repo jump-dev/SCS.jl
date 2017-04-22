@@ -437,3 +437,7 @@ function setwarmstart!(m::SCSMathProgModel, primal_sol; kwargs...)
     length(m.slack) == nconstr || (m.slack = zeros(nconstr))
     m
 end
+
+function setbvec!(m::SCSMathProgModel, b::Vector{Float64})
+    m.b[row_map_ind] = b
+end
