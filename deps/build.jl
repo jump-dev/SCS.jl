@@ -42,22 +42,23 @@ srcdir = joinpath(BinDeps.depsdir(scs), "src", "scs-$version/")
 libnames = [libname*".$(Libdl.dlext)" for libname in libnames]
 
 ldflags = ""
+
 if is_apple()
     ldflags = "$ldflags -undefined suppress -flat_namespace"
 end
+
 cflags = "-DCOPYAMATRIX -DDLONG -DLAPACK_LIB_FOUND -DCTRLC=1"
+
 if blasvendor == :openblas64
     cflags = "$cflags -DBLAS64 -DBLASSUFFIX=_64_"
-end
-if blasvendor == :mkl
+elseif blasvendor == :mkl
     if Base.USE_BLAS64
         cflags = "$cflags -DMKL_ILP64 -DBLAS64"
         ldflags = "$ldflags -lmkl_intel_ilp64"
     else
         ldflags = "$ldflags -lmkl_intel"
     end
-    cflags = "$cflags -fopenmp"
-    ldflags = "$ldflags -lmkl_gnu_thread -lmkl_rt -lmkl_core -lgomp"
+    ldflags = "$ldflags -lmkl_gnu_thread -lmkl_rt -lmkl_core"
 end
 
 ENV2 = copy(ENV)
