@@ -7,9 +7,7 @@ blasvendor = Base.BLAS.vendor()
 libnames = ["libscsdir", "libscsindir"]
 
 if (is_apple() ? (blasvendor == :openblas64) : false)
-    aliases = [libname*"64" for libname in libnames]
-else
-    aliases = libnames
+    libnames = [libname*"64" for libname in libnames]
 end
 
 scs = library_dependency("scs", aliases=[libnames[1]])
