@@ -37,8 +37,6 @@ provides(Binaries, URI("https://cache.julialang.org/https://bintray.com/artifact
 prefix = joinpath(BinDeps.depsdir(scs), "usr")
 srcdir = joinpath(BinDeps.depsdir(scs), "src", "scs-$version/")
 
-libnames = [libname*".$(Libdl.dlext)" for libname in libnames]
-
 ldflags = ""
 if is_apple()
     ldflags = "$ldflags -undefined suppress -flat_namespace"
@@ -62,21 +60,23 @@ ENV2 = copy(ENV)
 ENV2["LDFLAGS"] = ldflags
 ENV2["CFLAGS"] = cflags
 
+libnames_full = [libname*".$(Libdl.dlext)" for libname in libnames]
+
 provides(SimpleBuild,
     (@build_steps begin
         GetSources(scs)
         CreateDirectory(joinpath(prefix, "lib"))
-        FileRule(joinpath(prefix, "lib", libnames[1]),
+        FileRule(joinpath(prefix, "lib", libnames_full[1]),
             @build_steps begin
                 ChangeDirectory(srcdir)
-                setenv(`make out/$(libnames[1])`, ENV2)
-                `mv out/$(libnames[1]) $prefix/lib`
+                setenv(`make out/$(libnames_full[1])`, ENV2)
+                `mv out/$(libnames_full[1]) $prefix/lib`
             end)
-        FileRule(joinpath(prefix, "lib", libnames[2]),
+        FileRule(joinpath(prefix, "lib", libnames_full[2]),
             @build_steps begin
                 ChangeDirectory(srcdir)
-                setenv(`make out/$(libnames[2])`, ENV2)
-                `mv out/$(libnames[2]) $prefix/lib`
+                setenv(`make out/$(libnames_full[2])`, ENV2)
+                `mv out/$(libnames_full[2]) $prefix/lib`
             end)
     end),
     [scs, scsindir], os=:Unix)
