@@ -43,6 +43,8 @@ normalize       # boolean, heuristic data rescaling: 1 (default)
 scale           # if normalized, rescales by this factor: 5 (default)
 warm_start      # boolean, warm start (put initial guess in Sol struct): 0 (default)
 ```
+Additionally, You may select different linear solver through `linearsolver` keyword. Possible values: `SCS.Direct` (the default), `SCS.Indirect`.
+
 To use these settings you can either pass them as keyword arguments to `SCS_solve` (high level interface) or as arguments to the `SCSSolver` constructor (MathProgBase interface), e.g.
 ```julia
 # Direct
