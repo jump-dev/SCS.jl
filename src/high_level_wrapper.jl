@@ -127,7 +127,7 @@ function SCS_solve(m::Int, n::Int, A::SCSVecOrMatOrSparse, b::Array{Float64,},
     data = create_scs_data(m, n, A, b, c; options...)
     cone = create_scs_cone(f, l, q, qsize, s, ssize, ep, ed, p, psize)
 
-    if (:warm_start, true) in options
+    if (:warm_start, true) in options && length(primal_sol) == n && length(dual_sol) == m && length(slack) == m
         x = primal_sol
         y = dual_sol
         s = slack
