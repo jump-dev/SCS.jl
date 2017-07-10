@@ -44,6 +44,7 @@ type SCSMathProgModel <: AbstractConicModel
     orig_sense::Symbol                # Original objective sense
     # Post-solve
     solve_stat::Symbol
+    solve_time::Float64
     obj_val::Float64
     primal_sol::Vector{Float64}
     dual_sol::Vector{Float64}
@@ -57,7 +58,7 @@ end
 
 SCSMathProgModel(;kwargs...) = SCSMathProgModel(0, 0, 0, 0, spzeros(0, 0), Int[], Int[],
                                       0, 0, Int[], 0, Int[], 0, 0, 0,
-                                      :Min, :NotSolved, 0.0, Float64[], Float64[],
+                                      :Min, :NotSolved, 0.0, 0.0, Float64[], Float64[],
                                       Float64[], Int[], Symbol[],
                                       Int[], Symbol[], kwargs)
 
@@ -87,9 +88,11 @@ end
 =#
 
 function optimize!(m::SCSMathProgModel)
+    t = time()
     solution = SCS_solve(m.m, m.n, m.A, m.b, m.c, m.f, m.l, m.q, m.qsize,
                          m.s, m.ssize, m.ep, m.ed,
                          m.primal_sol, m.dual_sol, m.slack; m.options...)
+    m.solve_time = time() - t
 
     m.solve_stat = solution.status
     m.primal_sol = solution.x
@@ -441,3 +444,5 @@ end
 function setbvec!(m::SCSMathProgModel, b::Vector{Float64})
     m.b[m.row_map_ind] = b
 end
+
+getsolvetime(m::SCSMathProgModel) = m.solve_time
