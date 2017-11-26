@@ -13,9 +13,9 @@ function create_scs_matrix(m::Int, n::Int, A::SCSVecOrMatOrSparse)
 end
 
 function create_scs_settings(normalize=1::Int, scale=converter(Cdouble, 5.0)::Cdouble, rho_x=convert(Cdouble,1e-3)::Cdouble,
-                        max_iters=2500::Int, eps=converter(Cdouble, 1e-3)::Cdouble, alpha=convert(Cdouble, 1.8)::Cdouble,
-                        cg_rate=convert(Cdouble,2)::Cdouble, verbose=1::Int, warm_start=0::Int)
-    return SCSSettings(normalize, scale, rho_x, max_iters, eps, alpha, cg_rate, verbose, warm_start)
+                        max_iters=5000::Int, eps=converter(Cdouble, 1e-5)::Cdouble, alpha=convert(Cdouble, 1.8)::Cdouble,
+                        cg_rate=convert(Cdouble,2)::Cdouble, verbose=1::Int, warm_start=0::Int, acceleration_lookback=20::Int)
+    return SCSSettings(normalize, scale, rho_x, max_iters, eps, alpha, cg_rate, verbose, warm_start, acceleration_lookback)
 end
 
 # Create an SCSData type
@@ -28,16 +28,16 @@ end
 # c is of length n x 1
 # refer to create_scs_cone for K
 function create_scs_data(;m::Int=nothing, n::Int=nothing, A::Ptr{SCSMatrix}=nothing,
-        b::Ptr{Cdouble}=nothing,  c::Ptr{Cdouble}=nothing, max_iters=20000::Int,
-        eps=convert(Cdouble, 1e-4)::Cdouble, alpha=convert(Cdouble, 1.8)::Cdouble,
+        b::Ptr{Cdouble}=nothing,  c::Ptr{Cdouble}=nothing, max_iters=5000::Int,
+        eps=convert(Cdouble, 1e-5)::Cdouble, alpha=convert(Cdouble, 1.8)::Cdouble,
         rho_x=convert(Cdouble, 1e-3)::Cdouble, scale=convert(Cdouble, 5.0)::Cdouble,
         cg_rate=convert(Cdouble, 2)::Cdouble, verbose=1::Int,
-        normalize=1::Int, warm_start=0::Int, options...)
+        normalize=1::Int, warm_start=0::Int, acceleration_lookback=20::Int, options...)
 
     for (k, v) in options
         @eval(($k) = ($v))
     end
-    stgs = create_scs_settings(normalize, scale, rho_x, max_iters, eps, alpha, cg_rate, verbose, warm_start)
+    stgs = create_scs_settings(normalize, scale, rho_x, max_iters, eps, alpha, cg_rate, verbose, warm_start, acceleration_lookback)
     return SCSData(m, n, A, b, c, pointer([stgs]))
 end
 

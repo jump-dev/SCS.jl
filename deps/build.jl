@@ -18,8 +18,8 @@ if is_apple()
     provides(Homebrew.HB, "scs", scs, os = :Darwin)
 end
 
-version = "1.2.6"
-win_version = "1.1.5"
+version = "2.0.0"
+win_version = "2.0.0"
 
 provides(Sources, URI("https://github.com/cvxgrp/scs/archive/v$version.tar.gz"),
     [scs], os=:Unix, unpacked_dir="scs-$version")

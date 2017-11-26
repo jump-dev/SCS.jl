@@ -23,6 +23,7 @@ immutable SCSSettings
     cg_rate::Cdouble # for indirect, tolerance goes down like (1/iter)^cg_rate: 2
     verbose::Int # boolean, write out progress: 1
     warm_start::Int # boolean, warm start (put initial guess in Sol struct): 0
+    acceleration_lookback::Int # boolean, acceleration memory parameter: 20
 end
 
 

@@ -33,15 +33,16 @@ SCS implements the solver-independent [MathProgBase](https://github.com/JuliaOpt
 All SCS solver options can be set through the direct interface(documented below) and through MathProgBase.
 The list of options is defined the [`scs.h` header](https://github.com/cvxgrp/scs/blob/0f9f51d663efd75b9d55d9f6524da75baa498aee/include/scs.h#L30), which we reproduce here:
 ```
-max_iters       # maximum iterations to take: 2500 (default)
-eps             # convergence tolerance: 1e-3 (default)
-alpha           # relaxation parameter: 1.8 (default)
-rho_x           # x equality constraint scaling: 1e-3 (default)
-cg_rate         # for indirect, tolerance goes down like (1/iter)^cg_rate: 2 (default)
-verbose         # boolean, write out progress: 1 (default)
-normalize       # boolean, heuristic data rescaling: 1 (default)
-scale           # if normalized, rescales by this factor: 5 (default)
-warm_start      # boolean, warm start (put initial guess in Sol struct): 0 (default)
+max_iters               # maximum iterations to take: 2500 (default)
+eps                     # convergence tolerance: 1e-3 (default)
+alpha                   # relaxation parameter: 1.8 (default)
+rho_x                   # x equality constraint scaling: 1e-3 (default)
+cg_rate                 # for indirect, tolerance goes down like (1/iter)^cg_rate: 2 (default)
+verbose                 # boolean, write out progress: 1 (default)
+normalize               # boolean, heuristic data rescaling: 1 (default)
+scale                   # if normalized, rescales by this factor: 5 (default)
+warm_start              # boolean, warm start (put initial guess in Sol struct): 0 (default)
+acceleration_lookback   # int, acceleration memory parameter: 20 (default)
 ```
 To use these settings you can either pass them as keyword arguments to `SCS_solve` (high level interface) or as arguments to the `SCSSolver` constructor (MathProgBase interface), e.g.
 ```julia
