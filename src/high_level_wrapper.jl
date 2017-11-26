@@ -12,7 +12,7 @@ function create_scs_matrix(m::Int, n::Int, A::SCSVecOrMatOrSparse)
     return SCSMatrix(pointer(values), pointer(rowval), pointer(colptr), m, n)
 end
 
-function create_scs_settings(normalize=1::Int, scale=converter(Cdouble, 5.0)::Cdouble, rho_x=convert(Cdouble,1e-3)::Cdouble,
+function create_scs_settings(normalize=1::Int, scale=converter(Cdouble, 1.0)::Cdouble, rho_x=convert(Cdouble,1e-3)::Cdouble,
                         max_iters=5000::Int, eps=converter(Cdouble, 1e-5)::Cdouble, alpha=convert(Cdouble, 1.8)::Cdouble,
                         cg_rate=convert(Cdouble,2)::Cdouble, verbose=1::Int, warm_start=0::Int, acceleration_lookback=20::Int)
     return SCSSettings(normalize, scale, rho_x, max_iters, eps, alpha, cg_rate, verbose, warm_start, acceleration_lookback)

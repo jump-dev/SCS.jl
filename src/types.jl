@@ -15,7 +15,7 @@ end
 
 immutable SCSSettings
     normalize::Int # boolean, heuristic data rescaling: 1
-    scale::Cdouble # if normalized, rescales by this factor: 5
+    scale::Cdouble # if normalized, rescales by this factor: 1
     rho_x::Cdouble # x equality constraint scaling: 1e-3
     max_iters::Int # maximum iterations to take: 2500
     eps::Cdouble # convergence tolerance: 1e-3

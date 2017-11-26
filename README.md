@@ -40,7 +40,7 @@ rho_x                   # x equality constraint scaling: 1e-3 (default)
 cg_rate                 # for indirect, tolerance goes down like (1/iter)^cg_rate: 2 (default)
 verbose                 # boolean, write out progress: 1 (default)
 normalize               # boolean, heuristic data rescaling: 1 (default)
-scale                   # if normalized, rescales by this factor: 5 (default)
+scale                   # if normalized, rescales by this factor: 1 (default)
 warm_start              # boolean, warm start (put initial guess in Sol struct): 0 (default)
 acceleration_lookback   # int, acceleration memory parameter: 20 (default)
 ```
