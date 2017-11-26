@@ -4,14 +4,14 @@ using BinDeps
 
 blasvendor = Base.BLAS.vendor()
 
+libnames = ["libscsdir", "libscsindir"]
 
 if (is_apple() ? (blasvendor == :openblas64) : false)
-    aliases = ["libscsdir64"]
-else
-    aliases = ["libscsdir"]
+    libnames = [libname*"64" for libname in libnames]
 end
 
-scs = library_dependency("scs", aliases=aliases)
+scs = library_dependency("scs", aliases=[libnames[1]])
+scsindir = library_dependency("scsindir", aliases=[libnames[2]])
 
 if is_apple()
     using Homebrew
@@ -37,40 +37,49 @@ provides(Binaries, URI("https://cache.julialang.org/https://bintray.com/artifact
 prefix = joinpath(BinDeps.depsdir(scs), "usr")
 srcdir = joinpath(BinDeps.depsdir(scs), "src", "scs-$version/")
 
-libname = "libscsdir.$(Libdl.dlext)"
-
 ldflags = ""
+
 if is_apple()
     ldflags = "$ldflags -undefined suppress -flat_namespace"
 end
+
 cflags = "-DCOPYAMATRIX -DDLONG -DLAPACK_LIB_FOUND -DCTRLC=1"
+
 if blasvendor == :openblas64
     cflags = "$cflags -DBLAS64 -DBLASSUFFIX=_64_"
-end
-if blasvendor == :mkl
+elseif blasvendor == :mkl
     if Base.USE_BLAS64
         cflags = "$cflags -DMKL_ILP64 -DBLAS64"
         ldflags = "$ldflags -lmkl_intel_ilp64"
     else
         ldflags = "$ldflags -lmkl_intel"
     end
-    cflags = "$cflags -fopenmp"
-    ldflags = "$ldflags -lmkl_gnu_thread -lmkl_rt -lmkl_core -lgomp"
+    ldflags = "$ldflags -lmkl_gnu_thread -lmkl_rt -lmkl_core"
 end
 
 ENV2 = copy(ENV)
 ENV2["LDFLAGS"] = ldflags
 ENV2["CFLAGS"] = cflags
 
+libnames_full = [libname*".$(Libdl.dlext)" for libname in libnames]
+
 provides(SimpleBuild,
     (@build_steps begin
         GetSources(scs)
         CreateDirectory(joinpath(prefix, "lib"))
-        FileRule(joinpath(prefix, "lib", libname), @build_steps begin
-            ChangeDirectory(srcdir)
-            setenv(`make out/$libname`, ENV2)
-            `mv out/$libname $prefix/lib`
-        end)
-    end), [scs], os=:Unix)
+        FileRule(joinpath(prefix, "lib", libnames_full[1]),
+            @build_steps begin
+                ChangeDirectory(srcdir)
+                setenv(`make out/$(libnames_full[1])`, ENV2)
+                `mv out/$(libnames_full[1]) $prefix/lib`
+            end)
+        FileRule(joinpath(prefix, "lib", libnames_full[2]),
+            @build_steps begin
+                ChangeDirectory(srcdir)
+                setenv(`make out/$(libnames_full[2])`, ENV2)
+                `mv out/$(libnames_full[2]) $prefix/lib`
+            end)
+    end),
+    [scs, scsindir], os=:Unix)
 
-@BinDeps.install Dict([(:scs, :scs)])
+@BinDeps.install Dict(:scs => :scs, :scsindir => :scsindir)

@@ -1,4 +1,5 @@
 tests = ["direct.jl",
+         "indirect.jl",
          "mpb_linear.jl",
          "options.jl"]
 

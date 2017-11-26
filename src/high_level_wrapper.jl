@@ -124,6 +124,14 @@ function SCS_solve(m::Int, n::Int, A::SCSVecOrMatOrSparse, b::Array{Float64,},
         slack::Vector{Float64}=Float64[]; 
         options...)
 
+    options_dict = Dict(options)
+    if :linearsolver in keys(options_dict)
+        T = options_dict[:linearsolver]
+        options = [(a,b) for (a,b) in options if a≠:linearsolver]
+    else
+        T = SCS.Direct
+    end
+
     data = create_scs_data(m, n, A, b, c; options...)
     cone = create_scs_cone(f, l, q, qsize, s, ssize, ep, ed, p, psize)
 
@@ -137,8 +145,8 @@ function SCS_solve(m::Int, n::Int, A::SCSVecOrMatOrSparse, b::Array{Float64,},
         s = zeros(m)
     end
     solution = SCSSolution(pointer(x), pointer(y), pointer(s))
-    status, solution, info, p_work = SCS_solve(data, cone, solution)
-    SCS_finish(p_work)
+    status, solution, info, p_work = SCS_solve(T, data, cone, solution)
+    SCS_finish(T, p_work)
     return Solution(x, y, s, status)
 
 end
