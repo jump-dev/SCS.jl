@@ -36,9 +36,7 @@ type SCSMathProgModel <: AbstractConicModel
     f::Int                            # number of zero cones
     l::Int                            # number of linear cones { x | x >= 0}
     q::Vector{Int}                    # Array of SOC sizes
-    qsize::Int                        # Length of q
     s::Vector{Int}                    # Array of SDP sizes
-    ssize::Int                        # Length of s
     ep::Int                           # Number of primal exponential cones
     ed::Int                           # Number of dual exponential cones
     orig_sense::Symbol                # Original objective sense
@@ -57,7 +55,7 @@ type SCSMathProgModel <: AbstractConicModel
 end
 
 SCSMathProgModel(;kwargs...) = SCSMathProgModel(0, 0, 0, 0, spzeros(0, 0), Int[], Int[],
-                                      0, 0, Int[], 0, Int[], 0, 0, 0,
+                                      0, 0, Int[], Int[], 0, 0,
                                       :Min, :NotSolved, 0.0, 0.0, Float64[], Float64[],
                                       Float64[], Int[], Symbol[],
                                       Int[], Symbol[], kwargs)
@@ -89,8 +87,8 @@ end
 
 function optimize!(m::SCSMathProgModel)
     t = time()
-    solution = SCS_solve(m.m, m.n, m.A, m.b, m.c, m.f, m.l, m.q, m.qsize,
-                         m.s, m.ssize, m.ep, m.ed,
+    solution = SCS_solve(m.m, m.n, m.A, m.b, m.c, m.f, m.l, m.q,
+                         m.s, m.ep, m.ed,
                          m.primal_sol, m.dual_sol, m.slack; m.options...)
     m.solve_time = time() - t
 
@@ -375,9 +373,7 @@ function loadproblem!(model::SCSMathProgModel, c, A::SparseMatrixCSC, b, constr_
     model.b             = scs_b[:]
     model.c             = c[:]
     model.q             = q
-    model.qsize         = length(q)
     model.s             = s
-    model.ssize         = length(s)
     model.ep            = ep
     model.ed            = ed
     model.orig_sense    = :Min
