@@ -25,10 +25,10 @@ provides(Sources, URI("https://github.com/cvxgrp/scs/archive/v$version.tar.gz"),
     [scs], os=:Unix, unpacked_dir="scs-$version")
 
 # Windows binaries built in Cygwin as follows:
-# CFLAGS="-DLONG -DCOPYAMATRIX -DUSE_LAPACK -DCTRLC=1 -DBLAS64 -DBLASSUFFIX=_64_" LDFLAGS="-L$HOME/julia/usr/bin -lopenblas64_" make CC=x86_64-w64-mingw32-gcc out/libscsdir.dll
+# CFLAGS="-DDLONG -DCOPYAMATRIX -DUSE_LAPACK -DCTRLC=1 -DBLAS64 -DBLASSUFFIX=_64_" LDFLAGS="-L$HOME/julia/usr/bin -lopenblas64_" make CC=x86_64-w64-mingw32-gcc out/libscsdir.dll
 # mv out bin64
 # make clean
-# CFLAGS="-DLONG -DCOPYAMATRIX -DUSE_LAPACK -DCTRLC=1" LDFLAGS="-L$HOME/julia32/usr/bin -lopenblas" make CC=i686-w64-mingw32-gcc out/libscsdir.dll
+# CFLAGS="-DDLONG -DCOPYAMATRIX -DUSE_LAPACK -DCTRLC=1" LDFLAGS="-L$HOME/julia32/usr/bin -lopenblas" make CC=i686-w64-mingw32-gcc out/libscsdir.dll
 # mv out bin32
 provides(Binaries, URI("https://cache.julialang.org/https://bintray.com/artifact/download/tkelman/generic/scs-$win_version-r2.7z"),
     [scs], unpacked_dir="bin$(Sys.WORD_SIZE)", os = :Windows,
@@ -43,7 +43,7 @@ ldflags = ""
 if is_apple()
     ldflags = "$ldflags -undefined suppress -flat_namespace"
 end
-cflags = "-DCOPYAMATRIX -DLONG -DUSE_LAPACK -DCTRLC=1"
+cflags = "-DCOPYAMATRIX -DDLONG -DUSE_LAPACK -DCTRLC=1"
 if blasvendor == :openblas64
     cflags = "$cflags -DBLAS64 -DBLASSUFFIX=_64_"
 end
