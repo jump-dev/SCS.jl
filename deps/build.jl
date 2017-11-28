@@ -68,7 +68,7 @@ provides(SimpleBuild,
         CreateDirectory(joinpath(prefix, "lib"))
         FileRule(joinpath(prefix, "lib", libname), @build_steps begin
             ChangeDirectory(srcdir)
-            setenv(`make out/$libname`, ENV2)
+            setenv(`make BLASLDFLAGS="" `out/$libname`, ENV2)
             `mv out/$libname $prefix/lib`
         end)
     end), [scs], os=:Unix)
