@@ -4,7 +4,7 @@ export SCSMatrix, SCSData, SCSSettings, SCSSolution, SCSInfo, SCSCone, SCSVecOrM
 SCSVecOrMatOrSparse = Union{VecOrMat, SparseMatrixCSC{Float64,Int}}
 
 
-immutable SCSMatrix
+struct SCSMatrix
     values::Ptr{Cdouble}
     rowval::Ptr{Int}
     colptr::Ptr{Int}
@@ -13,7 +13,7 @@ immutable SCSMatrix
 end
 
 
-immutable SCSSettings
+struct SCSSettings
     normalize::Int # boolean, heuristic data rescaling: 1
     scale::Cdouble # if normalized, rescales by this factor: 1
     rho_x::Cdouble # x equality constraint scaling: 1e-3
@@ -27,7 +27,7 @@ immutable SCSSettings
 end
 
 
-immutable SCSData
+struct SCSData
     # A has m rows, n cols
     m::Int
     n::Int
@@ -39,14 +39,14 @@ immutable SCSData
 end
 
 
-immutable SCSSolution
+struct SCSSolution
     x::Ptr{Void}
     y::Ptr{Void}
     s::Ptr{Void}
 end
 
 
-immutable SCSInfo
+struct SCSInfo
     iter::Int
     # We need to allocate 32 bytes for a character string, so we allocate 256 bits
     # of integer instead
@@ -67,7 +67,7 @@ immutable SCSInfo
 end
 
 
-immutable SCSCone
+struct SCSCone
     f::Int # number of linear equality constraints
     l::Int # length of LP cone
     q::Ptr{Int} # array of second-order cone constraints
@@ -90,7 +90,7 @@ const status_map = Dict{Int, Symbol}(
     -4 => :Error
 )
 
-type Solution
+mutable struct Solution
     x::Array{Float64, 1}
     y::Array{Float64, 1}
     s::Array{Float64, 1}
