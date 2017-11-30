@@ -19,7 +19,7 @@ if is_apple()
 end
 
 version = "2.0.2"
-win_version = "2.0.2" # 2.0.* is not yet working on windows
+win_version = "2.0.2"
 
 provides(Sources, URI("https://github.com/cvxgrp/scs/archive/v$version.tar.gz"),
     [scs], os=:Unix, unpacked_dir="scs-$version")
