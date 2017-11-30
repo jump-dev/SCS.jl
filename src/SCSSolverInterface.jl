@@ -20,12 +20,12 @@ end
 #############################################################################
 # Define the MPB Solver and Model objects
 export SCSSolver
-immutable SCSSolver <: AbstractMathProgSolver
+struct SCSSolver <: AbstractMathProgSolver
     options
 end
 SCSSolver(;kwargs...) = SCSSolver(kwargs)
 
-type SCSMathProgModel <: AbstractConicModel
+mutable struct SCSMathProgModel <: AbstractConicModel
     m::Int                            # Number of constraints
     n::Int                            # Number of variables
     input_numconstr::Int
