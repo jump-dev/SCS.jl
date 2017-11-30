@@ -83,9 +83,18 @@ function create_scs_cone(f::Int, l::Int, q::Ptr{Int}, qsize::Int, s::Ptr{Int},
 end
 
 # Refer to comment above
-function create_scs_cone(f::Int, l::Int, q::Array{Int,}, qsize::Int, s::Array{Int,},
-        ssize::Int, ep::Int, ed::Int, p::Array{Float64,}, psize::Int)
-    return SCSCone(f, l, pointer(q), qsize, pointer(s), ssize, ep, ed, pointer(p), psize)
+function create_scs_cone(f::Int, l::Int, q::Array{Int}, s::Array{Int},
+        ep::Int, ed::Int, p::Array{Float64})
+    return SCSCone(f, l, pointer(q), length(q), pointer(s), length(s), ep, ed, pointer(p), length(p))
+end
+_depwarn(f, p) = warn("$f with qsize$(p ? ", ssize and psize" : " and ssize") arguments is deprecated. These arguments are redundant and can simply be removed as they are the length of the corresponding vector.")
+function create_scs_cone(f::Int, l::Int, q::Array{Int}, qsize::Int, s::Array{Int},
+        ssize::Int, ep::Int, ed::Int, p::Array{Float64}, psize::Int)
+    _depwarn("create_scs_cone", true)
+    @assert length(q) == qsize
+    @assert length(s) == ssize
+    @assert length(p) == psize
+    create_scs_cone(f, l, q, s, ep, ed, p)
 end
 
 
@@ -116,16 +125,16 @@ end
 # type Solution with
 # x, y, s, status (ASCII string), ret_val (numerical status)
 #
-function SCS_solve(m::Int, n::Int, A::SCSVecOrMatOrSparse, b::Array{Float64,},
-        c::Array{Float64,}, f::Int, l::Int, q::Array{Int,}, qsize::Int, s::Array{Int,},
-        ssize::Int, ep::Int, ed::Int, p::Array{Float64,}, psize::Int,
+function SCS_solve(m::Int, n::Int, A::SCSVecOrMatOrSparse, b::Array{Float64},
+        c::Array{Float64}, f::Int, l::Int, q::Array{Int}, s::Array{Int},
+        ep::Int, ed::Int, p::Array{Float64},
         primal_sol::Vector{Float64}=Float64[],
         dual_sol::Vector{Float64}=Float64[],
-        slack::Vector{Float64}=Float64[]; 
+        slack::Vector{Float64}=Float64[];
         options...)
 
     data = create_scs_data(m, n, A, b, c; options...)
-    cone = create_scs_cone(f, l, q, qsize, s, ssize, ep, ed, p, psize)
+    cone = create_scs_cone(f, l, q, s, ep, ed, p)
 
     if (:warm_start, true) in options && length(primal_sol) == n && length(dual_sol) == m && length(slack) == m
         x = primal_sol
@@ -144,13 +153,45 @@ function SCS_solve(m::Int, n::Int, A::SCSVecOrMatOrSparse, b::Array{Float64,},
 end
 
 # for legacy API maintenance, sets power cones to zero
-function SCS_solve(m::Int, n::Int, A::SCSVecOrMatOrSparse, b::Array{Float64,},
-        c::Array{Float64,}, f::Int, l::Int, q::Array{Int,}, qsize::Int, s::Array{Int,},
+function SCS_solve(m::Int, n::Int, A::SCSVecOrMatOrSparse, b::Array{Float64},
+        c::Array{Float64}, f::Int, l::Int, q::Array{Int}, s::Array{Int},
+        ep::Int, ed::Int,
+        primal_sol::Vector{Float64}=Float64[],
+        dual_sol::Vector{Float64}=Float64[],
+        slack::Vector{Float64}=Float64[];
+        options...)
+        return SCS_solve(m, n, A, b, c, f, l, q, s,
+        ep, ed, Float64[], primal_sol, dual_sol, slack; options...)
+end
+
+# Deprecated : with length of q, s and p
+
+function SCS_solve(m::Int, n::Int, A::SCSVecOrMatOrSparse, b::Array{Float64},
+        c::Array{Float64}, f::Int, l::Int, q::Array{Int}, qsize::Int, s::Array{Int},
+        ssize::Int, ep::Int, ed::Int, p::Array{Float64}, psize::Int,
+        primal_sol::Vector{Float64}=Float64[],
+        dual_sol::Vector{Float64}=Float64[],
+        slack::Vector{Float64}=Float64[];
+        options...)
+    _depwarn("SCS_solve", true)
+    @assert length(q) == qsize
+    @assert length(s) == ssize
+    @assert length(p) == psize
+    return SCS_solve(m, n, A, b, c, f, l, q, s,
+    ep, ed, p, primal_sol, dual_sol, slack; options...)
+end
+
+# for legacy API maintenance, sets power cones to zero
+function SCS_solve(m::Int, n::Int, A::SCSVecOrMatOrSparse, b::Array{Float64},
+        c::Array{Float64}, f::Int, l::Int, q::Array{Int}, qsize::Int, s::Array{Int},
         ssize::Int, ep::Int, ed::Int,
         primal_sol::Vector{Float64}=Float64[],
         dual_sol::Vector{Float64}=Float64[],
         slack::Vector{Float64}=Float64[];
         options...)
-        return SCS_solve(m, n, A, b, c, f, l, q, qsize, s, ssize,
-        ep, ed, Float64[], 0, primal_sol, dual_sol, slack; options...)
+    _depwarn("SCS_solve", false)
+    @assert length(q) == qsize
+    @assert length(s) == ssize
+    return SCS_solve(m, n, A, b, c, f, l, q, s,
+    ep, ed, Float64[], primal_sol, dual_sol, slack; options...)
 end

@@ -3,14 +3,14 @@ using Base.Test
 
 # Solve a trivial problem
 A = reshape([1.0],(1,1))
-solution = SCS_solve(1, 1, A, [1.0], [1.0], 1, 0, [0], 0, [0], 0, 0, 0);
+solution = SCS_solve(1, 1, A, [1.0], [1.0], 1, 0, Int[], 0, Int[], 0, 0, 0);
 @assert solution.ret_val == 1
 
 # Solve the same problem from the low-level interface
 function low_level_scs()
     A = reshape([1.0],(1,1))
     data = create_scs_data(1, 1, A, [1.0], [1.0])
-    cone = create_scs_cone(1, 0, [0], 0, [0], 0, 0, 0, Float64[], 0)
+    cone = create_scs_cone(1, 0, Int[], 0, Int[], 0, 0, 0, Float64[], 0)
 
     p_work, info = SCS_init(data, cone)
     status, solution, info, p_work = SCS_solve(p_work, data, cone, info)
@@ -29,8 +29,6 @@ function feasible_basic_conic()
 
     f = 0;
     l = 100;
-    qsize = 1;
-    ssize = 0;
     ep = 0
     ed = 0
     q = [12]
@@ -45,7 +43,7 @@ function feasible_basic_conic()
 
     A = SparseMatrixCSC(m, n, colptr + 1, rowval + 1, vec(values))
 
-    sol = SCS_solve(m, n, A, b, c, f, l, q, qsize, s, ssize, ep, ed)
+    sol = SCS_solve(m, n, A, b, c, f, l, q, s, ep, ed)
     @test sol.ret_val == 1
 end
 
@@ -58,8 +56,6 @@ function feasible_exponential_conic()
     m = 71;
     f = 10;
     l = 10;
-    qsize = 5;
-    ssize = 0;
     ep = 10;
     ed = 5;
     q = [0 1 0 2 3]';
@@ -73,7 +69,7 @@ function feasible_exponential_conic()
 
     A = SparseMatrixCSC(m, n, colptr + 1, rowval + 1, vec(values))
 
-    sol = SCS_solve(m, n, A, b, c, f, l, q, qsize, s, ssize, ep, ed)
+    sol = SCS_solve(m, n, A, b, c, f, l, q, s, ep, ed)
     @assert sol.ret_val == 1
 end
 
@@ -87,8 +83,6 @@ function feasible_sdp_conic()
     m = 46;
     f = 3;
     l = 3;
-    qsize = 3;
-    ssize = 3;
     ep = 2;
     ed = 2;
     q = [2 3 4]';
@@ -101,7 +95,7 @@ function feasible_sdp_conic()
 
     A = SparseMatrixCSC(m, n, colptr + 1, rowval + 1, vec(values))
 
-    sol = SCS_solve(m, n, A, b, c, f, l, q, qsize, s, ssize, ep, ed)
+    sol = SCS_solve(m, n, A, b, c, f, l, q, s, ep, ed)
     @test sol.ret_val == 1
 end
 
@@ -114,13 +108,10 @@ function feasible_pow_conic()
     m = 28;
     f = 5;
     l = 5;
-    qsize = 0;
-    ssize = 0;
     ep = 0;
     ed = 0;
     q = Int[];
     s = Int[];
-    psize = 6
     p = [-3.000000e-01 2.500000e-01 7.500000e-01 -4.000000e-01 8.700000e-01 -1.200000e-01]';
     b = [-0.887386390749058451 1.868842541924223610 -0.755288651776904296 0.000000000000000000 0.000000000000000000 0.000000000000000000 -0.242379421582613414 0.000000000000000000 0.000000000000000000 0.000000000000000000 2.000257252427916743 0.841870176542910631 -1.245982120437818974 0.644136460056986104 -0.068037985179701416 0.041769615282582828 1.081088773255733271 1.417941447788496845 0.955133254978043800 2.477002457942629299 0.326964373865085811 0.322926943542406031 0.765172439731569787 1.673745381540497679 0.056224953164704453 0.024308325296160227 -0.492458408194795028 -0.193643481641372683]';
     c = [0.581324380640174887 0.000000000000000000 -1.274914899429569370 1.437959547820705897 0.178499636115030086 -2.834480531039399676 -0.465471220509626749 0.440187271984058437 1.655006387767208542]';
@@ -130,7 +121,7 @@ function feasible_pow_conic()
 
     A = SparseMatrixCSC(m, n, colptr + 1, rowval + 1, vec(values))
 
-    sol = SCS_solve(m, n, A, b, c, f, l, q, qsize, s, ssize, ep, ed, p, psize)
+    sol = SCS_solve(m, n, A, b, c, f, l, q, s, ep, ed, p)
     @test sol.ret_val == 1
 end
 
