@@ -19,7 +19,7 @@ if is_apple()
 end
 
 version = "2.0.2"
-win_version = "2.0.2"
+win_version = "2.0.2" # The windows binaries are not consistent with this version yet.
 
 provides(Sources, URI("https://github.com/cvxgrp/scs/archive/v$version.tar.gz"),
     [scs], os=:Unix, unpacked_dir="scs-$version")
