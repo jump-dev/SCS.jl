@@ -15,7 +15,7 @@ end
 
 immutable SCSSettings
     normalize::Int # boolean, heuristic data rescaling: 1
-    scale::Cdouble # if normalized, rescales by this factor: 5
+    scale::Cdouble # if normalized, rescales by this factor: 1
     rho_x::Cdouble # x equality constraint scaling: 1e-3
     max_iters::Int # maximum iterations to take: 2500
     eps::Cdouble # convergence tolerance: 1e-3
@@ -23,6 +23,7 @@ immutable SCSSettings
     cg_rate::Cdouble # for indirect, tolerance goes down like (1/iter)^cg_rate: 2
     verbose::Int # boolean, write out progress: 1
     warm_start::Int # boolean, warm start (put initial guess in Sol struct): 0
+    acceleration_lookback::Int # boolean, acceleration memory parameter: 20
 end
 
 
