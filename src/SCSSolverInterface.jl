@@ -1,7 +1,6 @@
 #############################################################################
 # SCS.jl
 # Wrapper around the SCS solver https://github.com/cvxgrp/scs
-# See https://github.com/karanveerm/SCS.jl/
 #############################################################################
 # SCSSolverInterface.jl
 # MathProgBase.jl interface for the SCS.jl solver wrapper
@@ -10,6 +9,7 @@
 importall MathProgBase.SolverInterface
 import Base.convert
 
+# TODO: don't add to Base.convert!
 function convert(x::Type{Int}, y::UnitRange{Int})
     if length(y) == 1
         return y[1]
@@ -88,7 +88,7 @@ end
 function optimize!(m::SCSMathProgModel)
     t = time()
     solution = SCS_solve(m.m, m.n, m.A, m.b, m.c, m.f, m.l, m.q,
-                         m.s, m.ep, m.ed,
+                         m.s, m.ep, m.ed, Float64[],
                          m.primal_sol, m.dual_sol, m.slack; m.options...)
     m.solve_time = time() - t
 
