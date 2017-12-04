@@ -48,13 +48,9 @@ function SCS_solve(m::Int, n::Int, A::SCSVecOrMatOrSparse, b::Array{Float64},
     managed_matrix = ManagedSCSMatrix(m, n, A)
     matrix = Ref(SCSMatrix(managed_matrix))
     settings = Ref(SCSSettings(;options...))
-
     data = Ref(SCSData(m, n, Base.unsafe_convert(Ptr{SCSMatrix}, matrix), pointer(b), pointer(c), Base.unsafe_convert(Ptr{SCSSettings},settings)))
-
     cone = Ref(SCSCone(f, l, q, s, ep, ed, p))
-
     info = Ref(SCSInfo())
-    p_work = SCS_init(data, cone, info)
 
     if (:warm_start, true) in options && length(primal_sol) == n && length(dual_sol) == m && length(slack) == m
         x = primal_sol
@@ -65,13 +61,14 @@ function SCS_solve(m::Int, n::Int, A::SCSVecOrMatOrSparse, b::Array{Float64},
         y = zeros(m)
         s = zeros(m)
     end
-
     solution = SCSSolution(pointer(x), pointer(y), pointer(s))
 
     @compat_gc_preserve managed_matrix matrix settings b c q s p begin
+        p_work = SCS_init(data, cone, info)
         status = SCS_solve(p_work, data, cone, solution, info)
+        SCS_finish(p_work)
     end
-    SCS_finish(p_work)
+
     return Solution(x, y, s, status)
 
 end
