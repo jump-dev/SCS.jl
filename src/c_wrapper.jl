@@ -18,8 +18,8 @@ end
 # where K is a product cone of
 # zero cones,
 # linear cones { x | x >= 0 },
-# second-order cones { (t,x) | ||x||_2 <= t },
-# semi-definite cones { X | X psd }, and
+# second-order cones (SOC) { (t,x) | ||x||_2 <= t },
+# semi-definite cones (SDC) { X | X psd }, and
 # exponential cones {(x,y,z) | y e^(x/y) <= z, y>0 }.
 #
 #
