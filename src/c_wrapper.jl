@@ -11,7 +11,7 @@ macro compat_gc_preserve(args...)
 end
 
 
-# We assume we are solving a problem of the form
+# SCS solves a problem of the form
 # minimize        c' * x
 # subject to      A * x + s = b
 #                 s in K
@@ -23,6 +23,7 @@ end
 # exponential cones {(x,y,z) | y e^(x/y) <= z, y>0 }.
 #
 #
+# Description of input argments:
 # A is the matrix with m rows and n cols
 # b is of length m x 1
 # c is of length n x 1
@@ -34,9 +35,7 @@ end
 # ep (num primal exponential cones)
 # ed (num dual exponential cones).
 #
-# Returns object of type Solution
-# type Solution with
-# x, y, s, status (ASCII string), ret_val (numerical status)
+# Returns a Solution object.
 function SCS_solve(m::Int, n::Int, A::SCSVecOrMatOrSparse, b::Array{Float64},
         c::Array{Float64}, f::Int, l::Int, q::Array{Int}, s::Array{Int},
         ep::Int, ed::Int, p::Array{Float64},
