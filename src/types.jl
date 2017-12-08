@@ -42,7 +42,7 @@ struct SCSSettings
     rho_x::Cdouble # x equality constraint scaling: 1e-3
     max_iters::Int # maximum iterations to take: 5000
     eps::Cdouble # convergence tolerance: 1e-5
-    alpha::Cdouble # relaxation parameter: 1.8
+    alpha::Cdouble # relaxation parameter: 1.5
     cg_rate::Cdouble # for indirect, tolerance goes down like (1/iter)^cg_rate: 2
     verbose::Int # boolean, write out progress: 1
     warm_start::Int # boolean, warm start (put initial guess in Sol struct): 0
@@ -50,7 +50,7 @@ struct SCSSettings
 end
 
 function SCSSettings(;normalize=1::Int, scale=convert(Cdouble, 1.0)::Cdouble, rho_x=convert(Cdouble,1e-3)::Cdouble,
-                        max_iters=5000::Int, eps=convert(Cdouble, 1e-5)::Cdouble, alpha=convert(Cdouble, 1.8)::Cdouble,
+                        max_iters=5000::Int, eps=convert(Cdouble, 1e-5)::Cdouble, alpha=convert(Cdouble, 1.5)::Cdouble,
                         cg_rate=convert(Cdouble,2)::Cdouble, verbose=1::Int, warm_start=0::Int, acceleration_lookback=20::Int)
     return SCSSettings(normalize, scale, rho_x, max_iters, eps, alpha, cg_rate, verbose, warm_start, acceleration_lookback)
 end
