@@ -77,32 +77,36 @@ end
 # use of @gc_preserve in the SCS_solve helper above.
 
 # Take Ref{}s because SCS might modify the structs
-function SCS_init(data::Ref{SCSData}, cone::Ref{SCSCone}, info::Ref{SCSInfo})
+for (T, lib) in zip([SCS.Direct, SCS.Indirect], [SCS.direct, SCS.indirect])
+    @eval begin
+        function SCS_init(::Type{$T}, data::Ref{SCSData}, cone::Ref{SCSCone}, info::Ref{SCSInfo})
 
-    p_work = ccall((:scs_init, SCS.scs), Ptr{Void},
-        (Ptr{SCSData}, Ptr{SCSCone}, Ptr{SCSInfo}),
-        data, cone, info)
+            p_work = ccall((:scs_init, $lib), Ptr{Void},
+                (Ptr{SCSData}, Ptr{SCSCone}, Ptr{SCSInfo}),
+                data, cone, info)
 
-    return p_work
-end
+            return p_work
+        end
 
-# solution struct is simple enough, we know it won't be modified by SCS so take by value
-function SCS_solve(p_work::Ptr{Void}, data::Ref{SCSData}, cone::Ref{SCSCone}, solution::SCSSolution, info::Ref{SCSInfo})
+        # solution struct is simple enough, we know it won't be modified by SCS so take by value
+        function SCS_solve(::Type{$T}, p_work::Ptr{Void}, data::Ref{SCSData}, cone::Ref{SCSCone}, solution::SCSSolution, info::Ref{SCSInfo})
 
-    status = ccall((:scs_solve, SCS.scs), Int,
-        (Ptr{Void}, Ptr{SCSData}, Ptr{SCSCone}, Ref{SCSSolution}, Ptr{SCSInfo}),
-        p_work, data, cone, solution, info)
+            status = ccall((:scs_solve, $lib), Int,
+                (Ptr{Void}, Ptr{SCSData}, Ptr{SCSCone}, Ref{SCSSolution}, Ptr{SCSInfo}),
+                p_work, data, cone, solution, info)
 
-    return status
-end
+            return status
+        end
 
-function SCS_finish(p_work::Ptr{Void})
-    ccall((:scs_finish, SCS.scs), Void,
-        (Ptr{Void}, ),
-        p_work)
+        function SCS_finish(::Type{$T}, p_work::Ptr{Void})
+            ccall((:scs_finish, $lib), Void,
+                (Ptr{Void}, ),
+                p_work)
+        end
+    end
 end
 
 # This one is safe to call
 function SCS_version()
-    return unsafe_string(ccall((:scs_version, SCS.scs), Cstring, ()))
+    return unsafe_string(ccall((:scs_version, SCS.direct), Cstring, ()))
 end
