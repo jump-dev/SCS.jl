@@ -4,14 +4,8 @@ using BinDeps
 
 blasvendor = Base.BLAS.vendor()
 
-libs = Dict(:direct=>"libscsdir", :indirect=>"libscsindir")
-
-if is_apple() && (blasvendor == :openblas64)
-    libs = Dict(k => v*"64" for (k,v) in libs)
-end
-
-direct = library_dependency("direct", aliases=[libs[:direct]])
-indirect = library_dependency("indirect", aliases=[libs[:indirect]])
+direct = library_dependency("libscsdir", aliases=["libscsdir64"])
+indirect = library_dependency("libscsindir", aliases=["libscsindir64"])
 
 # TODO: Provide both libs in the "scs" Homebrew package.
 # if is_apple()
@@ -39,8 +33,6 @@ provides(Sources, URI("https://github.com/cvxgrp/scs/archive/v$version.tar.gz"),
 
 prefix = joinpath(BinDeps.depsdir(direct), "usr")
 srcdir = joinpath(BinDeps.depsdir(direct), "src", "scs-$version/")
-
-libnames = Dict(k => v*".$(Libdl.dlext)" for (k,v) in libs)
 
 ldflags = ""
 if is_apple()
@@ -70,18 +62,18 @@ provides(SimpleBuild,
         GetSources(direct)
         CreateDirectory(joinpath(prefix, "lib"))
 
-        FileRule(joinpath(prefix, "lib", libnames[:direct]), @build_steps begin
+        FileRule(joinpath(prefix, "lib", "libscsdir.$(Libdl.dlext)"), @build_steps begin
             ChangeDirectory(srcdir)
-            setenv(`make BLASLDFLAGS= out/$(libnames[:direct])`, ENV2)
-            `mv out/$(libnames[:direct]) $prefix/lib`
+            setenv(`make BLASLDFLAGS= out/libscsdir.$(Libdl.dlext)`, ENV2)
+            `mv out/libscsdir.so $prefix/lib`
         end)
 
-        FileRule(joinpath(prefix, "lib", libnames[:indirect]), @build_steps begin
+        FileRule(joinpath(prefix, "lib", "libscsindir.$(Libdl.dlext)"), @build_steps begin
             ChangeDirectory(srcdir)
-            setenv(`make BLASLDFLAGS= out/$(libnames[:indirect])`, ENV2)
-            `mv out/$(libnames[:indirect]) $prefix/lib`
+            setenv(`make BLASLDFLAGS= out/libscsindir.$(Libdl.dlext)`, ENV2)
+            `mv out/libscsindir.so $prefix/lib`
         end)
 
     end), [direct, indirect], os=:Unix)
 
-@BinDeps.install Dict(:direct => :direct, :indirect => :indirect)
+@BinDeps.install Dict(:libscsdir => :direct, :libscsindir => :indirect)
