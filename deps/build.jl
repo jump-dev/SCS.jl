@@ -13,10 +13,11 @@ end
 direct = library_dependency("direct", aliases=[libs[:direct]])
 indirect = library_dependency("indirect", aliases=[libs[:indirect]])
 
-if is_apple()
-    using Homebrew
-    provides(Homebrew.HB, [libs[:direct], libs[:indirect]], [direct, indirect], os = :Darwin)
-end
+# TODO: Provide both libs in the "scs" Homebrew package.
+# if is_apple()
+#     using Homebrew
+#     provides(Homebrew.HB, "scs", [direct, indirect], os = :Darwin)
+# end
 
 version = "2.0.2"
 win_version = "2.0.2" # The windows binaries are not consistent with this version yet.
