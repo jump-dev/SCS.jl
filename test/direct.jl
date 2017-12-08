@@ -3,7 +3,7 @@ using Base.Test
 
 # Solve a trivial problem
 A = reshape([1.0],(1,1))
-solution = SCS_solve(1, 1, A, [1.0], [1.0], 1, 0, Int[], Int[], 0, 0, Float64[], linearsolver=SCS.Direct);
+solution = SCS_solve(SCS.Direct, 1, 1, A, [1.0], [1.0], 1, 0, Int[], Int[], 0, 0, Float64[]);
 @test solution.ret_val == 1
 
 feasible_basic_conic(SCS.Direct)
