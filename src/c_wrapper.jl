@@ -44,6 +44,13 @@ function SCS_solve(m::Int, n::Int, A::SCSVecOrMatOrSparse, b::Array{Float64},
         slack::Vector{Float64}=Float64[];
         options...)
 
+    T = SCS.Indirect # the default method
+    opts = Dict(options)
+    if :linearsolver in keys(opts)
+        T = opts[:linearsolver]
+        options = [(k,v) for (k,v) in options if k !=:linearsolver]
+    end
+
     managed_matrix = ManagedSCSMatrix(m, n, A)
     matrix = Ref(SCSMatrix(managed_matrix))
     settings = Ref(SCSSettings(;options...))
@@ -63,9 +70,9 @@ function SCS_solve(m::Int, n::Int, A::SCSVecOrMatOrSparse, b::Array{Float64},
     solution = SCSSolution(pointer(x), pointer(y), pointer(s))
 
     @compat_gc_preserve managed_matrix matrix settings b c q s p begin
-        p_work = SCS_init(data, cone, info)
-        status = SCS_solve(p_work, data, cone, solution, info)
-        SCS_finish(p_work)
+        p_work = SCS_init(T, data, cone, info)
+        status = SCS_solve(T, p_work, data, cone, solution, info)
+        SCS_finish(T, p_work)
     end
 
     return Solution(x, y, s, status)
