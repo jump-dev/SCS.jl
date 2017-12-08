@@ -36,20 +36,14 @@ end
 # ed (num dual exponential cones).
 #
 # Returns a Solution object.
-function SCS_solve(m::Int, n::Int, A::SCSVecOrMatOrSparse, b::Array{Float64},
+function SCS_solve(T::Union{Type{Direct}, Type{Indirect}},
+        m::Int, n::Int, A::SCSVecOrMatOrSparse, b::Array{Float64},
         c::Array{Float64}, f::Int, l::Int, q::Array{Int}, s::Array{Int},
         ep::Int, ed::Int, p::Array{Float64},
         primal_sol::Vector{Float64}=Float64[],
         dual_sol::Vector{Float64}=Float64[],
         slack::Vector{Float64}=Float64[];
         options...)
-
-    T = SCS.Indirect # the default method
-    opts = Dict(options)
-    if :linearsolver in keys(opts)
-        T = opts[:linearsolver]
-        options = [(k,v) for (k,v) in options if k !=:linearsolver]
-    end
 
     managed_matrix = ManagedSCSMatrix(m, n, A)
     matrix = Ref(SCSMatrix(managed_matrix))
