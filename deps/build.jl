@@ -31,7 +31,7 @@ provides(Sources, URI("https://github.com/cvxgrp/scs/archive/v$version.tar.gz"),
 # CFLAGS="-DDLONG -DCOPYAMATRIX -DUSE_LAPACK -DCTRLC=1" LDFLAGS="-L$HOME/julia32/usr/bin -lopenblas" make CC=i686-w64-mingw32-gcc out/libscsdir.dll
 # mv out bin32
 provides(Binaries, URI("https://cache.julialang.org/https://bintray.com/artifact/download/tkelman/generic/scs-$win_version-r2.7z"),
-    [scs], unpacked_dir="bin$(Sys.WORD_SIZE)", os = :Windows,
+    [direct, indirect], unpacked_dir="bin$(Sys.WORD_SIZE)", os = :Windows,
     SHA="62bb4feeb7d2cd3db595f05b86a20fc93cfdef23311e2e898e18168189072d02")
 
 prefix = joinpath(BinDeps.depsdir(direct), "usr")
