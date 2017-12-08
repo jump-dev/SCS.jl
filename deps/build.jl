@@ -6,10 +6,8 @@ blasvendor = Base.BLAS.vendor()
 
 libs = Dict(:direct=>"libscsdir", :indirect=>"libscsindir")
 
-if (is_apple() ? (blasvendor == :openblas64) : false)
-    aliases = ["libscsdir64"]
-else
-    aliases = ["libscsdir"]
+if is_apple() && (blasvendor == :openblas64)
+    libs = Dict(k => v*"64" for (k,v) in libs)
 end
 
 direct = library_dependency("direct", aliases=[libs[:direct]])
@@ -17,7 +15,7 @@ indirect = library_dependency("indirect", aliases=[libs[:indirect]])
 
 if is_apple()
     using Homebrew
-    provides(Homebrew.HB, "scs", scs, os = :Darwin)
+    provides(Homebrew.HB, [libs[:direct], libs[:indirect]], [direct, indirect], os = :Darwin)
 end
 
 version = "2.0.2"
