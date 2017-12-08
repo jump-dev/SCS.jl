@@ -4,6 +4,7 @@ using BinDeps
 
 blasvendor = Base.BLAS.vendor()
 
+libs = Dict(:direct=>"libscsdir", :indirect=>"libscsindir")
 
 if (is_apple() ? (blasvendor == :openblas64) : false)
     aliases = ["libscsdir64"]
@@ -11,7 +12,8 @@ else
     aliases = ["libscsdir"]
 end
 
-scs = library_dependency("scs", aliases=aliases)
+direct = library_dependency("direct", aliases=[libs[:direct]])
+indirect = library_dependency("indirect", aliases=[libs[:indirect]])
 
 if is_apple()
     using Homebrew
@@ -22,7 +24,7 @@ version = "2.0.2"
 win_version = "2.0.2" # The windows binaries are not consistent with this version yet.
 
 provides(Sources, URI("https://github.com/cvxgrp/scs/archive/v$version.tar.gz"),
-    [scs], os=:Unix, unpacked_dir="scs-$version")
+    [direct, indirect], os=:Unix, unpacked_dir="scs-$version")
 
 # Windows binaries built in Cygwin as follows:
 # CFLAGS="-DDLONG -DCOPYAMATRIX -DUSE_LAPACK -DCTRLC=1 -DBLAS64 -DBLASSUFFIX=_64_" LDFLAGS="-L$HOME/julia/usr/bin -lopenblas64_" make CC=x86_64-w64-mingw32-gcc out/libscsdir.dll
@@ -34,10 +36,10 @@ provides(Binaries, URI("https://cache.julialang.org/https://bintray.com/artifact
     [scs], unpacked_dir="bin$(Sys.WORD_SIZE)", os = :Windows,
     SHA="62bb4feeb7d2cd3db595f05b86a20fc93cfdef23311e2e898e18168189072d02")
 
-prefix = joinpath(BinDeps.depsdir(scs), "usr")
-srcdir = joinpath(BinDeps.depsdir(scs), "src", "scs-$version/")
+prefix = joinpath(BinDeps.depsdir(direct), "usr")
+srcdir = joinpath(BinDeps.depsdir(direct), "src", "scs-$version/")
 
-libname = "libscsdir.$(Libdl.dlext)"
+libnames = Dict(k => v*".$(Libdl.dlext)" for (k,v) in libs)
 
 ldflags = ""
 if is_apple()
@@ -64,13 +66,21 @@ ENV2["CFLAGS"] = cflags
 
 provides(SimpleBuild,
     (@build_steps begin
-        GetSources(scs)
+        GetSources(direct)
         CreateDirectory(joinpath(prefix, "lib"))
-        FileRule(joinpath(prefix, "lib", libname), @build_steps begin
-            ChangeDirectory(srcdir)
-            setenv(`make BLASLDFLAGS= out/$libname`, ENV2)
-            `mv out/$libname $prefix/lib`
-        end)
-    end), [scs], os=:Unix)
 
-@BinDeps.install Dict([(:scs, :scs)])
+        FileRule(joinpath(prefix, "lib", libnames[:direct]), @build_steps begin
+            ChangeDirectory(srcdir)
+            setenv(`make BLASLDFLAGS= out/$(libnames[:direct])`, ENV2)
+            `mv out/$(libnames[:direct]) $prefix/lib`
+        end)
+
+        FileRule(joinpath(prefix, "lib", libnames[:indirect]), @build_steps begin
+            ChangeDirectory(srcdir)
+            setenv(`make BLASLDFLAGS= out/$(libnames[:indirect])`, ENV2)
+            `mv out/$(libnames[:indirect]) $prefix/lib`
+        end)
+
+    end), [direct, indirect], os=:Unix)
+
+@BinDeps.install Dict(:direct => :direct, :indirect => :indirect)
