@@ -130,13 +130,16 @@ function SCSCone(f::Int, l::Int, q::Vector{Int}, s::Vector{Int},
 end
 
 
-# TODO needs to be updated for newest constants
 const status_map = Dict{Int, Symbol}(
+    2 => :UserLimit,
     1 => :Optimal,
-    -2 => :Infeasible,
     -1 => :Unbounded,
+    -2 => :Infeasible,
     -3 => :Indeterminate,
-    -4 => :Error
+    -4 => :Error,
+    -5 => :Interrupted,
+    -6 => :UnboundedInaccurate,
+    -7 => :InfeasibleInaccurate
 )
 
 mutable struct Solution
