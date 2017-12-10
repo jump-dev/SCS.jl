@@ -65,13 +65,13 @@ provides(SimpleBuild,
         FileRule(joinpath(prefix, "lib", "libscsdir.$(Libdl.dlext)"), @build_steps begin
             ChangeDirectory(srcdir)
             setenv(`make BLASLDFLAGS= out/libscsdir.$(Libdl.dlext)`, ENV2)
-            `mv out/libscsdir.so $prefix/lib`
+            `mv out/libscsdir.$(Libdl.dlext) $prefix/lib`
         end)
 
         FileRule(joinpath(prefix, "lib", "libscsindir.$(Libdl.dlext)"), @build_steps begin
             ChangeDirectory(srcdir)
             setenv(`make BLASLDFLAGS= out/libscsindir.$(Libdl.dlext)`, ENV2)
-            `mv out/libscsindir.so $prefix/lib`
+            `mv out/libscsindir.$(Libdl.dlext) $prefix/lib`
         end)
 
     end), [direct, indirect], os=:Unix)
