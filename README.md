@@ -40,6 +40,8 @@ solution = SCS_solve(m, n, A, ..., psize; max_iters=10, verbose=0);
 m = solve!(problem, SCSSolver(max_iters=10, verbose=0))
 ```
 
+Moreover, You may select one of the linear solvers to be used by `SCSSolver` via `linearsolver` keyword. The options available are `SCS.Indirect` (the default) and `SCS.Direct`.
+
 ### High level wrapper
 
 The file [`high_level_wrapper.jl`](https://github.com/JuliaOpt/SCS.jl/blob/master/src/high_level_wrapper.jl) is thoroughly commented. Here is the basic usage

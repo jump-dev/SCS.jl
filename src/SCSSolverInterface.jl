@@ -87,9 +87,18 @@ end
 
 function optimize!(m::SCSMathProgModel)
     t = time()
-    solution = SCS_solve(m.m, m.n, m.A, m.b, m.c, m.f, m.l, m.q,
+
+    T = SCS.Indirect # the default method
+    options = m.options
+    opts = Dict(m.options)
+    if :linearsolver in keys(opts)
+        T = opts[:linearsolver]
+        options = [(k,v) for (k,v) in options if k !=:linearsolver]
+    end
+
+    solution = SCS_solve(T, m.m, m.n, m.A, m.b, m.c, m.f, m.l, m.q,
                          m.s, m.ep, m.ed, Float64[],
-                         m.primal_sol, m.dual_sol, m.slack; m.options...)
+                         m.primal_sol, m.dual_sol, m.slack; options...)
     m.solve_time = time() - t
 
     m.solve_stat = solution.status

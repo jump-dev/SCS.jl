@@ -154,3 +154,6 @@ mutable struct Solution
         end
     end
 end
+
+struct Direct end
+struct Indirect end

@@ -1,8 +1,11 @@
 using Base.Test
 
 tests = ["direct.jl",
+         "indirect.jl",
          "mpb_linear.jl",
          "options.jl"]
+
+include("test_problems.jl")
 
 for curtest in tests
     @testset "$curtest" begin
