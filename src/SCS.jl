@@ -24,6 +24,6 @@ end
 
 include("types.jl")
 include("c_wrapper.jl")
-include("SCSSolverInterface.jl")  # MathProgBase interface
+include("MPBWrapper.jl")  # MathProgBase interface
 
 end # module
