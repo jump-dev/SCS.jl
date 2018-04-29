@@ -24,6 +24,7 @@ end
 
 include("types.jl")
 include("c_wrapper.jl")
-include("MPBWrapper.jl")  # MathProgBase interface
+include("MPBWrapper.jl")
+include("MOIWrapper.jl")
 
 end # module

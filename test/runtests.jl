@@ -13,3 +13,4 @@ for curtest in tests
 end
 
 include("MPBWrapper.jl")
+include("MOIWrapper.jl")
