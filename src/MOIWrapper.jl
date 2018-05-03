@@ -80,12 +80,12 @@ MOI.supports(::SCSOptimizer, ::MOI.ObjectiveFunction{MOI.ScalarAffineFunction{Fl
 MOI.supportsconstraint(::SCSOptimizer, ::Type{<:SF}, ::Type{<:SS}) = true
 MOI.copy!(dest::SCSOptimizer, src::MOI.ModelLike; copynames=true) = MOIU.allocateload!(dest, src, copynames)
 
-# Implements optimize! : translate data to SCSData and call SCS_solve
 using Compat.SparseArrays
 
 const ZeroCones = Union{MOI.EqualTo, MOI.Zeros}
 const LPCones = Union{MOI.GreaterThan, MOI.LessThan, MOI.Nonnegatives, MOI.Nonpositives}
 
+# Replace by MOI.dimension on MOI v0.3 thanks to https://github.com/JuliaOpt/MathOptInterface.jl/pull/342
 _dim(s::MOI.AbstractScalarSet) = 1
 _dim(s::MOI.AbstractVectorSet) = MOI.dimension(s)
 
@@ -155,12 +155,17 @@ function sympackedUtoLidx(x::AbstractVector{<:Integer}, n)
 end
 
 
-# Build constraint matrix
-scalecoef(rows, coef, minus, s) = minus ? -coef : coef
-scalecoef(rows, coef, minus, s::Union{MOI.LessThan, Type{<:MOI.LessThan}, MOI.Nonpositives, Type{MOI.Nonpositives}}) = minus ? coef : -coef
-function _scalecoef(rows, coef, minus, d, rev)
+# Scale coefficients depending on rows index
+# rows: List of row indices
+# coef: List of corresponding coefficients
+# minus: if true, multiply the result by -1
+# d: dimension of set
+# rev: if true, we unscale instead (e.g. divide by √2 instead of multiply for PSD cone)
+_scalecoef(rows, coef, minus, ::Type{<:MOI.AbstractSet}, d, rev) = minus ? -coef : coef
+_scalecoef(rows, coef, minus, ::Union{Type{<:MOI.LessThan}, Type{<:MOI.Nonpositives}}, d, rev) = minus ? coef : -coef
+function _scalecoef(rows, coef, minus, ::Type{MOI.PositiveSemidefiniteConeTriangle}, d, rev)
     scaling = minus ? -1 : 1
-    scaling2 = rev ? scaling / sqrt(2) : scaling * sqrt(2)
+    scaling2 = rev ? scaling / √2 : scaling * √2
     output = copy(coef)
     diagidx = IntSet()
     for i in 1:d
@@ -175,18 +180,18 @@ function _scalecoef(rows, coef, minus, d, rev)
     end
     output
 end
-function scalecoef(rows, coef, minus, s::MOI.PositiveSemidefiniteConeTriangle)
-    _scalecoef(rows, coef, minus, s.dimension, false)
-end
-function scalecoef(rows, coef, minus, ::Type{MOI.PositiveSemidefiniteConeTriangle})
-    _scalecoef(rows, coef, minus, sympackeddim(length(rows)), true)
-end
+# Unscale the coefficients in `coef` with respective rows in `rows` for a set `s` and multiply by `-1` if `minus` is `true`.
+scalecoef(rows, coef, minus, s) = _scalecoef(rows, coef, minus, typeof(s), _dim(s), false)
+# Unscale the coefficients in `coef` with respective rows in `rows` for a set of type `S` with dimension `d`
+unscalecoef(rows, coef, S::Type{<:MOI.AbstractSet}, d) = _scalecoef(rows, coef, false, S, d, true)
+unscalecoef(rows, coef, S::Type{MOI.PositiveSemidefiniteConeTriangle}, d) = _scalecoef(rows, coef, false, S, sympackeddim(d), true)
+
 _varmap(f) = map(vi -> vi.value, f.variables)
-_constant(s::MOI.EqualTo) = s.value
-_constant(s::MOI.GreaterThan) = s.lower
-_constant(s::MOI.LessThan) = s.upper
+# constrrows: Recover the number of rows used by each constraint.
+# When, the set is available, simply use MOI.dimension
 constrrows(::MOI.AbstractScalarSet) = 1
 constrrows(s::MOI.AbstractVectorSet) = 1:MOI.dimension(s)
+# When only the index is available, use the `optimizer.ncone.nrows` field
 constrrows(optimizer::SCSOptimizer, ci::CI{<:MOI.AbstractScalarFunction, <:MOI.AbstractScalarSet}) = 1
 constrrows(optimizer::SCSOptimizer, ci::CI{<:MOI.AbstractVectorFunction, <:MOI.AbstractVectorSet}) = 1:optimizer.cone.nrows[constroffset(optimizer, ci)]
 MOIU.canloadconstraint(::SCSOptimizer, ::Type{<:SF}, ::Type{<:SS}) = true
@@ -200,7 +205,7 @@ function MOIU.loadconstraint!(optimizer::SCSOptimizer, ci, f::MOI.ScalarAffineFu
     i = offset + row
     # The SCS format is b - Ax ∈ cone
     # so minus=false for b and minus=true for A
-    setconstant = _constant(s)
+    setconstant = MOIU.getconstant(s)
     optimizer.cone.setconstant[offset] = setconstant
     constant = f.constant - setconstant
     optimizer.data.b[i] = scalecoef(row, constant, false, s)
@@ -221,11 +226,7 @@ function MOIU.loadconstraint!(optimizer::SCSOptimizer, ci, f::MOI.VectorAffineFu
     A = sparse(f.outputindex, _varmap(f), f.coefficients)
     # sparse combines duplicates with + but does not remove zeros created so we call dropzeros!
     dropzeros!(A)
-    colval = zeros(Int, length(A.rowval))
-    for col in 1:A.n
-        colval[A.colptr[col]:(A.colptr[col+1]-1)] = col
-    end
-    @assert !any(iszero.(colval))
+    I, J, V = findnz(A)
     offset = constroffset(optimizer, ci)
     rows = constrrows(s)
     optimizer.cone.nrows[offset] = length(rows)
@@ -233,9 +234,9 @@ function MOIU.loadconstraint!(optimizer::SCSOptimizer, ci, f::MOI.VectorAffineFu
     # The SCS format is b - Ax ∈ cone
     # so minus=false for b and minus=true for A
     optimizer.data.b[i] = scalecoef(rows, orderval(f.constant, s), false, s)
-    append!(optimizer.data.I, offset + orderidx(A.rowval, s))
-    append!(optimizer.data.J, colval)
-    append!(optimizer.data.V, scalecoef(A.rowval, A.nzval, true, s))
+    append!(optimizer.data.I, offset + orderidx(I, s))
+    append!(optimizer.data.J, J)
+    append!(optimizer.data.V, scalecoef(I, V, true, s))
 end
 
 function MOIU.allocatevariables!(optimizer::SCSOptimizer, nvars::Integer)
@@ -349,7 +350,7 @@ end
 function MOI.get(optimizer::SCSOptimizer, ::MOI.ConstraintPrimal, ci::CI{<:MOI.AbstractFunction, S}) where S <: MOI.AbstractSet
     offset = constroffset(optimizer, ci)
     rows = constrrows(optimizer, ci)
-    _unshift(optimizer, offset, scalecoef(rows, reorderval(optimizer.sol.slack[offset + rows], S), false, S), S)
+    _unshift(optimizer, offset, unscalecoef(rows, reorderval(optimizer.sol.slack[offset + rows], S), S, length(rows)), S)
 end
 
 MOI.canget(optimizer::SCSOptimizer, ::MOI.DualStatus) = true
@@ -369,7 +370,7 @@ end
 function MOI.get(optimizer::SCSOptimizer, ::MOI.ConstraintDual, ci::CI{<:MOI.AbstractFunction, S}) where S <: MOI.AbstractSet
     offset = constroffset(optimizer, ci)
     rows = constrrows(optimizer, ci)
-    scalecoef(rows, reorderval(optimizer.sol.dual[offset + rows], S), false, S)
+    unscalecoef(rows, reorderval(optimizer.sol.dual[offset + rows], S), S, length(rows))
 end
 
 MOI.canget(optimizer::SCSOptimizer, ::MOI.ResultCount) = true
