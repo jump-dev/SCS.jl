@@ -131,7 +131,7 @@ function MOIU.allocateconstraint!(optimizer::SCSOptimizer, f::F, s::S) where {F 
 end
 
 # Vectorized length for matrix dimension n
-sympackedlen(n) = (n*(n+1)) >> 1
+sympackedlen(n) = div(n*(n+1), 2)
 # Matrix dimension for vectorized length n
 sympackeddim(n) = div(isqrt(1+8n) - 1, 2)
 trimap(i::Integer, j::Integer) = i < j ? trimap(j, i) : div((i-1)*i, 2) + j
