@@ -20,14 +20,17 @@ end
 MOISolution() = MOISolution(0, # SCS_UNFINISHED
                       Float64[], Float64[], Float64[], NaN)
 
+# Used to build the data with allocate-load during `copy!`.
+# When `optimize!` is called, a the data is passed to SCS
+# using `SCS_solve` and the `Data` struct is discarded
 mutable struct Data
-    m::Int
-    n::Int
-    I::Vector{Int}
-    J::Vector{Int}
-    V::Vector{Float64}
-    b::Vector{Float64}
-    objconstant::Float64
+    m::Int # Number of rows/constraints
+    n::Int # Number of cols/variables
+    I::Vector{Int} # List of rows
+    J::Vector{Int} # List of cols
+    V::Vector{Float64} # List of coefficients
+    b::Vector{Float64} # constants
+    objconstant::Float64 # The objective is min c'x + objconstant
     c::Vector{Float64}
 end
 
