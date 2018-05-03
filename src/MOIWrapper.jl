@@ -91,6 +91,7 @@ _dim(s::MOI.AbstractVectorSet) = MOI.dimension(s)
 
 # Computes cone dimensions
 constroffset(cone::Cone, ci::CI{<:MOI.AbstractFunction, <:ZeroCones}) = ci.value
+#_allocateconstraint: Allocate indices for the constraint `f`-in-`s` using information in `cone` and then update `cone`
 function _allocateconstraint!(cone::Cone, f, s::ZeroCones)
     ci = cone.f
     cone.f += _dim(s)
