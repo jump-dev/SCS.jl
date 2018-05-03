@@ -22,8 +22,8 @@ MOISolution() = MOISolution(0, # SCS_UNFINISHED
 
 # Used to build the data with allocate-load during `copy!`.
 # When `optimize!` is called, a the data is passed to SCS
-# using `SCS_solve` and the `Data` struct is discarded
-mutable struct Data
+# using `SCS_solve` and the `ModelData` struct is discarded
+mutable struct ModelData
     m::Int # Number of rows/constraints
     n::Int # Number of cols/variables
     I::Vector{Int} # List of rows
@@ -59,7 +59,7 @@ end
 mutable struct SCSOptimizer <: MOI.AbstractOptimizer
     cone::Cone
     maxsense::Bool
-    data::Union{Void, Data} # only non-Void between MOI.copy! and MOI.optimize!
+    data::Union{Void, ModelData} # only non-Void between MOI.copy! and MOI.optimize!
     sol::MOISolution
     function SCSOptimizer()
         new(Cone(), false, nothing, MOISolution())
@@ -253,7 +253,7 @@ function MOIU.loadvariables!(optimizer::SCSOptimizer, nvars::Integer)
     V = Float64[]
     b = zeros(m)
     c = zeros(nvars)
-    optimizer.data = Data(m, nvars, I, J, V, b, 0., c)
+    optimizer.data = ModelData(m, nvars, I, J, V, b, 0., c)
 end
 
 MOIU.canallocate(::SCSOptimizer, ::MOI.ObjectiveSense) = true
