@@ -44,7 +44,7 @@ mutable struct Cone
     ep::Int # number of primal exponential cone triples
     ed::Int # number of dual exponential cone triples
     p::Vector{Float64} # array of power cone params
-    setconstant::Dict{Int, Float64} # For the constant of EqualTo, LessThan and GreaterThan
+    setconstant::Dict{Int, Float64} # For the constant of EqualTo, LessThan and GreaterThan, they are used for getting the `ConstraintPrimal` as the slack is Ax - b but MOI expects Ax so we need to add the constant b to the slack to get Ax
     nrows::Dict{Int, Int} # The number of rows of each vector sets
     function Cone()
         new(0, 0,
