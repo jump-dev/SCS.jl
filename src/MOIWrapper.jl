@@ -34,6 +34,7 @@ mutable struct ModelData
     c::Vector{Float64}
 end
 
+# This is tied to SCS's internal representation
 mutable struct ConeData
     f::Int # number of linear equality constraints
     l::Int # length of LP cone
@@ -45,7 +46,7 @@ mutable struct ConeData
     ed::Int # number of dual exponential cone triples
     p::Vector{Float64} # array of power cone params
     setconstant::Dict{Int, Float64} # For the constant of EqualTo, LessThan and GreaterThan, they are used for getting the `ConstraintPrimal` as the slack is Ax - b but MOI expects Ax so we need to add the constant b to the slack to get Ax
-    nrows::Dict{Int, Int} # The number of rows of each vector sets
+    nrows::Dict{Int, Int} # The number of rows of each vector sets, this is used by `constrrows` to recover the number of rows used by a constraint when getting `ConstraintPrimal` or `ConstraintDual`
     function ConeData()
         new(0, 0,
             0, Int[],
