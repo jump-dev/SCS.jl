@@ -53,7 +53,7 @@ mutable struct ConeData
             0, Int[],
             0, 0, Float64[],
             Dict{Int, Float64}(),
-            Dict{Int, UnitRange{Int}}())
+            Dict{Int, Int}())
     end
 end
 
