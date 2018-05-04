@@ -145,9 +145,9 @@ function orderconesforscs(A_in, b_in, c_cones, v_cones)
     A_t = spzeros(n,0)
     b = zeros(0)
     row_map_ind = zeros(Int, length(b_in))
-    row_map_type = Array{Symbol}(length(b_in))
+    row_map_type = Array{Symbol}(undef, length(b_in))
     col_map_ind = zeros(Int, n)
-    col_map_type = Array{Symbol}(n)
+    col_map_type = Array{Symbol}(undef, n)
 
     # First, count the total number of variables
     num_vars = 0

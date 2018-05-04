@@ -268,7 +268,7 @@ MOIU.canload(::SCSOptimizer, ::MOI.ObjectiveSense) = true
 function MOIU.load!(::SCSOptimizer, ::MOI.ObjectiveSense, ::MOI.OptimizationSense) end
 MOIU.canload(::SCSOptimizer, ::MOI.ObjectiveFunction{MOI.ScalarAffineFunction{Float64}}) = true
 function MOIU.load!(optimizer::SCSOptimizer, ::MOI.ObjectiveFunction, f::MOI.ScalarAffineFunction)
-    c0 = full(sparsevec(_varmap(f), f.coefficients, optimizer.data.n))
+    c0 = Vector(sparsevec(_varmap(f), f.coefficients, optimizer.data.n))
     optimizer.data.objconstant = f.constant
     optimizer.data.c = optimizer.maxsense ? -c0 : c0
 end
