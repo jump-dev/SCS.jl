@@ -2,13 +2,16 @@ using BinDeps
 
 @BinDeps.setup
 
-blasvendor = Base.BLAS.vendor()
+using Libdl
+using LinearAlgebra.BLAS
+
+blasvendor = BLAS.vendor()
 
 direct = library_dependency("libscsdir", aliases=["libscsdir64"])
 indirect = library_dependency("libscsindir", aliases=["libscsindir64"])
 
 # TODO: Provide both libs in the "scs" Homebrew package.
-# if is_apple()
+# if Sys.isapple()
 #     using Homebrew
 #     provides(Homebrew.HB, "scs", [direct, indirect], os = :Darwin)
 # end
@@ -35,7 +38,7 @@ prefix = joinpath(BinDeps.depsdir(direct), "usr")
 srcdir = joinpath(BinDeps.depsdir(direct), "src", "scs-$version/")
 
 ldflags = ""
-if is_apple()
+if Sys.isapple()
     ldflags = "$ldflags -undefined suppress -flat_namespace"
 end
 cflags = "-DCOPYAMATRIX -DDLONG -DUSE_LAPACK -DCTRLC=1"
