@@ -6,7 +6,13 @@
 # MathProgBase.jl interface for the SCS.jl solver wrapper
 #############################################################################
 
-importall MathProgBase.SolverInterface
+using MathProgBase.SolverInterface
+
+import MathProgBase.SolverInterface: ConicModel, LinearQuadraticModel,
+    getdual, getobjval, getsolution, getsolvetime, getvardual, loadproblem!,
+    numconstr, numvar, optimize!, setbvec!, setwarmstart!, status,
+    supportedcones
+
 import Base.convert
 
 # TODO: don't add to Base.convert!
