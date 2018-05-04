@@ -3,7 +3,7 @@
 # Wrapper around the SCS solver https://github.com/cvxgrp/scs
 # See http://github.com/karanveerm/SCS.jl
 #############################################################################
-# test/mpb.jl
+# test/mpb_linear.jl
 # Test the MathProgBase.jl interface for the SCS.jl solver wrapper
 #############################################################################
 
