@@ -4,7 +4,7 @@ macro compat_gc_preserve(args...)
     vars = args[1:end-1]
     body = args[end]
     if VERSION > v"0.7.0-"
-        return esc(Expr(:macrocall, Expr(:., :Base, Base.Meta.quot(Symbol("@gc_preserve"))), __source__, args...))
+        return esc(Expr(:macrocall, Expr(:., :GC, Base.Meta.quot(Symbol("@preserve"))), __source__, args...))
     else
         return esc(body)
     end
