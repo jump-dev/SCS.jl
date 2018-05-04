@@ -52,7 +52,7 @@ function SCS_solve(T::Union{Type{Direct}, Type{Indirect}},
     cone = Ref(SCSCone(f, l, q, s, ep, ed, p))
     info = Ref(SCSInfo())
 
-    if (:warm_start, true) in options && length(primal_sol) == n && length(dual_sol) == m && length(slack) == m
+    if (:warm_start=>true) in options && length(primal_sol) == n && length(dual_sol) == m && length(slack) == m
         x = primal_sol
         y = dual_sol
         s = slack

@@ -432,7 +432,7 @@ end
 # warmstart
 # kwargs can be `primal_sol`, `dual_sol`, and `slack`
 function setwarmstart!(m::SCSMathProgModel, primal_sol; kwargs...)
-    push!(m.options, (:warm_start, true))
+    m.options = pairs(merge(m.options.data, (warm_start=>true,)))
     m.primal_sol = primal_sol
     for (k,v) in kwargs
         setfield!(m, k, v)
