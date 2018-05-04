@@ -1,5 +1,6 @@
-export SCSMatrix, SCSData, SCSSettings, SCSSolution, SCSInfo, SCSCone, SCSVecOrMatOrSparse
+using SparseArrays
 
+export SCSMatrix, SCSData, SCSSettings, SCSSolution, SCSInfo, SCSCone, SCSVecOrMatOrSparse
 
 SCSVecOrMatOrSparse = Union{VecOrMat, SparseMatrixCSC{Float64,Int}}
 
