@@ -68,9 +68,9 @@ struct SCSData
 end
 
 struct SCSSolution
-    x::Ptr{Void}
-    y::Ptr{Void}
-    s::Ptr{Void}
+    x::Ptr{Nothing}
+    y::Ptr{Nothing}
+    s::Ptr{Nothing}
 end
 
 

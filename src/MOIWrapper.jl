@@ -60,7 +60,7 @@ end
 mutable struct SCSOptimizer <: MOI.AbstractOptimizer
     cone::ConeData
     maxsense::Bool
-    data::Union{Void, ModelData} # only non-Void between MOI.copy! and MOI.optimize!
+    data::Union{Nothing, ModelData} # only non-Void between MOI.copy! and MOI.optimize!
     sol::MOISolution
     function SCSOptimizer()
         new(ConeData(), false, nothing, MOISolution())
@@ -169,7 +169,7 @@ function _scalecoef(rows, coef, minus, ::Type{MOI.PositiveSemidefiniteConeTriang
     scaling = minus ? -1 : 1
     scaling2 = rev ? scaling / √2 : scaling * √2
     output = copy(coef)
-    diagidx = IntSet()
+    diagidx = BitSet()
     for i in 1:d
         push!(diagidx, trimap(i, i))
     end
