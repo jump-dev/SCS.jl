@@ -232,11 +232,11 @@ function MOIU.loadconstraint!(optimizer::SCSOptimizer, ci, f::MOI.VectorAffineFu
     offset = constroffset(optimizer, ci)
     rows = constrrows(s)
     optimizer.cone.nrows[offset] = length(rows)
-    i = offset + rows
+    i = offset .+ rows
     # The SCS format is b - Ax ∈ cone
     # so minus=false for b and minus=true for A
     optimizer.data.b[i] = scalecoef(rows, orderval(f.constant, s), false, s)
-    append!(optimizer.data.I, offset + orderidx(I, s))
+    append!(optimizer.data.I, offset .+ orderidx(I, s))
     append!(optimizer.data.J, J)
     append!(optimizer.data.V, scalecoef(I, V, true, s))
 end
@@ -352,7 +352,7 @@ end
 function MOI.get(optimizer::SCSOptimizer, ::MOI.ConstraintPrimal, ci::CI{<:MOI.AbstractFunction, S}) where S <: MOI.AbstractSet
     offset = constroffset(optimizer, ci)
     rows = constrrows(optimizer, ci)
-    _unshift(optimizer, offset, unscalecoef(rows, reorderval(optimizer.sol.slack[offset + rows], S), S, length(rows)), S)
+    _unshift(optimizer, offset, unscalecoef(rows, reorderval(optimizer.sol.slack[offset .+ rows], S), S, length(rows)), S)
 end
 
 MOI.canget(optimizer::SCSOptimizer, ::MOI.DualStatus) = true
@@ -372,7 +372,7 @@ end
 function MOI.get(optimizer::SCSOptimizer, ::MOI.ConstraintDual, ci::CI{<:MOI.AbstractFunction, S}) where S <: MOI.AbstractSet
     offset = constroffset(optimizer, ci)
     rows = constrrows(optimizer, ci)
-    unscalecoef(rows, reorderval(optimizer.sol.dual[offset + rows], S), S, length(rows))
+    unscalecoef(rows, reorderval(optimizer.sol.dual[offset .+ rows], S), S, length(rows))
 end
 
 MOI.canget(optimizer::SCSOptimizer, ::MOI.ResultCount) = true

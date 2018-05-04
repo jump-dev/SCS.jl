@@ -152,7 +152,7 @@ function orderconesforscs(A_in, b_in, c_cones, v_cones)
     # First, count the total number of variables
     num_vars = 0
     for (cone, idxs) in v_cones
-        col_map_type[idxs] = cone
+        col_map_type[idxs] .= cone
         num_vars += length(idxs)
     end
     @assert num_vars == n
