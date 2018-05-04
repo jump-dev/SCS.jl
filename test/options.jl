@@ -7,7 +7,7 @@
 # Tests the ability to pass options
 #############################################################################
 
-using MathProgBase.SolverInterface
+using MathProgBase
 
 # The normal test
 A = [1.0 1.0 0.0 0.0 0.0;
