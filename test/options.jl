@@ -7,10 +7,7 @@
 # Tests the ability to pass options
 #############################################################################
 
-using Base.Test
 using MathProgBase.SolverInterface
-using SCS
-
 
 # The normal test
 A = [1.0 1.0 0.0 0.0 0.0;
