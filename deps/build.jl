@@ -2,8 +2,9 @@ using BinDeps
 
 @BinDeps.setup
 
-using Libdl
-using LinearAlgebra.BLAS
+using Compat.Libdl
+using Compat.LinearAlgebra.BLAS
+using Compat.Sys: isapple
 
 blasvendor = BLAS.vendor()
 
@@ -38,7 +39,7 @@ prefix = joinpath(BinDeps.depsdir(direct), "usr")
 srcdir = joinpath(BinDeps.depsdir(direct), "src", "scs-$version/")
 
 ldflags = ""
-if Sys.isapple()
+if isapple()
     ldflags = "$ldflags -undefined suppress -flat_namespace"
 end
 cflags = "-DCOPYAMATRIX -DDLONG -DUSE_LAPACK -DCTRLC=1"

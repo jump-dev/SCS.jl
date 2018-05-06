@@ -8,8 +8,8 @@
 #############################################################################
 
 using MathProgBase
-using LinearAlgebra
-using SparseArrays
+using Compat.LinearAlgebra
+using Compat.SparseArrays
 
 solver = SCSSolver()
 objtol = 1e-4

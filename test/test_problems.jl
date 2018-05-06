@@ -1,4 +1,4 @@
-using SparseArrays
+using Compat.SparseArrays
 
 # Random, feasible conic problem (no exponential or SDP cones)
 # Problem data taken from https://github.com/cvxgrp/scs/blob/master/examples/raw/demo_data

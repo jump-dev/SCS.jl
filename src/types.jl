@@ -1,4 +1,4 @@
-using SparseArrays
+using Compat.SparseArrays
 
 export SCSMatrix, SCSData, SCSSettings, SCSSolution, SCSInfo, SCSCone, SCSVecOrMatOrSparse
 
@@ -68,7 +68,7 @@ struct SCSData
     stgs::Ptr{SCSSettings}
 end
 
-struct SCSSolution
+@compat struct SCSSolution
     x::Ptr{Nothing}
     y::Ptr{Nothing}
     s::Ptr{Nothing}

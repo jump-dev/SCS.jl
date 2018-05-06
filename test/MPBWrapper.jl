@@ -2,7 +2,7 @@
     include("mpb_linear.jl")
 end
 
-using Pkg.dir
+using Compat.Pkg: dir
 @testset "MathProgBase" begin
     include(joinpath(dir("MathProgBase"),"test","conicinterface.jl"))
     coniclineartest(SCS.SCSSolver(), duals=true, tol=1e-2)
