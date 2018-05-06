@@ -68,7 +68,7 @@ struct SCSData
     stgs::Ptr{SCSSettings}
 end
 
-@compat struct SCSSolution
+struct SCSSolution
     x::Ptr{Nothing}
     y::Ptr{Nothing}
     s::Ptr{Nothing}
