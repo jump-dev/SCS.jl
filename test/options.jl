@@ -30,7 +30,8 @@ MathProgBase.optimize!(m)
 @test isapprox(MathProgBase.getobjval(m), -99.0, atol=1e-5)
 
 # With a warmstart from the eps = 1e-8 solution, solution should be extremely accurate even after 1 iteration
-m.options = pairs(merge(m.options.data, (warm_start=true, max_iters=1)))
+SCS.addoption!(m, :warm_start, true)
+SCS.addoption!(m, :max_iters, 1)
 MathProgBase.optimize!(m)
 @test isapprox(MathProgBase.getobjval(m), -99.0, atol=1e-5)
 

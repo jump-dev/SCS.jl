@@ -436,10 +436,23 @@ function getvardual(m::SCSMathProgModel)
     return dual
 end
 
+if VERSION >= v"0.7-"
+    function addoption!(m::SCSMathProgModel, option::Symbol, value)
+        nt = NamedTuple{(option,), Tuple{typeof(value)}}((value,))
+        m.options = pairs(merge(m.options.data, nt))
+        return m
+    end
+else
+    function addoption!(m::SCSMathProgModel, option::Symbol, value)
+        push!(m.options, (option, value))
+        return m
+    end
+end
+
 # warmstart
 # kwargs can be `primal_sol`, `dual_sol`, and `slack`
 function setwarmstart!(m::SCSMathProgModel, primal_sol; kwargs...)
-    m.options = pairs(merge(m.options.data, (warm_start=true,)))
+    addoption!(m, :warm_start, true)
     m.primal_sol = primal_sol
     for (k,v) in kwargs
         setfield!(m, k, v)
