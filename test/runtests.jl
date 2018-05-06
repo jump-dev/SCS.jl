@@ -1,4 +1,5 @@
-using Base.Test
+using Compat.Test
+using SCS
 
 tests = ["direct.jl",
          "indirect.jl",

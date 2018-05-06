@@ -4,7 +4,7 @@ macro compat_gc_preserve(args...)
     vars = args[1:end-1]
     body = args[end]
     if VERSION > v"0.7.0-"
-        return esc(Expr(:macrocall, Expr(:., :Base, Base.Meta.quot(Symbol("@gc_preserve"))), __source__, args...))
+        return esc(Expr(:macrocall, Expr(:., :GC, Base.Meta.quot(Symbol("@preserve"))), __source__, args...))
     else
         return esc(body)
     end
@@ -52,7 +52,13 @@ function SCS_solve(T::Union{Type{Direct}, Type{Indirect}},
     cone = Ref(SCSCone(f, l, q, s, ep, ed, p))
     info = Ref(SCSInfo())
 
-    if (:warm_start, true) in options && length(primal_sol) == n && length(dual_sol) == m && length(slack) == m
+    if VERSION >= v"0.7-"
+        ws = (:warm_start=>true) in options
+    else
+        ws = (:warm_start, true) in options
+    end
+
+    if ws && length(primal_sol) == n && length(dual_sol) == m && length(slack) == m
         x = primal_sol
         y = dual_sol
         s = slack
@@ -82,7 +88,7 @@ for (T, lib) in zip([SCS.Direct, SCS.Indirect], [SCS.direct, SCS.indirect])
     @eval begin
         function SCS_init(::Type{$T}, data::Ref{SCSData}, cone::Ref{SCSCone}, info::Ref{SCSInfo})
 
-            p_work = ccall((:scs_init, $lib), Ptr{Void},
+            p_work = ccall((:scs_init, $lib), Ptr{Nothing},
                 (Ptr{SCSData}, Ptr{SCSCone}, Ptr{SCSInfo}),
                 data, cone, info)
 
@@ -90,18 +96,18 @@ for (T, lib) in zip([SCS.Direct, SCS.Indirect], [SCS.direct, SCS.indirect])
         end
 
         # solution struct is simple enough, we know it won't be modified by SCS so take by value
-        function SCS_solve(::Type{$T}, p_work::Ptr{Void}, data::Ref{SCSData}, cone::Ref{SCSCone}, solution::SCSSolution, info::Ref{SCSInfo})
+        function SCS_solve(::Type{$T}, p_work::Ptr{Nothing}, data::Ref{SCSData}, cone::Ref{SCSCone}, solution::SCSSolution, info::Ref{SCSInfo})
 
             status = ccall((:scs_solve, $lib), Int,
-                (Ptr{Void}, Ptr{SCSData}, Ptr{SCSCone}, Ref{SCSSolution}, Ptr{SCSInfo}),
+                (Ptr{Nothing}, Ptr{SCSData}, Ptr{SCSCone}, Ref{SCSSolution}, Ptr{SCSInfo}),
                 p_work, data, cone, solution, info)
 
             return status
         end
 
-        function SCS_finish(::Type{$T}, p_work::Ptr{Void})
-            ccall((:scs_finish, $lib), Void,
-                (Ptr{Void}, ),
+        function SCS_finish(::Type{$T}, p_work::Ptr{Nothing})
+            ccall((:scs_finish, $lib), Nothing,
+                (Ptr{Nothing}, ),
                 p_work)
         end
     end

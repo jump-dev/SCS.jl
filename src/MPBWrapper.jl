@@ -6,7 +6,14 @@
 # MathProgBase.jl interface for the SCS.jl solver wrapper
 #############################################################################
 
-importall MathProgBase.SolverInterface
+using Compat.LinearAlgebra: dot
+using MathProgBase.SolverInterface
+
+import MathProgBase.SolverInterface: ConicModel, LinearQuadraticModel,
+    getdual, getobjval, getsolution, getsolvetime, getvardual, loadproblem!,
+    numconstr, numvar, optimize!, setbvec!, setwarmstart!, status,
+    supportedcones
+
 import Base.convert
 
 # TODO: don't add to Base.convert!
@@ -145,14 +152,14 @@ function orderconesforscs(A_in, b_in, c_cones, v_cones)
     A_t = spzeros(n,0)
     b = zeros(0)
     row_map_ind = zeros(Int, length(b_in))
-    row_map_type = Array{Symbol}(length(b_in))
+    row_map_type = Array{Symbol}(undef, length(b_in))
     col_map_ind = zeros(Int, n)
-    col_map_type = Array{Symbol}(n)
+    col_map_type = Array{Symbol}(undef, n)
 
     # First, count the total number of variables
     num_vars = 0
     for (cone, idxs) in v_cones
-        col_map_type[idxs] = cone
+        col_map_type[idxs] .= cone
         num_vars += length(idxs)
     end
     @assert num_vars == n
@@ -429,10 +436,23 @@ function getvardual(m::SCSMathProgModel)
     return dual
 end
 
+if VERSION >= v"0.7-"
+    function addoption!(m::SCSMathProgModel, option::Symbol, value)
+        nt = NamedTuple{(option,), Tuple{typeof(value)}}((value,))
+        m.options = pairs(merge(m.options.data, nt))
+        return m
+    end
+else
+    function addoption!(m::SCSMathProgModel, option::Symbol, value)
+        push!(m.options, (option, value))
+        return m
+    end
+end
+
 # warmstart
 # kwargs can be `primal_sol`, `dual_sol`, and `slack`
 function setwarmstart!(m::SCSMathProgModel, primal_sol; kwargs...)
-    push!(m.options, (:warm_start, true))
+    addoption!(m, :warm_start, true)
     m.primal_sol = primal_sol
     for (k,v) in kwargs
         setfield!(m, k, v)

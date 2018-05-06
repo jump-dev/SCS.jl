@@ -1,5 +1,6 @@
-export SCSMatrix, SCSData, SCSSettings, SCSSolution, SCSInfo, SCSCone, SCSVecOrMatOrSparse
+using Compat.SparseArrays
 
+export SCSMatrix, SCSData, SCSSettings, SCSSolution, SCSInfo, SCSCone, SCSVecOrMatOrSparse
 
 SCSVecOrMatOrSparse = Union{VecOrMat, SparseMatrixCSC{Float64,Int}}
 
@@ -68,9 +69,9 @@ struct SCSData
 end
 
 struct SCSSolution
-    x::Ptr{Void}
-    y::Ptr{Void}
-    s::Ptr{Void}
+    x::Ptr{Nothing}
+    y::Ptr{Nothing}
+    s::Ptr{Nothing}
 end
 
 

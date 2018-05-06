@@ -7,9 +7,9 @@
 # Test the MathProgBase.jl interface for the SCS.jl solver wrapper
 #############################################################################
 
-using Base.Test
 using MathProgBase
-using SCS
+using Compat.LinearAlgebra
+using Compat.SparseArrays
 
 solver = SCSSolver()
 objtol = 1e-4

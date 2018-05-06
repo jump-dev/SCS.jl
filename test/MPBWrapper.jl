@@ -2,9 +2,9 @@
     include("mpb_linear.jl")
 end
 
-import SCS
+using Compat.Pkg: dir
 @testset "MathProgBase" begin
-    include(joinpath(Pkg.dir("MathProgBase"),"test","conicinterface.jl"))
+    include(joinpath(dir("MathProgBase"),"test","conicinterface.jl"))
     coniclineartest(SCS.SCSSolver(), duals=true, tol=1e-2)
     conicSOCtest(SCS.SCSSolver(), duals=true, tol=1e-2)
     conicEXPtest(SCS.SCSSolver(), duals=true, tol=1e-2)

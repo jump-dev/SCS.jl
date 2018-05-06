@@ -8,12 +8,14 @@ else
     error("SCS not properly installed. Please run Pkg.build(\"SCS\") and restart julia")
 end
 
-import Base.Libdl: RTLD_LAZY, RTLD_DEEPBIND, RTLD_GLOBAL, dlopen
+using Compat
+using Compat.Libdl
+using Compat.Sys: isunix
 
 function __init__()
     vnum = VersionNumber(SCS_version())
     # default binaries need access to Julia's lapack symbols
-    if is_unix()
+    if isunix()
         dlopen(Base.liblapack_name, RTLD_LAZY|RTLD_DEEPBIND|RTLD_GLOBAL)
     end
     depsdir = realpath(joinpath(dirname(@__FILE__),"..","deps"))

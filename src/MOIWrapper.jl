@@ -60,7 +60,7 @@ end
 mutable struct SCSOptimizer <: MOI.AbstractOptimizer
     cone::ConeData
     maxsense::Bool
-    data::Union{Void, ModelData} # only non-Void between MOI.copy! and MOI.optimize!
+    data::Union{Nothing, ModelData} # only non-Void between MOI.copy! and MOI.optimize!
     sol::MOISolution
     function SCSOptimizer()
         new(ConeData(), false, nothing, MOISolution())
@@ -169,7 +169,7 @@ function _scalecoef(rows, coef, minus, ::Type{MOI.PositiveSemidefiniteConeTriang
     scaling = minus ? -1 : 1
     scaling2 = rev ? scaling / √2 : scaling * √2
     output = copy(coef)
-    diagidx = IntSet()
+    diagidx = BitSet()
     for i in 1:d
         push!(diagidx, trimap(i, i))
     end
@@ -232,11 +232,11 @@ function MOIU.loadconstraint!(optimizer::SCSOptimizer, ci, f::MOI.VectorAffineFu
     offset = constroffset(optimizer, ci)
     rows = constrrows(s)
     optimizer.cone.nrows[offset] = length(rows)
-    i = offset + rows
+    i = offset .+ rows
     # The SCS format is b - Ax ∈ cone
     # so minus=false for b and minus=true for A
     optimizer.data.b[i] = scalecoef(rows, orderval(f.constant, s), false, s)
-    append!(optimizer.data.I, offset + orderidx(I, s))
+    append!(optimizer.data.I, offset .+ orderidx(I, s))
     append!(optimizer.data.J, J)
     append!(optimizer.data.V, scalecoef(I, V, true, s))
 end
@@ -268,7 +268,7 @@ MOIU.canload(::SCSOptimizer, ::MOI.ObjectiveSense) = true
 function MOIU.load!(::SCSOptimizer, ::MOI.ObjectiveSense, ::MOI.OptimizationSense) end
 MOIU.canload(::SCSOptimizer, ::MOI.ObjectiveFunction{MOI.ScalarAffineFunction{Float64}}) = true
 function MOIU.load!(optimizer::SCSOptimizer, ::MOI.ObjectiveFunction, f::MOI.ScalarAffineFunction)
-    c0 = full(sparsevec(_varmap(f), f.coefficients, optimizer.data.n))
+    c0 = Vector(sparsevec(_varmap(f), f.coefficients, optimizer.data.n))
     optimizer.data.objconstant = f.constant
     optimizer.data.c = optimizer.maxsense ? -c0 : c0
 end
@@ -352,7 +352,7 @@ end
 function MOI.get(optimizer::SCSOptimizer, ::MOI.ConstraintPrimal, ci::CI{<:MOI.AbstractFunction, S}) where S <: MOI.AbstractSet
     offset = constroffset(optimizer, ci)
     rows = constrrows(optimizer, ci)
-    _unshift(optimizer, offset, unscalecoef(rows, reorderval(optimizer.sol.slack[offset + rows], S), S, length(rows)), S)
+    _unshift(optimizer, offset, unscalecoef(rows, reorderval(optimizer.sol.slack[offset .+ rows], S), S, length(rows)), S)
 end
 
 MOI.canget(optimizer::SCSOptimizer, ::MOI.DualStatus) = true
@@ -372,7 +372,7 @@ end
 function MOI.get(optimizer::SCSOptimizer, ::MOI.ConstraintDual, ci::CI{<:MOI.AbstractFunction, S}) where S <: MOI.AbstractSet
     offset = constroffset(optimizer, ci)
     rows = constrrows(optimizer, ci)
-    unscalecoef(rows, reorderval(optimizer.sol.dual[offset + rows], S), S, length(rows))
+    unscalecoef(rows, reorderval(optimizer.sol.dual[offset .+ rows], S), S, length(rows))
 end
 
 MOI.canget(optimizer::SCSOptimizer, ::MOI.ResultCount) = true
