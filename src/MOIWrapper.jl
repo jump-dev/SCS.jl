@@ -188,7 +188,11 @@ scalecoef(rows, coef, minus, s) = _scalecoef(rows, coef, minus, typeof(s), _dim(
 unscalecoef(rows, coef, S::Type{<:MOI.AbstractSet}, d) = _scalecoef(rows, coef, false, S, d, true)
 unscalecoef(rows, coef, S::Type{MOI.PositiveSemidefiniteConeTriangle}, d) = _scalecoef(rows, coef, false, S, sympackeddim(d), true)
 
-_varmap(f) = map(vi -> vi.value, f.variables)
+output_index(t::MOI.VectorAffineTerm) = t.output_index
+variable_index_value(t::MOI.ScalarAffineTerm) = t.variable_index.value
+variable_index_value(t::MOI.VectorAffineTerm) = variable_index_value(t.scalar_term)
+coefficient(t::MOI.ScalarAffineTerm) = t.coefficient
+coefficient(t::MOI.VectorAffineTerm) = coefficient(t.scalar_term)
 # constrrows: Recover the number of rows used by each constraint.
 # When, the set is available, simply use MOI.dimension
 constrrows(::MOI.AbstractScalarSet) = 1
@@ -199,7 +203,7 @@ constrrows(optimizer::SCSOptimizer, ci::CI{<:MOI.AbstractVectorFunction, <:MOI.A
 MOIU.canloadconstraint(::SCSOptimizer, ::Type{<:SF}, ::Type{<:SS}) = true
 MOIU.loadconstraint!(optimizer::SCSOptimizer, ci, f::MOI.SingleVariable, s) = MOIU.loadconstraint!(optimizer, ci, MOI.ScalarAffineFunction{Float64}(f), s)
 function MOIU.loadconstraint!(optimizer::SCSOptimizer, ci, f::MOI.ScalarAffineFunction, s::MOI.AbstractScalarSet)
-    a = sparsevec(_varmap(f), f.coefficients)
+    a = sparsevec(variable_index_value.(f.terms), coefficient.(f.terms))
     # sparsevec combines duplicates with + but does not remove zeros created so we call dropzeros!
     dropzeros!(a)
     offset = constroffset(optimizer, ci)
@@ -225,7 +229,7 @@ function orderidx(idx, s::MOI.PositiveSemidefiniteConeTriangle)
     sympackedUtoLidx(idx, s.dimension)
 end
 function MOIU.loadconstraint!(optimizer::SCSOptimizer, ci, f::MOI.VectorAffineFunction, s::MOI.AbstractVectorSet)
-    A = sparse(f.outputindex, _varmap(f), f.coefficients)
+    A = sparse(output_index.(f.terms), variable_index_value.(f.terms), coefficient.(f.terms))
     # sparse combines duplicates with + but does not remove zeros created so we call dropzeros!
     dropzeros!(A)
     I, J, V = findnz(A)
@@ -235,7 +239,7 @@ function MOIU.loadconstraint!(optimizer::SCSOptimizer, ci, f::MOI.VectorAffineFu
     i = offset .+ rows
     # The SCS format is b - Ax ∈ cone
     # so minus=false for b and minus=true for A
-    optimizer.data.b[i] = scalecoef(rows, orderval(f.constant, s), false, s)
+    optimizer.data.b[i] = scalecoef(rows, orderval(f.constants, s), false, s)
     append!(optimizer.data.I, offset .+ orderidx(I, s))
     append!(optimizer.data.J, J)
     append!(optimizer.data.V, scalecoef(I, V, true, s))
@@ -268,7 +272,7 @@ MOIU.canload(::SCSOptimizer, ::MOI.ObjectiveSense) = true
 function MOIU.load!(::SCSOptimizer, ::MOI.ObjectiveSense, ::MOI.OptimizationSense) end
 MOIU.canload(::SCSOptimizer, ::MOI.ObjectiveFunction{MOI.ScalarAffineFunction{Float64}}) = true
 function MOIU.load!(optimizer::SCSOptimizer, ::MOI.ObjectiveFunction, f::MOI.ScalarAffineFunction)
-    c0 = Vector(sparsevec(_varmap(f), f.coefficients, optimizer.data.n))
+    c0 = Vector(sparsevec(variable_index_value.(f.terms), coefficient.(f.terms), optimizer.data.n))
     optimizer.data.objconstant = f.constant
     optimizer.data.c = optimizer.maxsense ? -c0 : c0
 end
