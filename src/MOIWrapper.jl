@@ -116,36 +116,32 @@ using Compat.SparseArrays
 const ZeroCones = Union{MOI.EqualTo, MOI.Zeros}
 const LPCones = Union{MOI.GreaterThan, MOI.LessThan, MOI.Nonnegatives, MOI.Nonpositives}
 
-# Replace by MOI.dimension on MOI v0.3 thanks to https://github.com/JuliaOpt/MathOptInterface.jl/pull/342
-_dim(s::MOI.AbstractScalarSet) = 1
-_dim(s::MOI.AbstractVectorSet) = MOI.dimension(s)
-
 # Computes cone dimensions
 constroffset(cone::ConeData, ci::CI{<:MOI.AbstractFunction, <:ZeroCones}) = ci.value
 #_allocateconstraint: Allocate indices for the constraint `f`-in-`s` using information in `cone` and then update `cone`
 function _allocateconstraint!(cone::ConeData, f, s::ZeroCones)
     ci = cone.f
-    cone.f += _dim(s)
+    cone.f += MOI.dimension(s)
     ci
 end
 constroffset(cone::ConeData, ci::CI{<:MOI.AbstractFunction, <:LPCones}) = cone.f + ci.value
 function _allocateconstraint!(cone::ConeData, f, s::LPCones)
     ci = cone.l
-    cone.l += _dim(s)
+    cone.l += MOI.dimension(s)
     ci
 end
 constroffset(cone::ConeData, ci::CI{<:MOI.AbstractFunction, <:MOI.SecondOrderCone}) = cone.f + cone.l + ci.value
 function _allocateconstraint!(cone::ConeData, f, s::MOI.SecondOrderCone)
     push!(cone.qa, s.dimension)
     ci = cone.q
-    cone.q += _dim(s)
+    cone.q += MOI.dimension(s)
     ci
 end
 constroffset(cone::ConeData, ci::CI{<:MOI.AbstractFunction, <:MOI.PositiveSemidefiniteConeTriangle}) = cone.f + cone.l + cone.q + ci.value
 function _allocateconstraint!(cone::ConeData, f, s::MOI.PositiveSemidefiniteConeTriangle)
-    push!(cone.sa, s.dimension)
+    push!(cone.sa, s.side_dimension)
     ci = cone.s
-    cone.s += _dim(s)
+    cone.s += MOI.dimension(s)
     ci
 end
 constroffset(cone::ConeData, ci::CI{<:MOI.AbstractFunction, <:MOI.ExponentialCone}) = cone.f + cone.l + cone.q + cone.s + ci.value
@@ -212,7 +208,7 @@ function _scalecoef(rows, coef, minus, ::Type{MOI.PositiveSemidefiniteConeTriang
     output
 end
 # Unscale the coefficients in `coef` with respective rows in `rows` for a set `s` and multiply by `-1` if `minus` is `true`.
-scalecoef(rows, coef, minus, s) = _scalecoef(rows, coef, minus, typeof(s), _dim(s), false)
+scalecoef(rows, coef, minus, s) = _scalecoef(rows, coef, minus, typeof(s), MOI.dimension(s), false)
 # Unscale the coefficients in `coef` with respective rows in `rows` for a set of type `S` with dimension `d`
 unscalecoef(rows, coef, S::Type{<:MOI.AbstractSet}, d) = _scalecoef(rows, coef, false, S, d, true)
 unscalecoef(rows, coef, S::Type{MOI.PositiveSemidefiniteConeTriangle}, d) = _scalecoef(rows, coef, false, S, sympackeddim(d), true)
@@ -250,11 +246,11 @@ end
 MOIU.loadconstraint!(optimizer::Optimizer, ci, f::MOI.VectorOfVariables, s) = MOIU.loadconstraint!(optimizer, ci, MOI.VectorAffineFunction{Float64}(f), s)
 orderval(val, s) = val
 function orderval(val, s::MOI.PositiveSemidefiniteConeTriangle)
-    sympackedUtoL(val, s.dimension)
+    sympackedUtoL(val, s.side_dimension)
 end
 orderidx(idx, s) = idx
 function orderidx(idx, s::MOI.PositiveSemidefiniteConeTriangle)
-    sympackedUtoLidx(idx, s.dimension)
+    sympackedUtoLidx(idx, s.side_dimension)
 end
 function MOIU.loadconstraint!(optimizer::Optimizer, ci, f::MOI.VectorAffineFunction, s::MOI.AbstractVectorSet)
     A = sparse(output_index.(f.terms), variable_index_value.(f.terms), coefficient.(f.terms))
