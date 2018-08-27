@@ -1,5 +1,15 @@
 using BinaryProvider # requires BinaryProvider 0.3.0 or later
 
+dependencies = [
+    "https://github.com/JuliaLinearAlgebra/OpenBLASBuilder/releases/download/v0.3.0-1/build_OpenBLAS.v0.3.0.jl"
+]
+
+for dependency in reverse(dependencies)
+    download(dependency,basename(dependency))
+    evalfile(basename(dependency))
+end
+
+
 # Parse some basic command-line arguments
 const verbose = "--verbose" in ARGS
 const prefix = Prefix(get([a for a in ARGS if a != "--verbose"], 1, joinpath(@__DIR__, "usr")))
