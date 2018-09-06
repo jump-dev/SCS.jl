@@ -5,7 +5,7 @@ const MOIB = MOI.Bridges
 
 const MOIU = MOI.Utilities
 MOIU.@model SCSModelData () (EqualTo, GreaterThan, LessThan) (Zeros, Nonnegatives, Nonpositives, SecondOrderCone, ExponentialCone, PositiveSemidefiniteConeTriangle) () (SingleVariable,) (ScalarAffineFunction,) (VectorOfVariables,) (VectorAffineFunction,)
-const optimizer = MOIU.CachingOptimizer(SCSModelData{Float64}(), SCSOptimizer())
+const optimizer = MOIU.CachingOptimizer(SCSModelData{Float64}(), SCS.Optimizer())
 
 # linear9test needs 1e-3 with SCS < 2.0 and 5e-1 with SCS 2.0
 # linear2test needs 1e-4
