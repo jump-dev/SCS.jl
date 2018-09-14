@@ -4,7 +4,16 @@ const MOIT = MOI.Test
 const MOIB = MOI.Bridges
 
 const MOIU = MOI.Utilities
-MOIU.@model SCSModelData () (EqualTo, GreaterThan, LessThan) (Zeros, Nonnegatives, Nonpositives, SecondOrderCone, ExponentialCone, PositiveSemidefiniteConeTriangle) () (SingleVariable,) (ScalarAffineFunction,) (VectorOfVariables,) (VectorAffineFunction,)
+MOIU.@model(SCSModelData,
+            (),
+            (MOI.EqualTo, MOI.GreaterThan, MOI.LessThan),
+            (MOI.Zeros, MOI.Nonnegatives, MOI.Nonpositives, MOI.SecondOrderCone,
+             MOI.ExponentialCone, MOI.PositiveSemidefiniteConeTriangle),
+            (),
+            (MOI.SingleVariable,),
+            (MOI.ScalarAffineFunction,),
+            (MOI.VectorOfVariables,),
+            (MOI.VectorAffineFunction,))
 const optimizer = MOIU.CachingOptimizer(SCSModelData{Float64}(), SCS.Optimizer())
 
 # linear9test needs 1e-3 with SCS < 2.0 and 5e-1 with SCS 2.0
