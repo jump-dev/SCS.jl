@@ -35,7 +35,9 @@ if haskey(download_info, platform_key())
     if unsatisfied || !isinstalled(url, tarball_hash; prefix=prefix)
         for dependency in dependencies          # We do not check for already installed dependencies
             download(dependency,basename(dependency))
-            evalfile(basename(dependency))
+            if !success(`$(Base.julia_cmd()) $(basename(dependency))`)
+               println("error")
+            end
         end      
         # Download and install binaries
         install(url, tarball_hash; prefix=prefix, force=true, verbose=verbose)
