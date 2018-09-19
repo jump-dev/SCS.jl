@@ -9,7 +9,6 @@ else
 end
 
 using Compat
-using Compat.Sys: isunix
 
 function __init__()
     vnum = VersionNumber(SCS_version())
