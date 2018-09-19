@@ -2,6 +2,12 @@ __precompile__()
 
 module SCS
 
+# To make Pkg aware that this dependency
+# will be injected by BinaryProvider. 		
+# if VERSION > v"0.7.0-"
+#     using Libdl
+# end
+
 if isfile(joinpath(dirname(@__FILE__), "..", "deps", "deps.jl"))
     include("../deps/deps.jl")
 else
@@ -9,18 +15,12 @@ else
 end
 
 using Compat
-using Compat.Libdl
-using Compat.Sys: isunix
 
 function __init__()
     vnum = VersionNumber(SCS_version())
-    # default binaries need access to Julia's lapack symbols
-    if isunix()
-        dlopen(Base.liblapack_name, RTLD_LAZY|RTLD_DEEPBIND|RTLD_GLOBAL)
-    end
     depsdir = realpath(joinpath(dirname(@__FILE__),"..","deps"))
     if vnum.major == 1
-        error("Current SCS version installed is $(SCS_version()), but we require version 2.*. On Linux and Windows, delete the contents of the `$depsdir` directory except for the files `build.jl` and `.gitignore`, then rerun Pkg.build(\"SCS\"). On OS X, run `using Homebrew; Homebrew.update()` in Julia.")
+        error("Current SCS version installed is $(SCS_version()), but we require version 2.*.")
     end
 end
 

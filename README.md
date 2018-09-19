@@ -19,10 +19,7 @@ You can install SCS.jl through the Julia package manager:
 julia> Pkg.add("SCS")
 ```
 
-SCS.jl will automatically setup the SCS solver itself:
- - On Linux it will build from source
- - On OS X it will download a binary via [Homebrew.jl].
- - On Windows it will download a binary.
+SCS.jl will use [BinaryProvider.jl](https://github.com/JuliaPackaging/BinaryProvider.jl) to automatically install the SCS binaries.
 
 ## Usage
 
