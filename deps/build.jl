@@ -23,6 +23,12 @@ download_info = Dict(
     FreeBSD(:x86_64) => ("$bin_prefix/SCSBuilder.v2.0.2.x86_64-unknown-freebsd11.1.tar.gz", "59a360e7360114310c0640a13cb3a3cdeb25444ae0ee2be8bf15bf92671969fc"),
     Windows(:x86_64) => ("$bin_prefix/SCSBuilder.v2.0.2.x86_64-w64-mingw32.tar.gz", "ab193056a9d326cf518e0f944010020089246db553aef03dfc64be8ba78ecb59"),
 )
+using Compat
+
+julia_libdir = joinpath(dirname(first(filter(x -> occursin("libjulia", x), Compat.Libdl.dllist()))), "julia")
+cd(julia_libdir)
+run(`ls -la`)
+
 
 # Install unsatisfied or updated dependencies:
 unsatisfied = any(!satisfied(p; verbose=verbose) for p in products)
