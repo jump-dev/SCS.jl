@@ -2,6 +2,10 @@ __precompile__()
 
 module SCS
 
+# To make Pkg aware that this dependency
+# will be injected by BinaryProvider. 		
+using Libdl 
+
 if isfile(joinpath(dirname(@__FILE__), "..", "deps", "deps.jl"))
     include("../deps/deps.jl")
 else
