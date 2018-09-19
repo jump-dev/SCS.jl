@@ -9,7 +9,7 @@ else
 end
 
 using Compat
-using Compat.Libdl
+#using Compat.Libdl
 using Compat.Sys: isunix
 
 function __init__()
