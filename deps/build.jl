@@ -28,7 +28,7 @@ using Compat
 julia_libdir = joinpath(dirname(first(filter(x -> occursin("libjulia", x), Compat.Libdl.dllist()))), "julia")
 cd(julia_libdir)
 run(`ls -la`)
-
+run(`gcc -v`)
 
 # Install unsatisfied or updated dependencies:
 unsatisfied = any(!satisfied(p; verbose=verbose) for p in products)
