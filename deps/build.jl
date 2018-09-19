@@ -45,5 +45,10 @@ elseif unsatisfied
     error("Your platform $(triplet(platform_key())) is not supported by this package!")
 end
 
+cd(joinpath(Pkg.dir("SCS"),"deps","usr","lib"))
+run(`ldd libscsdir.so`)
+Libdl.dlopen("libscsdir.so")
+                    
+                    
 # Write out a deps.jl file that will contain mappings for our products
 write_deps_file(joinpath(@__DIR__, "deps.jl"), products, verbose=verbose)
