@@ -4,7 +4,9 @@ module SCS
 
 # To make Pkg aware that this dependency
 # will be injected by BinaryProvider. 		
-using Compat.Libdl
+if VERSION > v"0.7.0-"
+    using Libdl
+end
 
 if isfile(joinpath(dirname(@__FILE__), "..", "deps", "deps.jl"))
     include("../deps/deps.jl")
