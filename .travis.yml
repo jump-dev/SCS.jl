@@ -6,13 +6,6 @@ julia:
   - 0.6
   - 0.7
   - 1.0
-addons:
-  apt:
-    sources:
-      - ubuntu-toolchain-r-test
-    packages:
-      - gcc-4.9
-      - g++-4.9
 notifications:
   email: false
 after_success:
