@@ -19,7 +19,7 @@ You can install SCS.jl through the Julia package manager:
 julia> Pkg.add("SCS")
 ```
 
-SCS.jl will use [BinaryProvider.jl](https://github.com/JuliaPackaging/BinaryProvider.jl) to automatically install the SCS binaries.
+SCS.jl will use [BinaryProvider.jl](https://github.com/JuliaPackaging/BinaryProvider.jl) to automatically install the SCS binaries. Note that if you are not using the official Julia binaries from `https://julialang.org/downloads/` you may need a custom install of the SCS binaries. 
 
 ## Custom Installation
 
