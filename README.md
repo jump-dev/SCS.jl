@@ -21,6 +21,18 @@ julia> Pkg.add("SCS")
 
 SCS.jl will use [BinaryProvider.jl](https://github.com/JuliaPackaging/BinaryProvider.jl) to automatically install the SCS binaries.
 
+## Custom Installation
+
+To install custom built SCS binaries set the environmental variable `JULIA_SCS_LIBRARY_PATH` and call `Pkg.build("SCS")`. For instance, if the libraries are installed in `/opt/lib` just call
+```julia
+ENV["JULIA_SCS_LIBRARY_PATH"]="/opt/lib"
+Pkg.build("SCS")
+```
+
+If you do not want BinaryProvider to download the default binaries on install set  `JULIA_SCS_LIBRARY_PATH`  before calling `Pkg.add("SCS")`. 
+
+To switch back to the default binaries clear `JULIA_SCS_LIBRARY_PATH` and call `Pkg.build("SCS")`.
+
 ## Usage
 
 ### MathProgBase wrapper
