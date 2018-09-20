@@ -31,7 +31,7 @@ if haskey(ENV,"JULIA_SCS_LIBRARY_PATH")
         products = custom_products
         custom_library = true
     else
-        warn("Could not install custom libraries from $(ENV["JULIA_SCS_LIBRARY_PATH"]). Falling back to BinaryProvider")
+        Compat.@warn("Could not install custom libraries from $(ENV["JULIA_SCS_LIBRARY_PATH"]). Falling back to BinaryProvider")
     end
 end
 
