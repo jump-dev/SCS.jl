@@ -28,6 +28,11 @@ To install custom built SCS binaries set the environmental variable `JULIA_SCS_L
 ENV["JULIA_SCS_LIBRARY_PATH"]="/opt/lib"
 Pkg.build("SCS")
 ```
+Note that your custom build binaries need to be compiled with the option `DLONG=1`. For instance, a minimal compilation script would be
+```bash
+make DLONG=1
+```
+on SCS's source directory. 
 
 If you do not want BinaryProvider to download the default binaries on install set  `JULIA_SCS_LIBRARY_PATH`  before calling `Pkg.add("SCS")`. 
 
