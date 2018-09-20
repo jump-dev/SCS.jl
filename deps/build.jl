@@ -1,4 +1,5 @@
 using BinaryProvider # requires BinaryProvider 0.3.0 or later
+using Compat
 
 # Parse some basic command-line arguments
 const verbose = "--verbose" in ARGS
