@@ -24,9 +24,20 @@ download_info = Dict(
     Windows(:x86_64) => ("$bin_prefix/SCSBuilder.v2.0.2.x86_64-w64-mingw32.tar.gz", "289504d5df960c3434e5877f16cc42949e32280eb0ec684020bf6f9336c9316f"),
 )
 
+custom_library = false
+if haskey(ENV,"JULIA_SCS_LIBRARY_PATH")
+    custom_products = [LibraryProduct(ENV["JULIA_SCS_LIBRARY_PATH"],product.libnames,product.variable_name) for product in products]
+    if all(satisfied(p; verbose=verbose) for p in custom_products)
+        products = custom_products
+        custom_library = true
+    else
+        warn("Could not install custom libraries from $(ENV["JULIA_SCS_LIBRARY_PATH"]). Falling back to BinaryProvider")
+    end
+end
+
 # Install unsatisfied or updated dependencies:
 unsatisfied = any(!satisfied(p; verbose=verbose) for p in products)
-if haskey(download_info, platform_key())
+if !custom_library && haskey(download_info, platform_key())
     url, tarball_hash = download_info[platform_key()]
     if unsatisfied || !isinstalled(url, tarball_hash; prefix=prefix)
         # Download and install binaries
