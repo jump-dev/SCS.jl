@@ -1,5 +1,5 @@
 using BinaryProvider # requires BinaryProvider 0.3.0 or later
-using Compat
+
 
 # Parse some basic command-line arguments
 const verbose = "--verbose" in ARGS
@@ -32,7 +32,7 @@ if haskey(ENV,"JULIA_SCS_LIBRARY_PATH")
         products = custom_products
         custom_library = true
     else
-        Compat.@warn "Could not install custom libraries from $(ENV["JULIA_SCS_LIBRARY_PATH"]). Falling back to BinaryProvider"
+        error("Could not install custom libraries from $(ENV["JULIA_SCS_LIBRARY_PATH"]).\nTo fall back to BinaryProvider call delete!(ENV,\"JULIA_SCS_LIBRARY_PATH\") and run build again.")
     end
 end
 
