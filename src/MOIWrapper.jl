@@ -60,9 +60,11 @@ mutable struct Optimizer <: MOI.AbstractOptimizer
     maxsense::Bool
     data::Union{Nothing, ModelData} # only non-Void between MOI.copy_to and MOI.optimize!
     sol::MOISolution
-    function Optimizer()
-        new(ConeData(), false, nothing, MOISolution())
+    options
+    function Optimizer(; options...)
+        new(ConeData(), false, nothing, MOISolution(), options)
     end
+
 end
 
 function MOI.is_empty(optimizer::Optimizer)
@@ -282,7 +284,15 @@ function MOI.optimize!(optimizer::Optimizer)
     objconstant = optimizer.data.objconstant
     c = optimizer.data.c
     optimizer.data = nothing # Allows GC to free optimizer.data before A is loaded to SCS
-    sol = SCS_solve(SCS.Indirect, m, n, A, b, c, cone.f, cone.l, cone.qa, cone.sa, cone.ep, cone.ed, cone.p)
+
+    T = SCS.Indirect # the default method
+    opts = Dict(optimizer.options)
+    if :linear_solver in keys(opts)
+        T = opts[:linear_solver]
+    end
+    options = [(k,v) for (k,v) in optimizer.options if k !=:linear_solver]
+
+    sol = SCS_solve(T, m, n, A, b, c, cone.f, cone.l, cone.qa, cone.sa, cone.ep, cone.ed, cone.p, options...)
     ret_val = sol.ret_val
     primal = sol.x
     dual = sol.y
