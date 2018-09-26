@@ -37,7 +37,7 @@ SCSMatrix(m::ManagedSCSMatrix) =
     SCSMatrix(pointer(m.values), pointer(m.rowval), pointer(m.colptr), m.m, m.n)
 
 
-struct SCSSettings
+mutable struct SCSSettings
     normalize::Int # boolean, heuristic data rescaling: 1
     scale::Cdouble # if normalized, rescales by this factor: 1
     rho_x::Cdouble # x equality constraint scaling: 1e-3
@@ -48,12 +48,9 @@ struct SCSSettings
     verbose::Int # boolean, write out progress: 1
     warm_start::Int # boolean, warm start (put initial guess in Sol struct): 0
     acceleration_lookback::Int # acceleration memory parameter: 20
-end
 
-function SCSSettings(;normalize=1::Int, scale=convert(Cdouble, 1.0)::Cdouble, rho_x=convert(Cdouble,1e-3)::Cdouble,
-                        max_iters=5000::Int, eps=convert(Cdouble, 1e-5)::Cdouble, alpha=convert(Cdouble, 1.5)::Cdouble,
-                        cg_rate=convert(Cdouble,2)::Cdouble, verbose=1::Int, warm_start=0::Int, acceleration_lookback=20::Int)
-    return SCSSettings(normalize, scale, rho_x, max_iters, eps, alpha, cg_rate, verbose, warm_start, acceleration_lookback)
+    SCSSettings() = new()
+    SCSSettings(normalize, scale, rho_x, max_iters, eps, alpha, cg_rate, verbose, warm_start, acceleration_lookback) = new(normalize, scale, rho_x, max_iters, eps, alpha, cg_rate, verbose, warm_start, acceleration_lookback)
 end
 
 
