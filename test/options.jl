@@ -20,20 +20,22 @@ s = SCSSolver()
 m = MathProgBase.ConicModel(s)
 MathProgBase.loadproblem!(m, -obj, A, rowub, [(:NonNeg,1:3)],[(:NonNeg,1:5)])
 MathProgBase.optimize!(m)
-@test isapprox(MathProgBase.getobjval(m), -99.0, atol=1e-3)
 
-# With eps = 1e-8, solution should be far more accurate
-s = SCSSolver(eps=1e-8)
+@test isapprox(MathProgBase.getobjval(m), -99.0, atol=1e-6, rtol=0.0)
+@test !isapprox(MathProgBase.getobjval(m), -99.0, atol=1e-7, rtol=0.0)
+
+# With eps = 1e-12, solution should be far more accurate
+s = SCSSolver(eps=1e-12)
 m = MathProgBase.ConicModel(s)
 MathProgBase.loadproblem!(m, -obj, A, rowub, [(:NonNeg,1:3)],[(:NonNeg,1:5)])
 MathProgBase.optimize!(m)
-@test isapprox(MathProgBase.getobjval(m), -99.0, atol=1e-5)
+@test isapprox(MathProgBase.getobjval(m), -99.0, atol=1e-10, rtol=0.0)
 
 # With a warmstart from the eps = 1e-8 solution, solution should be extremely accurate even after 1 iteration
 SCS.addoption!(m, :warm_start, true)
 SCS.addoption!(m, :max_iters, 1)
 MathProgBase.optimize!(m)
-@test isapprox(MathProgBase.getobjval(m), -99.0, atol=1e-5)
+@test isapprox(MathProgBase.getobjval(m), -99.0, atol=1e-10, rtol=0.0)
 
 # Now let's do the same warmstart, but on a new instance of the same problem
 primal_sol = m.primal_sol
@@ -44,4 +46,4 @@ m = MathProgBase.ConicModel(s)
 MathProgBase.loadproblem!(m, -obj, A, rowub, [(:NonNeg,1:3)],[(:NonNeg,1:5)])
 MathProgBase.setwarmstart!(m, primal_sol; dual_sol = dual_sol, slack = slack)
 MathProgBase.optimize!(m)
-@test isapprox(MathProgBase.getobjval(m), -99.0, atol=1e-5)
+@test isapprox(MathProgBase.getobjval(m), -99.0, atol=1e-10, rtol=0.0)
