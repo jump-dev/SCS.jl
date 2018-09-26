@@ -58,6 +58,11 @@ function SCS_solve(T::Union{Type{Direct}, Type{Indirect}},
         k in all_kwargs || throw(ArgumentError("Unknown keyword passed to SCS solver: $k"))
     end
 
+    for param in keys(opts)
+        # when dropping support for 0.6 could be replaced with setproperty!
+        setfield!(settings[], param, convert(fieldtype(SCSSettings, param), opts[param]))
+    end
+
     cone = Ref(SCSCone(f, l, q, s, ep, ed, p))
     info = Ref(SCSInfo())
 
