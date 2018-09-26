@@ -98,9 +98,9 @@ function optimize!(m::SCSMathProgModel)
     T = SCS.Indirect # the default method
     options = m.options
     opts = Dict(m.options)
-    if :linearsolver in keys(opts)
-        T = opts[:linearsolver]
-        options = [(k,v) for (k,v) in options if k !=:linearsolver]
+    if :linear_solver in keys(opts)
+        T = opts[:linear_solver]
+        options = [(k,v) for (k,v) in options if k !=:linear_solver]
     end
 
     solution = SCS_solve(T, m.m, m.n, m.A, m.b, m.c, m.f, m.l, m.q,
