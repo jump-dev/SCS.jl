@@ -88,7 +88,7 @@ end
 for (T, lib) in zip([SCS.Direct, SCS.Indirect], [SCS.direct, SCS.indirect])
     @eval begin
 
-        function SCS_set_default_settings!(::Type{$T}, data::Ref{SCSData})
+        function SCS_set_default_settings(::Type{$T}, data::Ref{SCSData})
             ccall((:scs_set_default_settings, $lib), Nothing, (Ref{SCSData}, ), data)
         end
 
