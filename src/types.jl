@@ -53,6 +53,36 @@ struct SCSSettings
     SCSSettings(normalize, scale, rho_x, max_iters, eps, alpha, cg_rate, verbose, warm_start, acceleration_lookback) = new(normalize, scale, rho_x, max_iters, eps, alpha, cg_rate, verbose, warm_start, acceleration_lookback)
 end
 
+struct Direct end
+struct Indirect end
+
+function _SCS_user_settings(default_settings;
+        normalize=default_settings.normalize,
+        scale=default_settings.scale,
+        rho_x=default_settings.rho_x,
+        max_iters=default_settings.max_iters,
+        eps=default_settings.eps,
+        alpha=default_settings.alpha,
+        cg_rate=default_settings.cg_rate,
+        verbose=default_settings.verbose,
+        warm_start=default_settings.warm_start,
+        acceleration_lookback=default_settings.acceleration_lookback)
+    return SCSSettings(normalize, scale, rho_x, max_iters, eps, alpha, cg_rate, verbose,warm_start, acceleration_lookback)
+end
+
+function SCSSettings(linear_solver::Union{Type{Direct}, Type{Indirect}}; options...)
+
+    mmatrix = ManagedSCSMatrix(0,0,spzeros(1,1))
+    matrix = Ref(SCSMatrix(mmatrix))
+    default_settings = Ref(SCSSettings())
+    dummy_data = Ref(SCSData(0,0, Base.unsafe_convert(Ptr{SCSMatrix}, matrix),
+        pointer([0.0]), pointer([0.0]),
+        Base.unsafe_convert(Ptr{SCSSettings}, default_settings)))
+    SCS_set_default_settings(linear_solver, dummy_data)
+
+    settings = _SCS_user_settings(default_settings[]; Dict(options)...)
+    return settings
+end
 
 struct SCSData
     # A has m rows, n cols
@@ -152,6 +182,3 @@ mutable struct Solution
         end
     end
 end
-
-struct Direct end
-struct Indirect end

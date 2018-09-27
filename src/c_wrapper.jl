@@ -47,21 +47,8 @@ function SCS_solve(T::Union{Type{Direct}, Type{Indirect}},
 
     managed_matrix = ManagedSCSMatrix(m, n, A)
     matrix = Ref(SCSMatrix(managed_matrix))
-    settings = Ref(SCSSettings())
+    settings = Ref(SCSSettings(T; options...))
     data = Ref(SCSData(m, n, Base.unsafe_convert(Ptr{SCSMatrix}, matrix), pointer(b), pointer(c), Base.unsafe_convert(Ptr{SCSSettings},settings)))
-    SCS_set_default_settings!(T, data)
-
-    opts = Dict(options)
-
-    all_kwargs = [:scale, :rho_x, :max_iters, :eps, :alpha, :cg_rate, :acceleration_lookback, :normalize, :verbose, :warm_start]
-    for k in keys(opts)
-        k in all_kwargs || throw(ArgumentError("Unknown keyword passed to SCS solver: $k"))
-    end
-
-    for param in keys(opts)
-        # when dropping support for 0.6 could be replaced with setproperty!
-        setfield!(settings[], param, convert(fieldtype(SCSSettings, param), opts[param]))
-    end
 
     cone = Ref(SCSCone(f, l, q, s, ep, ed, p))
     info = Ref(SCSInfo())
