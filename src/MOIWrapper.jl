@@ -260,6 +260,9 @@ function MOIU.load_variables(optimizer::Optimizer, nvars::Integer)
     b = zeros(m)
     c = zeros(nvars)
     optimizer.data = ModelData(m, nvars, I, J, V, b, 0., c)
+    # `optimizer.sol` contains the result of the previous optimization.
+    # It is used as a warm start if its length is the same, e.g.
+    # probably because no variable and/or constraint has been added.
     if length(optimizer.sol.primal) != nvars
         optimizer.sol.primal = zeros(nvars)
     end
