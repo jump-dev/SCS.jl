@@ -47,3 +47,10 @@ MathProgBase.loadproblem!(m, -obj, A, rowub, [(:NonNeg,1:3)],[(:NonNeg,1:5)])
 MathProgBase.setwarmstart!(m, primal_sol; dual_sol = dual_sol, slack = slack)
 MathProgBase.optimize!(m)
 @test isapprox(MathProgBase.getobjval(m), -99.0, atol=1e-10, rtol=0.0)
+
+# tests for incorrect options
+s = SCSSolver(eps=1e-12, epps=1.0)
+m = MathProgBase.ConicModel(s)
+MathProgBase.loadproblem!(m, -obj, A, rowub, [(:NonNeg,1:3)],[(:NonNeg,1:5)])
+
+@test_throws ArgumentError MathProgBase.optimize!(m)
