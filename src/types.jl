@@ -84,7 +84,11 @@ function SCSSettings(linear_solver::Union{Type{Direct}, Type{Indirect}}; options
     catch err
         if err isa MethodError && startswith(string(typeof(err.f).name.name),"#kw#")
             SCS_kwargs = fieldnames(typeof(default_settings[]))
-            kwargs = [err.args[1][i*2-1] for i in 1:(length(err.args[1]) ÷ 2)]
+            if VERSION >= v"0.7-"
+                kwargs = keys(err.args[1])
+            else
+                kwargs = [err.args[1][i*2-1] for i in 1:(length(err.args[1]) ÷ 2)]
+            end
             unexpected = setdiff(kwargs, SCS_kwargs)
             plur = length(unexpected) > 1 ? "s" : ""
             throw(ArgumentError("Unrecognized option$plur passed to the SCSSolver or SCS.Optimizer: "* join(unexpected, ", ")))

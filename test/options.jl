@@ -54,3 +54,10 @@ m = MathProgBase.ConicModel(s)
 MathProgBase.loadproblem!(m, -obj, A, rowub, [(:NonNeg,1:3)],[(:NonNeg,1:5)])
 
 @test_throws ArgumentError MathProgBase.optimize!(m)
+
+err = try
+    MathProgBase.optimize!(m)
+catch ex
+    ex
+end
+@test err.msg == "Unrecognized option passed to the SCSSolver or SCS.Optimizer: epps"
