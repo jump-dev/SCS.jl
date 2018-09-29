@@ -60,4 +60,20 @@ err = try
 catch ex
     ex
 end
-@test err.msg == "Unrecognized option passed to the SCSSolver or SCS.Optimizer: epps"
+@test err.msg == "Unrecognized option passed to SCS: epps;
+Recognized options are: normalize, scale, rho_x, max_iters, eps, alpha, cg_rate, verbose, warm_start and acceleration_lookback."
+
+# tests for incorrect options
+s = SCSSolver(linear_solver="AAA", eps=1e-12, epps=1.0)
+m = MathProgBase.ConicModel(s)
+MathProgBase.loadproblem!(m, -obj, A, rowub, [(:NonNeg,1:3)],[(:NonNeg,1:5)])
+
+@test_throws ArgumentError MathProgBase.optimize!(m)
+
+err = try
+    MathProgBase.optimize!(m)
+catch ex
+    ex
+end
+
+@test err.msg == "Unrecognized linear_solver passed to SCS: AAA;\nRecognized options are: SCS.Direct, SCS.Indirect."
