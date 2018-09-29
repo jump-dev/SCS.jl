@@ -285,12 +285,7 @@ function MOI.optimize!(optimizer::Optimizer)
     c = optimizer.data.c
     optimizer.data = nothing # Allows GC to free optimizer.data before A is loaded to SCS
 
-    linear_solver = SCS.Indirect # the default method
-    opts = Dict(optimizer.options)
-    if :linear_solver in keys(opts)
-        linear_solver = opts[:linear_solver]
-    end
-    options = [(k,v) for (k,v) in optimizer.options if k !=:linear_solver]
+    linear_solver, options = sanatize_SCS_options(optimizer.options)
 
     sol = SCS_solve(linear_solver, m, n, A, b, c, cone.f, cone.l, cone.qa, cone.sa, cone.ep, cone.ed, cone.p; options...)
     ret_val = sol.ret_val

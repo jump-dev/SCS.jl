@@ -196,3 +196,26 @@ mutable struct Solution
         end
     end
 end
+
+function sanatize_SCS_options(options)
+    options = Dict(options)
+    if :linear_solver in keys(options)
+        linear_solver = options[:linear_solver]
+        if linear_solver == Direct || linear_solver == Indirect
+            nothing
+        else
+            throw(ArgumentError("Unrecognized linear_solver passed to SCS: $linear_solver;\nRecognized options are: $Direct, $Indirect."))
+        end
+        delete!(options, :linear_solver)
+    else
+        linear_solver = Indirect # the default linear_solver
+    end
+
+    SCS_options = fieldnames(SCSSettings)
+    unrecognized = setdiff(keys(options), SCS_options)
+    if length(unrecognized) > 0
+        plur = length(unrecognized) > 1 ? "s" : ""
+        throw(ArgumentError("Unrecognized option$plur passed to SCS: $(join(unrecognized, ", "));\nRecognized options are: $(join(SCS_options, ", ", " and "))."))
+    end
+    return linear_solver, options
+end
