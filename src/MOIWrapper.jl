@@ -292,7 +292,7 @@ function MOI.optimize!(optimizer::Optimizer)
     end
     options = [(k,v) for (k,v) in optimizer.options if k !=:linear_solver]
 
-    sol = SCS_solve(linear_solver, m, n, A, b, c, cone.f, cone.l, cone.qa, cone.sa, cone.ep, cone.ed, cone.p, options...)
+    sol = SCS_solve(linear_solver, m, n, A, b, c, cone.f, cone.l, cone.qa, cone.sa, cone.ep, cone.ed, cone.p; options...)
     ret_val = sol.ret_val
     primal = sol.x
     dual = sol.y
