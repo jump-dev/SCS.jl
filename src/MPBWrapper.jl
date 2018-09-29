@@ -99,7 +99,6 @@ function optimize!(m::SCSMathProgModel)
     opts = Dict(m.options)
     if :linear_solver in keys(opts)
         linear_solver = opts[:linear_solver]
-        delete
     end
     options = [(k,v) for (k,v) in m.options if k !=:linear_solver]
 
