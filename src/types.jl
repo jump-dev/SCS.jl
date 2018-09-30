@@ -79,23 +79,7 @@ function SCSSettings(linear_solver::Union{Type{Direct}, Type{Indirect}}; options
         pointer([0.0]), pointer([0.0]),
         Base.unsafe_convert(Ptr{SCSSettings}, default_settings)))
     SCS_set_default_settings(linear_solver, dummy_data)
-    settings = try
-        _SCS_user_settings(default_settings[]; options...)
-    catch err
-        if err isa MethodError && startswith(string(typeof(err.f).name.name),"#kw#")
-            SCS_kwargs = fieldnames(typeof(default_settings[]))
-            if VERSION >= v"0.7-"
-                kwargs = keys(err.args[1])
-            else
-                kwargs = [err.args[1][i*2-1] for i in 1:(length(err.args[1]) ÷ 2)]
-            end
-            unexpected = setdiff(kwargs, SCS_kwargs)
-            plur = length(unexpected) > 1 ? "s" : ""
-            throw(ArgumentError("Unrecognized option$plur passed to the SCSSolver or SCS.Optimizer: "* join(unexpected, ", ")))
-        end
-        rethrow(err)
-    end
-    return settings
+    return _SCS_user_settings(default_settings[]; options...)
 end
 
 struct SCSData
