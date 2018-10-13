@@ -19,6 +19,16 @@ for T in [SCS.Direct, SCS.Indirect]
 
     config = MOIT.TestConfig(atol=1e-5)
 
+    @testset "Continuous linear problems" begin
+        MOIT.unittest(MOIB.SplitInterval{Float64}(optimizer),
+                      # solve_blank_obj needs 1e-2 tolerance
+                      MOIT.TestConfig(atol=1e-2, rtol=1e-2),
+                      [# Quadratic functions are not supported
+                       "solve_qcp_edge_cases", "solve_qp_edge_cases",
+                       # Integer and ZeroOne sets are not supported
+                       "solve_integer_edge_cases", "solve_objbound_edge_cases"])
+    end
+
     @testset "Continuous linear problems with $T" begin
         MOIT.contlineartest(MOIB.SplitInterval{Float64}(optimizer), config)
     end
