@@ -3,10 +3,12 @@
 end
 
 using Compat.Pkg: dir
-@testset "MathProgBase" begin
-    include(joinpath(dir("MathProgBase"),"test","conicinterface.jl"))
-    coniclineartest(SCS.SCSSolver(), duals=true, tol=1e-2)
-    conicSOCtest(SCS.SCSSolver(), duals=true, tol=1e-2)
-    conicEXPtest(SCS.SCSSolver(), duals=true, tol=1e-2)
-    conicSDPtest(SCS.SCSSolver(), duals=true, tol=1e-2)
+for T in [SCS.Direct, SCS.Indirect]
+    @testset "MathProgBase $T" begin
+        include(joinpath(dir("MathProgBase"),"test","conicinterface.jl"))
+        coniclineartest(SCS.SCSSolver(linear_solver=T, eps=1e-7), duals=true, tol=1e-5)
+        conicSOCtest(SCS.SCSSolver(linear_solver=T), duals=true, tol=1e-5)
+        conicEXPtest(SCS.SCSSolver(linear_solver=T), duals=true, tol=1e-5)
+        conicSDPtest(SCS.SCSSolver(linear_solver=T, eps=1e-7), duals=true, tol=1e-5)
+    end
 end

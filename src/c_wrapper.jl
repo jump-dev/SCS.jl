@@ -47,8 +47,9 @@ function SCS_solve(T::Union{Type{Direct}, Type{Indirect}},
 
     managed_matrix = ManagedSCSMatrix(m, n, A)
     matrix = Ref(SCSMatrix(managed_matrix))
-    settings = Ref(SCSSettings(;options...))
+    settings = Ref(SCSSettings(T; options...))
     data = Ref(SCSData(m, n, Base.unsafe_convert(Ptr{SCSMatrix}, matrix), pointer(b), pointer(c), Base.unsafe_convert(Ptr{SCSSettings},settings)))
+
     cone = Ref(SCSCone(f, l, q, s, ep, ed, p))
     info = Ref(SCSInfo())
 
@@ -86,6 +87,11 @@ end
 # Take Ref{}s because SCS might modify the structs
 for (T, lib) in zip([SCS.Direct, SCS.Indirect], [SCS.direct, SCS.indirect])
     @eval begin
+
+        function SCS_set_default_settings(::Type{$T}, data::Ref{SCSData})
+            ccall((:scs_set_default_settings, $lib), Nothing, (Ref{SCSData}, ), data)
+        end
+
         function SCS_init(::Type{$T}, data::Ref{SCSData}, cone::Ref{SCSCone}, info::Ref{SCSInfo})
 
             p_work = ccall((:scs_init, $lib), Ptr{Nothing},

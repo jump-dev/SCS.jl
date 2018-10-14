@@ -14,17 +14,16 @@ MOIU.@model(SCSModelData,
             (MOI.ScalarAffineFunction,),
             (MOI.VectorOfVariables,),
             (MOI.VectorAffineFunction,))
-const optimizer = MOIU.CachingOptimizer(SCSModelData{Float64}(), SCS.Optimizer())
+for T in [SCS.Direct, SCS.Indirect]
+    optimizer = MOIU.CachingOptimizer(SCSModelData{Float64}(), SCS.Optimizer(linear_solver=T, eps=1e-8))
 
-# linear9test needs 1e-3 with SCS < 2.0 and 5e-1 with SCS 2.0
-# linear2test needs 1e-4
-const config = MOIT.TestConfig(atol=1e-4, rtol=1e-4)
+    config = MOIT.TestConfig(atol=1e-5)
 
-@testset "Continuous linear problems" begin
-    # AlmostSuccess for linear9 with SCS 2
-    MOIT.contlineartest(MOIB.SplitInterval{Float64}(optimizer), config, ["linear9"])
-end
+    @testset "Continuous linear problems with $T" begin
+        MOIT.contlineartest(MOIB.SplitInterval{Float64}(optimizer), config)
+    end
 
-@testset "Continuous conic problems" begin
-    MOIT.contconictest(MOIB.RootDet{Float64}(MOIB.LogDet{Float64}(optimizer)), config, ["rsoc", "geomean", "psds", "rootdet", "logdets"])
+    @testset "Continuous conic problems with $T" begin
+        MOIT.contconictest(MOIB.RootDet{Float64}(MOIB.LogDet{Float64}(optimizer)), config, ["rsoc", "geomean", "psds", "rootdet", "logdets"])
+    end
 end

@@ -38,24 +38,49 @@ SCSMatrix(m::ManagedSCSMatrix) =
 
 
 struct SCSSettings
-    normalize::Int # boolean, heuristic data rescaling: 1
-    scale::Cdouble # if normalized, rescales by this factor: 1
-    rho_x::Cdouble # x equality constraint scaling: 1e-3
-    max_iters::Int # maximum iterations to take: 5000
-    eps::Cdouble # convergence tolerance: 1e-5
-    alpha::Cdouble # relaxation parameter: 1.5
-    cg_rate::Cdouble # for indirect, tolerance goes down like (1/iter)^cg_rate: 2
-    verbose::Int # boolean, write out progress: 1
-    warm_start::Int # boolean, warm start (put initial guess in Sol struct): 0
-    acceleration_lookback::Int # acceleration memory parameter: 20
+    normalize::Int # boolean, heuristic data rescaling
+    scale::Cdouble # if normalized, rescales by this factor
+    rho_x::Cdouble # x equality constraint scaling
+    max_iters::Int # maximum iterations to take
+    eps::Cdouble # convergence tolerance
+    alpha::Cdouble # relaxation parameter
+    cg_rate::Cdouble # for indirect, tolerance goes down like (1/iter)^cg_rate
+    verbose::Int # boolean, write out progress
+    warm_start::Int # boolean, warm start (put initial guess in Sol struct)
+    acceleration_lookback::Int # acceleration memory parameter
+
+    SCSSettings() = new()
+    SCSSettings(normalize, scale, rho_x, max_iters, eps, alpha, cg_rate, verbose, warm_start, acceleration_lookback) = new(normalize, scale, rho_x, max_iters, eps, alpha, cg_rate, verbose, warm_start, acceleration_lookback)
 end
 
-function SCSSettings(;normalize=1::Int, scale=convert(Cdouble, 1.0)::Cdouble, rho_x=convert(Cdouble,1e-3)::Cdouble,
-                        max_iters=5000::Int, eps=convert(Cdouble, 1e-5)::Cdouble, alpha=convert(Cdouble, 1.5)::Cdouble,
-                        cg_rate=convert(Cdouble,2)::Cdouble, verbose=1::Int, warm_start=0::Int, acceleration_lookback=20::Int)
-    return SCSSettings(normalize, scale, rho_x, max_iters, eps, alpha, cg_rate, verbose, warm_start, acceleration_lookback)
+struct Direct end
+struct Indirect end
+
+function _SCS_user_settings(default_settings::SCSSettings;
+        normalize=default_settings.normalize,
+        scale=default_settings.scale,
+        rho_x=default_settings.rho_x,
+        max_iters=default_settings.max_iters,
+        eps=default_settings.eps,
+        alpha=default_settings.alpha,
+        cg_rate=default_settings.cg_rate,
+        verbose=default_settings.verbose,
+        warm_start=default_settings.warm_start,
+        acceleration_lookback=default_settings.acceleration_lookback)
+    return SCSSettings(normalize, scale, rho_x, max_iters, eps, alpha, cg_rate, verbose,warm_start, acceleration_lookback)
 end
 
+function SCSSettings(linear_solver::Union{Type{Direct}, Type{Indirect}}; options...)
+
+    mmatrix = ManagedSCSMatrix(0,0,spzeros(1,1))
+    matrix = Ref(SCSMatrix(mmatrix))
+    default_settings = Ref(SCSSettings())
+    dummy_data = Ref(SCSData(0,0, Base.unsafe_convert(Ptr{SCSMatrix}, matrix),
+        pointer([0.0]), pointer([0.0]),
+        Base.unsafe_convert(Ptr{SCSSettings}, default_settings)))
+    SCS_set_default_settings(linear_solver, dummy_data)
+    return _SCS_user_settings(default_settings[]; options...)
+end
 
 struct SCSData
     # A has m rows, n cols
@@ -156,5 +181,25 @@ mutable struct Solution
     end
 end
 
-struct Direct end
-struct Indirect end
+function sanatize_SCS_options(options)
+    options = Dict(options)
+    if :linear_solver in keys(options)
+        linear_solver = options[:linear_solver]
+        if linear_solver == Direct || linear_solver == Indirect
+            nothing
+        else
+            throw(ArgumentError("Unrecognized linear_solver passed to SCS: $linear_solver;\nRecognized options are: $Direct, $Indirect."))
+        end
+        delete!(options, :linear_solver)
+    else
+        linear_solver = Indirect # the default linear_solver
+    end
+
+    SCS_options = fieldnames(SCSSettings)
+    unrecognized = setdiff(keys(options), SCS_options)
+    if length(unrecognized) > 0
+        plur = length(unrecognized) > 1 ? "s" : ""
+        throw(ArgumentError("Unrecognized option$plur passed to SCS: $(join(unrecognized, ", "));\nRecognized options are: $(join(SCS_options, ", ", " and "))."))
+    end
+    return linear_solver, options
+end
