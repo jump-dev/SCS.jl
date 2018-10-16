@@ -19,7 +19,7 @@ You can install SCS.jl through the Julia package manager:
 julia> Pkg.add("SCS")
 ```
 
-SCS.jl will use [BinaryProvider.jl](https://github.com/JuliaPackaging/BinaryProvider.jl) to automatically install the SCS binaries. Note that if you are not using the official Julia binaries from `https://julialang.org/downloads/` you may need a custom install of the SCS binaries. 
+SCS.jl will use [BinaryProvider.jl](https://github.com/JuliaPackaging/BinaryProvider.jl) to automatically install the SCS binaries. Note that if you are not using the official Julia binaries from `https://julialang.org/downloads/` you may need a custom install of the SCS binaries.
 
 ## Custom Installation
 
@@ -30,11 +30,15 @@ Pkg.build("SCS")
 ```
 Note that your custom build binaries need to be compiled with the option `DLONG=1`. For instance, a minimal compilation script would be
 ```bash
-make DLONG=1
+$ cd <scs_dir>
+$ make DLONG=1
+$ julia
+julia> ENV["JULIA_SCS_LIBRARY_PATH"]="<scs_dir>/out"
+] build SCS
 ```
-on SCS's source directory. 
+where `<scs_dir>` is SCS's source directory.
 
-If you do not want BinaryProvider to download the default binaries on install set  `JULIA_SCS_LIBRARY_PATH`  before calling `Pkg.add("SCS")`. 
+If you do not want BinaryProvider to download the default binaries on install set  `JULIA_SCS_LIBRARY_PATH`  before calling `Pkg.add("SCS")`.
 
 To switch back to the default binaries clear `JULIA_SCS_LIBRARY_PATH` and call `Pkg.build("SCS")`.
 
