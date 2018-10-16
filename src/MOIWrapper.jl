@@ -79,6 +79,7 @@ MOIU.needs_allocate_load(instance::Optimizer) = true
 
 function MOI.supports(::Optimizer,
                       ::Union{MOI.ObjectiveSense,
+                              MOI.ObjectiveFunction{MOI.SingleVariable},
                               MOI.ObjectiveFunction{MOI.ScalarAffineFunction{Float64}},
                               MOI.VariablePrimalStart})
     return true
@@ -287,7 +288,10 @@ end
 function MOIU.allocate(optimizer::Optimizer, ::MOI.ObjectiveSense, sense::MOI.OptimizationSense)
     optimizer.maxsense = sense == MOI.MaxSense
 end
-function MOIU.allocate(::Optimizer, ::MOI.ObjectiveFunction, ::MOI.ScalarAffineFunction) end
+function MOIU.allocate(::Optimizer, ::MOI.ObjectiveFunction,
+                       ::MOI.Union{MOI.SingleVariable,
+                                   MOI.ScalarAffineFunction{Float64}})
+end
 
 function MOIU.load(optimizer::Optimizer, ::MOI.VariablePrimalStart,
                    vi::MOI.VariableIndex, value::Float64)
@@ -305,11 +309,21 @@ function MOIU.load(optimizer::Optimizer, ::MOI.ConstraintDualStart,
     rows = constrrows(optimizer, ci)
     optimizer.sol.primal[offset .+ rows] .= value
 end
-function MOIU.load(::Optimizer, ::MOI.ObjectiveSense, ::MOI.OptimizationSense) end
-function MOIU.load(optimizer::Optimizer, ::MOI.ObjectiveFunction, f::MOI.ScalarAffineFunction)
-    c0 = Vector(sparsevec(variable_index_value.(f.terms), coefficient.(f.terms), optimizer.data.n))
+function MOIU.load(::Optimizer, ::MOI.ObjectiveSense, ::MOI.OptimizationSense)
+end
+function MOIU.load(optimizer::Optimizer, ::MOI.ObjectiveFunction,
+                   f::MOI.SingleVariable)
+    MOIU.load(optimizer,
+              MOI.ObjectiveFunction{MOI.ScalarAffineFunction{Float64}}(),
+              MOI.ScalarAffineFunction{Float64}(f))
+end
+function MOIU.load(optimizer::Optimizer, ::MOI.ObjectiveFunction,
+                   f::MOI.ScalarAffineFunction)
+    c0 = Vector(sparsevec(variable_index_value.(f.terms), coefficient.(f.terms),
+                          optimizer.data.n))
     optimizer.data.objconstant = f.constant
     optimizer.data.c = optimizer.maxsense ? -c0 : c0
+    return nothing
 end
 
 function MOI.optimize!(optimizer::Optimizer)
