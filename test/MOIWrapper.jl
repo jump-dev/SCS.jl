@@ -44,6 +44,7 @@ for T in [SCS.Direct, SCS.Indirect]
     end
 
     @testset "Continuous conic problems with $T" begin
-        MOIT.contconictest(MOIB.RootDet{Float64}(MOIB.LogDet{Float64}(optimizer)), config, ["rsoc", "geomean", "psds", "rootdet", "logdets"])
+        MOIT.contconictest(MOIB.RootDet{Float64}(MOIB.LogDet{Float64}(MOIB.GeoMean{Float64}(MOIB.RSOC{Float64}(optimizer)))),
+                           config, ["psds", "rootdets", "logdets"])
     end
 end
