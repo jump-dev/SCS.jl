@@ -61,7 +61,7 @@ catch ex
     ex
 end
 @test err.msg == "Unrecognized option passed to SCS: epps;
-Recognized options are: normalize, scale, rho_x, max_iters, eps, alpha, cg_rate, verbose, warm_start and acceleration_lookback."
+Recognized options are: linear_solver, normalize, scale, rho_x, max_iters, eps, alpha, cg_rate, verbose, warm_start and acceleration_lookback."
 
 # tests for incorrect options
 s = SCSSolver(linear_solver="AAA", eps=1e-12, epps=1.0)
