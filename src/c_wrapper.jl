@@ -45,6 +45,9 @@ function SCS_solve(T::Union{Type{Direct}, Type{Indirect}},
         slack::Vector{Float64}=Float64[];
         options...)
 
+    n > 0 || throw(ArgumentError("The number of variables in SCSModel must be greater than 0"))
+    m > 0 || throw(ArgumentError("The number of constraints in SCSModel must be greater than 0"))
+
     managed_matrix = ManagedSCSMatrix(m, n, A)
     matrix = Ref(SCSMatrix(managed_matrix))
     settings = Ref(SCSSettings(T; options...))
