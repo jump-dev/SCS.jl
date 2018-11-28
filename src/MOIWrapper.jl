@@ -14,9 +14,10 @@ mutable struct MOISolution
     dual::Vector{Float64}
     slack::Vector{Float64}
     objval::Float64
+    solve_time::Float64
 end
 MOISolution() = MOISolution(0, # SCS_UNFINISHED
-                      Float64[], Float64[], Float64[], NaN)
+                            Float64[], Float64[], Float64[], NaN, 0.0)
 
 # Used to build the data with allocate-load during `copy_to`.
 # When `optimize!` is called, a the data is passed to SCS
@@ -338,17 +339,23 @@ function MOI.optimize!(optimizer::Optimizer)
 
     linear_solver, options = sanatize_SCS_options(optimizer.options)
 
-    sol = SCS_solve(linear_solver, m, n, A, b, c, 
+    t = time()
+    sol = SCS_solve(linear_solver, m, n, A, b, c,
                     cone.f, cone.l, cone.qa, cone.sa, cone.ep, cone.ed, cone.p,
                     optimizer.sol.primal, optimizer.sol.dual,
                     optimizer.sol.slack; options...)
+    solve_time = time() - t
 
     ret_val = sol.ret_val
     primal = sol.x
     dual = sol.y
     slack = sol.s
     objval = (optimizer.maxsense ? -1 : 1) * dot(c, primal) + objconstant
-    optimizer.sol = MOISolution(ret_val, primal, dual, slack, objval)
+    optimizer.sol = MOISolution(ret_val, primal, dual, slack, objval, solve_time)
+end
+
+function MOI.get(optimizer::Optimizer, ::MOI.SolveTime)
+    return optimizer.sol.solve_time
 end
 
 # Implements getter for result value and statuses
