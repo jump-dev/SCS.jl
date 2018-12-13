@@ -74,6 +74,7 @@ end
 function MOI.empty!(optimizer::Optimizer)
     optimizer.maxsense = false
     optimizer.data = nothing # It should already be nothing except if an error is thrown inside copy_to
+    optimizer.sol.ret_val = 0
 end
 
 MOIU.needs_allocate_load(instance::Optimizer) = true
@@ -373,18 +374,27 @@ end
 function MOI.get(optimizer::Optimizer, ::MOI.TerminationStatus)
     s = optimizer.sol.ret_val
     @assert -7 <= s <= 2
-    @assert s != 0
-    if s in (-7, -6, 2)
-        MOI.AlmostSuccess
+    if s == -7
+        MOI.AlmostInfeasible
+    elseif s == -6
+        MOI.AlmostDualInfeasible
+    elseif s == 2
+        MOI.AlmostOptimal
     elseif s == -5
         MOI.Interrupted
     elseif s == -4
         MOI.NumericalError
     elseif s == -3
         MOI.SlowProgress
+    elseif s == -2
+        MOI.Infeasible
+    elseif s == -1
+        MOI.DualInfeasible
+    elseif s == 1
+        MOI.Optimal
     else
-        @assert -2 <= s <= 1
-        MOI.Success
+        @assert s == 0
+        MOI.OptimizeNotCalled
     end
 end
 
