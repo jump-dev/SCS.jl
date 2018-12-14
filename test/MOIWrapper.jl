@@ -19,6 +19,11 @@ for T in [SCS.Direct, SCS.Indirect]
                                       SCS.Optimizer(linear_solver=T, eps=1e-8,
                                                     verbose=0))
 
+    @testset "supports_allocate_load" begin
+        @test MOIU.supports_allocate_load(optimizer.optimizer, false)
+        @test !MOIU.supports_allocate_load(optimizer.optimizer, true)
+    end
+
     config = MOIT.TestConfig(atol=1e-5)
 
     @testset "Unit" begin

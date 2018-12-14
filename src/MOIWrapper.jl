@@ -77,7 +77,7 @@ function MOI.empty!(optimizer::Optimizer)
     optimizer.sol.ret_val = 0
 end
 
-MOIU.needs_allocate_load(instance::Optimizer) = true
+MOIU.supports_allocate_load(::Optimizer, copy_names::Bool) = !copy_names
 
 function MOI.supports(::Optimizer,
                       ::Union{MOI.ObjectiveSense,
