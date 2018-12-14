@@ -375,26 +375,27 @@ function MOI.get(optimizer::Optimizer, ::MOI.TerminationStatus)
     s = optimizer.sol.ret_val
     @assert -7 <= s <= 2
     if s == -7
-        MOI.AlmostInfeasible
+        return MOI.AlmostInfeasible
     elseif s == -6
-        MOI.AlmostDualInfeasible
+        # TODO in MOI v0.7.1, return MOI.AlmostDualInfeasible
+        return MOI.OtherError
     elseif s == 2
-        MOI.AlmostOptimal
+        return MOI.AlmostOptimal
     elseif s == -5
-        MOI.Interrupted
+        return MOI.Interrupted
     elseif s == -4
-        MOI.NumericalError
+        return MOI.NumericalError
     elseif s == -3
-        MOI.SlowProgress
+        return MOI.SlowProgress
     elseif s == -2
-        MOI.Infeasible
+        return MOI.Infeasible
     elseif s == -1
-        MOI.DualInfeasible
+        return MOI.DualInfeasible
     elseif s == 1
-        MOI.Optimal
+        return MOI.Optimal
     else
         @assert s == 0
-        MOI.OptimizeNotCalled
+        return MOI.OptimizeNotCalled
     end
 end
 
