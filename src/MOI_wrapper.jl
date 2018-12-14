@@ -89,8 +89,8 @@ end
 
 MOI.supports_constraint(::Optimizer, ::Type{<:SF}, ::Type{<:SS}) = true
 
-function MOI.copy_to(dest::Optimizer, src::MOI.ModelLike; copy_names = true)
-    return MOIU.allocate_load(dest, src, copy_names)
+function MOI.copy_to(dest::Optimizer, src::MOI.ModelLike; kws...)
+    return MOIU.automatic_copy_to(dest, src; kws...)
 end
 
 using Compat.SparseArrays
