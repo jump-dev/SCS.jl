@@ -26,7 +26,7 @@ end
 
 include("types.jl")
 include("c_wrapper.jl")
-include("MPBWrapper.jl")
-include("MOIWrapper.jl")
+include("MPB_wrapper.jl")
+include("MOI_wrapper.jl")
 
 end # module
