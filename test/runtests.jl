@@ -13,5 +13,5 @@ for curtest in tests
     end
 end
 
-include("MPBWrapper.jl")
-include("MOIWrapper.jl")
+include("MPB_wrapper.jl")
+include("MOI_wrapper.jl")

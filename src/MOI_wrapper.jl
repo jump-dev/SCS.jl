@@ -68,15 +68,18 @@ mutable struct Optimizer <: MOI.AbstractOptimizer
 
 end
 
+MOI.get(::Optimizer, ::MOI.SolverName) = "SCS"
+
 function MOI.is_empty(optimizer::Optimizer)
     !optimizer.maxsense && optimizer.data === nothing
 end
 function MOI.empty!(optimizer::Optimizer)
     optimizer.maxsense = false
     optimizer.data = nothing # It should already be nothing except if an error is thrown inside copy_to
+    optimizer.sol.ret_val = 0
 end
 
-MOIU.needs_allocate_load(instance::Optimizer) = true
+MOIU.supports_allocate_load(::Optimizer, copy_names::Bool) = !copy_names
 
 function MOI.supports(::Optimizer,
                       ::Union{MOI.ObjectiveSense,
@@ -88,8 +91,8 @@ end
 
 MOI.supports_constraint(::Optimizer, ::Type{<:SF}, ::Type{<:SS}) = true
 
-function MOI.copy_to(dest::Optimizer, src::MOI.ModelLike; copy_names = true)
-    return MOIU.allocate_load(dest, src, copy_names)
+function MOI.copy_to(dest::Optimizer, src::MOI.ModelLike; kws...)
+    return MOIU.automatic_copy_to(dest, src; kws...)
 end
 
 using Compat.SparseArrays
@@ -373,18 +376,28 @@ end
 function MOI.get(optimizer::Optimizer, ::MOI.TerminationStatus)
     s = optimizer.sol.ret_val
     @assert -7 <= s <= 2
-    @assert s != 0
-    if s in (-7, -6, 2)
-        MOI.AlmostSuccess
+    if s == -7
+        return MOI.AlmostInfeasible
+    elseif s == -6
+        # TODO in MOI v0.7.1, return MOI.AlmostDualInfeasible
+        return MOI.OtherError
+    elseif s == 2
+        return MOI.AlmostOptimal
     elseif s == -5
-        MOI.Interrupted
+        return MOI.Interrupted
     elseif s == -4
-        MOI.NumericalError
+        return MOI.NumericalError
     elseif s == -3
-        MOI.SlowProgress
+        return MOI.SlowProgress
+    elseif s == -2
+        return MOI.Infeasible
+    elseif s == -1
+        return MOI.DualInfeasible
+    elseif s == 1
+        return MOI.Optimal
     else
-        @assert -2 <= s <= 1
-        MOI.Success
+        @assert s == 0
+        return MOI.OptimizeNotCalled
     end
 end
 
