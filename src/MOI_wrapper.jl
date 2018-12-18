@@ -290,7 +290,7 @@ function MOIU.allocate(::Optimizer, ::MOI.ConstraintDualStart,
                        ::MOI.ConstraintIndex, ::Float64)
 end
 function MOIU.allocate(optimizer::Optimizer, ::MOI.ObjectiveSense, sense::MOI.OptimizationSense)
-    optimizer.maxsense = sense == MOI.MaxSense
+    optimizer.maxsense = sense == MOI.MAX_SENSE
 end
 function MOIU.allocate(::Optimizer, ::MOI.ObjectiveFunction,
                        ::MOI.Union{MOI.SingleVariable,
@@ -377,27 +377,26 @@ function MOI.get(optimizer::Optimizer, ::MOI.TerminationStatus)
     s = optimizer.sol.ret_val
     @assert -7 <= s <= 2
     if s == -7
-        return MOI.AlmostInfeasible
+        return MOI.ALMOST_INFEASIBLE
     elseif s == -6
-        # TODO in MOI v0.7.1, return MOI.AlmostDualInfeasible
-        return MOI.OtherError
+        return MOI.ALMOST_DUAL_INFEASIBLE
     elseif s == 2
-        return MOI.AlmostOptimal
+        return MOI.ALMOST_OPTIMAL
     elseif s == -5
-        return MOI.Interrupted
+        return MOI.INTERRUPTED
     elseif s == -4
-        return MOI.NumericalError
+        return MOI.NUMERICAL_ERROR
     elseif s == -3
-        return MOI.SlowProgress
+        return MOI.SLOW_PROGRESS
     elseif s == -2
-        return MOI.Infeasible
+        return MOI.INFEASIBLE
     elseif s == -1
-        return MOI.DualInfeasible
+        return MOI.DUAL_INFEASIBLE
     elseif s == 1
-        return MOI.Optimal
+        return MOI.OPTIMAL
     else
         @assert s == 0
-        return MOI.OptimizeNotCalled
+        return MOI.OPTIMIZE_NOT_CALLED
     end
 end
 
@@ -406,11 +405,11 @@ MOI.get(optimizer::Optimizer, ::MOI.ObjectiveValue) = optimizer.sol.objval
 function MOI.get(optimizer::Optimizer, ::MOI.PrimalStatus)
     s = optimizer.sol.ret_val
     if s in (-3, 1, 2)
-        MOI.FeasiblePoint
+        MOI.FEASIBLE_POINT
     elseif s in (-6, -1)
-        MOI.InfeasibilityCertificate
+        MOI.INFEASIBILITY_CERTIFICATE
     else
-        MOI.InfeasiblePoint
+        MOI.INFEASIBLE_POINT
     end
 end
 function MOI.get(optimizer::Optimizer, ::MOI.VariablePrimal, vi::VI)
@@ -432,11 +431,11 @@ end
 function MOI.get(optimizer::Optimizer, ::MOI.DualStatus)
     s = optimizer.sol.ret_val
     if s in (-3, 1, 2)
-        MOI.FeasiblePoint
+        MOI.FEASIBLE_POINT
     elseif s in (-7, -2)
-        MOI.InfeasibilityCertificate
+        MOI.INFEASIBILITY_CERTIFICATE
     else
-        MOI.InfeasiblePoint
+        MOI.INFEASIBLE_POINT
     end
 end
 function MOI.get(optimizer::Optimizer, ::MOI.ConstraintDual, ci::CI{<:MOI.AbstractFunction, S}) where S <: MOI.AbstractSet
