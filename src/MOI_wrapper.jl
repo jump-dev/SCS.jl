@@ -6,7 +6,7 @@ const VI = MOI.VariableIndex
 const MOIU = MOI.Utilities
 
 const SF = Union{MOI.SingleVariable, MOI.ScalarAffineFunction{Float64}, MOI.VectorOfVariables, MOI.VectorAffineFunction{Float64}}
-const SS = Union{MOI.EqualTo{Float64}, MOI.GreaterThan{Float64}, MOI.LessThan{Float64}, MOI.Zeros, MOI.Nonnegatives, MOI.Nonpositives, MOI.SecondOrderCone, MOI.ExponentialCone, MOI.PositiveSemidefiniteConeTriangle}
+const SS = Union{MOI.EqualTo{Float64}, MOI.GreaterThan{Float64}, MOI.LessThan{Float64}, MOI.Zeros, MOI.Nonnegatives, MOI.Nonpositives, MOI.SecondOrderCone, MOI.ExponentialCone, MOI.PositiveSemidefiniteConeTriangle, MOI.PowerCone}
 
 mutable struct MOISolution
     ret_val::Int
@@ -102,7 +102,7 @@ const LPCones = Union{MOI.GreaterThan, MOI.LessThan, MOI.Nonnegatives, MOI.Nonpo
 
 # Computes cone dimensions
 constroffset(cone::ConeData, ci::CI{<:MOI.AbstractFunction, <:ZeroCones}) = ci.value
-#_allocateconstraint: Allocate indices for the constraint `f`-in-`s` using information in `cone` and then update `cone`
+#_allocate_constraint: Allocate indices for the constraint `f`-in-`s` using information in `cone` and then update `cone`
 function _allocate_constraint(cone::ConeData, f, s::ZeroCones)
     ci = cone.f
     cone.f += MOI.dimension(s)
@@ -132,6 +132,13 @@ constroffset(cone::ConeData, ci::CI{<:MOI.AbstractFunction, <:MOI.ExponentialCon
 function _allocate_constraint(cone::ConeData, f, s::MOI.ExponentialCone)
     ci = 3cone.ep
     cone.ep += 1
+    ci
+end
+constroffset(cone::ConeData, ci::CI{<:MOI.AbstractFunction, <:MOI.PowerCone}) = cone.f + cone.l + cone.q + cone.s + cone.ep + ci.value
+function _allocate_constraint(cone::ConeData, f, s::MOI.PowerCone)
+    push!(cone.p, s.exponent)
+    ci = cone.q
+    cone.q += MOI.dimension(s)
     ci
 end
 constroffset(optimizer::Optimizer, ci::CI) = constroffset(optimizer.cone, ci::CI)
