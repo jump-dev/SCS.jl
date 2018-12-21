@@ -6,7 +6,7 @@ const VI = MOI.VariableIndex
 const MOIU = MOI.Utilities
 
 const SF = Union{MOI.SingleVariable, MOI.ScalarAffineFunction{Float64}, MOI.VectorOfVariables, MOI.VectorAffineFunction{Float64}}
-const SS = Union{MOI.EqualTo{Float64}, MOI.GreaterThan{Float64}, MOI.LessThan{Float64}, MOI.Zeros, MOI.Nonnegatives, MOI.Nonpositives, MOI.SecondOrderCone, MOI.ExponentialCone, MOI.PositiveSemidefiniteConeTriangle, MOI.PowerCone}
+const SS = Union{MOI.EqualTo{Float64}, MOI.GreaterThan{Float64}, MOI.LessThan{Float64}, MOI.Zeros, MOI.Nonnegatives, MOI.Nonpositives, MOI.SecondOrderCone, MOI.ExponentialCone, MOI.PositiveSemidefiniteConeTriangle, MOI.PowerCone, MOI.DualPowerCone}
 
 mutable struct MOISolution
     ret_val::Int
@@ -136,6 +136,12 @@ function _allocate_constraint(cone::ConeData, f, s::MOI.ExponentialCone)
 end
 constroffset(cone::ConeData, ci::CI{<:MOI.AbstractFunction, <:MOI.PowerCone}) = cone.f + cone.l + cone.q + cone.s + cone.ep + ci.value
 function _allocate_constraint(cone::ConeData, f, s::MOI.PowerCone)
+    ci = length(cone.p)
+    push!(cone.p, s.exponent)
+    ci
+end
+constroffset(cone::ConeData, ci::CI{<:MOI.AbstractFunction, <:MOI.DualPowerCone}) = cone.f + cone.l + cone.q + cone.s + cone.ep + ci.value
+function _allocate_constraint(cone::ConeData, f, s::MOI.DualPowerCone)
     ci = length(cone.p)
     push!(cone.p, s.exponent)
     ci
