@@ -254,6 +254,25 @@ function MOIU.load_constraint(optimizer::Optimizer, ci, f::MOI.VectorAffineFunct
     i = offset .+ rows
     # The SCS format is b - Ax ∈ cone
     # so minus=false for b and minus=true for A
+    
+    println("== DBG == START")
+    println("== DBG == ci: $(ci)")
+    println("== DBG == f: $(f)")
+    println("== DBG == s: $(s)")
+    println("== DBG == A: $(A)")
+    println("== DBG == I: $(I)")
+    println("== DBG == J: $(J)")
+    println("== DBG == V: $(V)")
+    println("== DBG == offset: $(offset)")
+    println("== DBG == rows: $(rows)")
+    println("== DBG == i: $(i)")
+    println("== DBG == OPTIMIZER DATA")
+    println("== DBG == optimizer.data.b: $(optimizer.data.b)")
+    println("== DBG == optimizer.data.I: $(optimizer.data.I)")
+    println("== DBG == optimizer.data.J: $(optimizer.data.J)")
+    println("== DBG == optimizer.data.V: $(optimizer.data.V)")
+    println("== DBG == END")
+    
     optimizer.data.b[i] = scalecoef(rows, orderval(f.constants, s), false, s)
     append!(optimizer.data.I, offset .+ orderidx(I, s))
     append!(optimizer.data.J, J)
@@ -267,7 +286,7 @@ end
 
 function MOIU.load_variables(optimizer::Optimizer, nvars::Integer)
     cone = optimizer.cone
-    m = cone.f + cone.l + cone.q + cone.s + 3cone.ep + cone.ed
+    m = cone.f + cone.l + cone.q + cone.s + 3cone.ep + cone.ed + length(cone.p)
     I = Int[]
     J = Int[]
     V = Float64[]
