@@ -137,8 +137,7 @@ end
 constroffset(cone::ConeData, ci::CI{<:MOI.AbstractFunction, <:MOI.PowerCone}) = cone.f + cone.l + cone.q + cone.s + cone.ep + ci.value
 function _allocate_constraint(cone::ConeData, f, s::MOI.PowerCone)
     push!(cone.p, s.exponent)
-    ci = cone.q
-    cone.q += MOI.dimension(s)
+    ci = length(cone.q)
     ci
 end
 constroffset(optimizer::Optimizer, ci::CI) = constroffset(optimizer.cone, ci::CI)
@@ -286,7 +285,7 @@ end
 
 function MOIU.load_variables(optimizer::Optimizer, nvars::Integer)
     cone = optimizer.cone
-    m = cone.f + cone.l + cone.q + cone.s + 3cone.ep + cone.ed + length(cone.p)
+    m = cone.f + cone.l + cone.q + cone.s + 3cone.ep + cone.ed + 3 * length(cone.p)
     I = Int[]
     J = Int[]
     V = Float64[]
