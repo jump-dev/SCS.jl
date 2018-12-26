@@ -143,7 +143,7 @@ end
 constroffset(cone::ConeData, ci::CI{<:MOI.AbstractFunction, <:MOI.DualPowerCone}) = cone.f + cone.l + cone.q + cone.s + cone.ep + ci.value
 function _allocate_constraint(cone::ConeData, f, s::MOI.DualPowerCone)
     ci = length(cone.p)
-    push!(cone.p, s.exponent)
+    push!(cone.p, - s.exponent)
     ci
 end
 constroffset(optimizer::Optimizer, ci::CI) = constroffset(optimizer.cone, ci::CI)
