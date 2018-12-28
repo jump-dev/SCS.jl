@@ -160,7 +160,7 @@ constroffset(cone::ConeData,
 function _allocate_constraint(cone::ConeData, f, s::MOI.DualPowerCone)
     ci = length(cone.p)
     # SCS' convention: dual cones have a negative exponent. 
-    push!(cone.p, - s.exponent)
+    push!(cone.p, -s.exponent)
     return ci
 end
 constroffset(optimizer::Optimizer, ci::CI) = 
