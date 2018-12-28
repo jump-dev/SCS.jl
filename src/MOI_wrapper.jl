@@ -102,8 +102,10 @@ const LPCones = Union{MOI.GreaterThan, MOI.LessThan,
                       MOI.Nonnegatives, MOI.Nonpositives}
 
 # Computes cone dimensions
-constroffset(cone::ConeData, ci::CI{<:MOI.AbstractFunction, <:ZeroCones}) =
-        ci.value
+function constroffset(cone::ConeData, 
+                      ci::CI{<:MOI.AbstractFunction, <:ZeroCones})
+    return ci.value
+end
 #_allocate_constraint: Allocate indices for the constraint `f`-in-`s` 
 # using information in `cone` and then update `cone`
 function _allocate_constraint(cone::ConeData, f, s::ZeroCones)
@@ -111,26 +113,30 @@ function _allocate_constraint(cone::ConeData, f, s::ZeroCones)
     cone.f += MOI.dimension(s)
     return ci
 end
-constroffset(cone::ConeData, ci::CI{<:MOI.AbstractFunction, <:LPCones}) = 
-        cone.f + ci.value
+function constroffset(cone::ConeData, 
+                      ci::CI{<:MOI.AbstractFunction, <:LPCones}) 
+    return cone.f + ci.value
+end
 function _allocate_constraint(cone::ConeData, f, s::LPCones)
     ci = cone.l
     cone.l += MOI.dimension(s)
     return ci
 end
-constroffset(cone::ConeData, 
-             ci::CI{<:MOI.AbstractFunction, <:MOI.SecondOrderCone}) = 
-        cone.f + cone.l + ci.value
+function constroffset(cone::ConeData, 
+                      ci::CI{<:MOI.AbstractFunction, <:MOI.SecondOrderCone}) 
+    return cone.f + cone.l + ci.value
+end
 function _allocate_constraint(cone::ConeData, f, s::MOI.SecondOrderCone)
     push!(cone.qa, s.dimension)
     ci = cone.q
     cone.q += MOI.dimension(s)
     return ci
 end
-constroffset(cone::ConeData, 
-             ci::CI{<:MOI.AbstractFunction, 
-                    <:MOI.PositiveSemidefiniteConeTriangle}) = 
-        cone.f + cone.l + cone.q + ci.value
+function constroffset(cone::ConeData, 
+                      ci::CI{<:MOI.AbstractFunction, 
+                             <:MOI.PositiveSemidefiniteConeTriangle}) 
+    return cone.f + cone.l + cone.q + ci.value
+end
 function _allocate_constraint(cone::ConeData, f, 
                               s::MOI.PositiveSemidefiniteConeTriangle)
     push!(cone.sa, s.side_dimension)
@@ -138,35 +144,38 @@ function _allocate_constraint(cone::ConeData, f,
     cone.s += MOI.dimension(s)
     return ci
 end
-constroffset(cone::ConeData, 
-             ci::CI{<:MOI.AbstractFunction, <:MOI.ExponentialCone}) = 
-        cone.f + cone.l + cone.q + cone.s + ci.value
+function constroffset(cone::ConeData, 
+                      ci::CI{<:MOI.AbstractFunction, <:MOI.ExponentialCone}) 
+    return cone.f + cone.l + cone.q + cone.s + ci.value
+end
 function _allocate_constraint(cone::ConeData, f, s::MOI.ExponentialCone)
     ci = 3cone.ep
     cone.ep += 1
     return ci
 end
-constroffset(cone::ConeData, 
-             ci::CI{<:MOI.AbstractFunction, <:MOI.PowerCone}) = 
-        cone.f + cone.l + cone.q + cone.s + cone.ep + ci.value
+function constroffset(cone::ConeData, 
+                      ci::CI{<:MOI.AbstractFunction, <:MOI.PowerCone}) 
+    return cone.f + cone.l + cone.q + cone.s + cone.ep + ci.value
+end
 function _allocate_constraint(cone::ConeData, f, s::MOI.PowerCone)
     ci = length(cone.p)
     push!(cone.p, s.exponent)
     return ci
 end
-constroffset(cone::ConeData, 
-             ci::CI{<:MOI.AbstractFunction, <:MOI.DualPowerCone}) = 
-        cone.f + cone.l + cone.q + cone.s + cone.ep + ci.value
+function constroffset(cone::ConeData, 
+                      ci::CI{<:MOI.AbstractFunction, <:MOI.DualPowerCone}) 
+    return cone.f + cone.l + cone.q + cone.s + cone.ep + ci.value
+end
 function _allocate_constraint(cone::ConeData, f, s::MOI.DualPowerCone)
     ci = length(cone.p)
     # SCS' convention: dual cones have a negative exponent. 
     push!(cone.p, -s.exponent)
     return ci
 end
-constroffset(optimizer::Optimizer, ci::CI) = 
-        constroffset(optimizer.cone, ci::CI)
-function MOIU.allocate_constraint(optimizer::Optimizer, f::F, s::S) 
-        where {F <: MOI.AbstractFunction, S <: MOI.AbstractSet}
+function constroffset(optimizer::Optimizer, ci::CI) 
+    return constroffset(optimizer.cone, ci::CI)
+end
+function MOIU.allocate_constraint(optimizer::Optimizer, f::F, s::S) where {F <: MOI.AbstractFunction, S <: MOI.AbstractSet}
     return CI{F, S}(_allocate_constraint(optimizer.cone, f, s))
 end
 
