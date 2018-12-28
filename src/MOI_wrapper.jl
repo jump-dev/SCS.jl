@@ -106,50 +106,50 @@ constroffset(cone::ConeData, ci::CI{<:MOI.AbstractFunction, <:ZeroCones}) = ci.v
 function _allocate_constraint(cone::ConeData, f, s::ZeroCones)
     ci = cone.f
     cone.f += MOI.dimension(s)
-    ci
+    return ci
 end
 constroffset(cone::ConeData, ci::CI{<:MOI.AbstractFunction, <:LPCones}) = cone.f + ci.value
 function _allocate_constraint(cone::ConeData, f, s::LPCones)
     ci = cone.l
     cone.l += MOI.dimension(s)
-    ci
+    return ci
 end
 constroffset(cone::ConeData, ci::CI{<:MOI.AbstractFunction, <:MOI.SecondOrderCone}) = cone.f + cone.l + ci.value
 function _allocate_constraint(cone::ConeData, f, s::MOI.SecondOrderCone)
     push!(cone.qa, s.dimension)
     ci = cone.q
     cone.q += MOI.dimension(s)
-    ci
+    return ci
 end
 constroffset(cone::ConeData, ci::CI{<:MOI.AbstractFunction, <:MOI.PositiveSemidefiniteConeTriangle}) = cone.f + cone.l + cone.q + ci.value
 function _allocate_constraint(cone::ConeData, f, s::MOI.PositiveSemidefiniteConeTriangle)
     push!(cone.sa, s.side_dimension)
     ci = cone.s
     cone.s += MOI.dimension(s)
-    ci
+    return ci
 end
 constroffset(cone::ConeData, ci::CI{<:MOI.AbstractFunction, <:MOI.ExponentialCone}) = cone.f + cone.l + cone.q + cone.s + ci.value
 function _allocate_constraint(cone::ConeData, f, s::MOI.ExponentialCone)
     ci = 3cone.ep
     cone.ep += 1
-    ci
+    return ci
 end
 constroffset(cone::ConeData, ci::CI{<:MOI.AbstractFunction, <:MOI.PowerCone}) = cone.f + cone.l + cone.q + cone.s + cone.ep + ci.value
 function _allocate_constraint(cone::ConeData, f, s::MOI.PowerCone)
     ci = length(cone.p)
     push!(cone.p, s.exponent)
-    ci
+    return ci
 end
 constroffset(cone::ConeData, ci::CI{<:MOI.AbstractFunction, <:MOI.DualPowerCone}) = cone.f + cone.l + cone.q + cone.s + cone.ep + ci.value
 function _allocate_constraint(cone::ConeData, f, s::MOI.DualPowerCone)
     ci = length(cone.p)
     # SCS' convention: dual cones have a negative exponent. 
     push!(cone.p, - s.exponent)
-    ci
+    return ci
 end
 constroffset(optimizer::Optimizer, ci::CI) = constroffset(optimizer.cone, ci::CI)
 function MOIU.allocate_constraint(optimizer::Optimizer, f::F, s::S) where {F <: MOI.AbstractFunction, S <: MOI.AbstractSet}
-    CI{F, S}(_allocate_constraint(optimizer.cone, f, s))
+    return CI{F, S}(_allocate_constraint(optimizer.cone, f, s))
 end
 
 # Vectorized length for matrix dimension n
