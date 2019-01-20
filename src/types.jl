@@ -48,9 +48,10 @@ struct SCSSettings
     verbose::Int # boolean, write out progress
     warm_start::Int # boolean, warm start (put initial guess in Sol struct)
     acceleration_lookback::Int # acceleration memory parameter
+    write_data_filename::Cstring
 
     SCSSettings() = new()
-    SCSSettings(normalize, scale, rho_x, max_iters, eps, alpha, cg_rate, verbose, warm_start, acceleration_lookback) = new(normalize, scale, rho_x, max_iters, eps, alpha, cg_rate, verbose, warm_start, acceleration_lookback)
+    SCSSettings(normalize, scale, rho_x, max_iters, eps, alpha, cg_rate, verbose, warm_start, acceleration_lookback, write_data_filename) = new(normalize, scale, rho_x, max_iters, eps, alpha, cg_rate, verbose, warm_start, acceleration_lookback, write_data_filename)
 end
 
 struct Direct end
@@ -66,8 +67,10 @@ function _SCS_user_settings(default_settings::SCSSettings;
         cg_rate=default_settings.cg_rate,
         verbose=default_settings.verbose,
         warm_start=default_settings.warm_start,
-        acceleration_lookback=default_settings.acceleration_lookback)
-    return SCSSettings(normalize, scale, rho_x, max_iters, eps, alpha, cg_rate, verbose,warm_start, acceleration_lookback)
+        acceleration_lookback=default_settings.acceleration_lookback,
+        write_data_filename=default_settings.write_data_filename
+        )
+    return SCSSettings(normalize, scale, rho_x, max_iters, eps, alpha, cg_rate, verbose,warm_start, acceleration_lookback, write_data_filename)
 end
 
 function SCSSettings(linear_solver::Union{Type{Direct}, Type{Indirect}}; options...)
