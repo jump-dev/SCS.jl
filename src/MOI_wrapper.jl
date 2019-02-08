@@ -426,8 +426,11 @@ end
 function MOI.get(optimizer::Optimizer, ::MOI.VariablePrimal, vi::VI)
     optimizer.sol.primal[vi.value]
 end
-MOI.get(optimizer::Optimizer, a::MOI.VariablePrimal, vi::Vector{VI}) = MOI.get.(optimizer, a, vi)
-function MOI.get(optimizer::Optimizer, ::MOI.ConstraintPrimal, ci::CI{<:MOI.AbstractFunction, S}) where S <: MOI.AbstractSet
+function MOI.get(optimizer::Optimizer, a::MOI.VariablePrimal, vi::Vector{VI})
+    return MOI.get.(optimizer, a, vi)
+end
+function MOI.get(optimizer::Optimizer, ::MOI.ConstraintPrimal,
+                 ci::CI{<:MOI.AbstractFunction, S}) where S <: MOI.AbstractSet
     offset = constroffset(optimizer, ci)
     rows = constrrows(optimizer, ci)
     primal = optimizer.sol.slack[offset .+ rows]
@@ -448,7 +451,8 @@ function MOI.get(optimizer::Optimizer, ::MOI.DualStatus)
         MOI.INFEASIBLE_POINT
     end
 end
-function MOI.get(optimizer::Optimizer, ::MOI.ConstraintDual, ci::CI{<:MOI.AbstractFunction, S}) where S <: MOI.AbstractSet
+function MOI.get(optimizer::Optimizer, ::MOI.ConstraintDual,
+                 ci::CI{<:MOI.AbstractFunction, S}) where S <: MOI.AbstractSet
     offset = constroffset(optimizer, ci)
     rows = constrrows(optimizer, ci)
     dual = optimizer.sol.dual[offset .+ rows]
