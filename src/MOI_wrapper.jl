@@ -222,7 +222,7 @@ function _scalecoef(rows, coef, d, rev)
     return output
 end
 # Unscale the coefficients in `coef` with respective rows in `rows` for a set `s`
-scalecoef(rows, coef, s) = _scalecoef(rows, coef, typeof(s), MOI.dimension(s), false)
+scalecoef(rows, coef, s) = _scalecoef(rows, coef, MOI.dimension(s), false)
 # Unscale the coefficients in `coef` with respective rows in `rows` for a set of type `S` with dimension `d`
 unscalecoef(rows, coef, d) = _scalecoef(rows, coef, sympackeddim(d), true)
 
