@@ -21,7 +21,7 @@ for T in [SCS.Direct, SCS.Indirect]
     cached = MOIU.CachingOptimizer(cache, optimizer)
 
     # Essential bridges that are needed for all tests
-    const bridged = MOIB.Vectorize{Float64}(MOIB.NonposToNonneg{Float64}(cached))
+    bridged = MOIB.Vectorize{Float64}(MOIB.NonposToNonneg{Float64}(cached))
 
     @testset "SolverName" begin
         @test MOI.get(optimizer, MOI.SolverName()) == "SCS"
