@@ -18,6 +18,7 @@ import SCS
 
 for T in [SCS.Direct, SCS.Indirect]
     optimizer = SCS.Optimizer(linear_solver=T, eps=1e-8, verbose=0)
+    MOI.empty!(cache)
     cached = MOIU.CachingOptimizer(cache, optimizer)
 
     # Essential bridges that are needed for all tests
