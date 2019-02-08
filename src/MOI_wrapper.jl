@@ -433,16 +433,13 @@ function MOI.get(optimizer::Optimizer, ::MOI.VariablePrimal, vi::VI)
     optimizer.sol.primal[vi.value]
 end
 MOI.get(optimizer::Optimizer, a::MOI.VariablePrimal, vi::Vector{VI}) = MOI.get.(optimizer, a, vi)
-function reorderval(val, ::Type{MOI.PositiveSemidefiniteConeTriangle})
-    sympackedLtoU(val)
-end
 function MOI.get(optimizer::Optimizer, ::MOI.ConstraintPrimal, ci::CI{<:MOI.AbstractFunction, S}) where S <: MOI.AbstractSet
     offset = constroffset(optimizer, ci)
     rows = constrrows(optimizer, ci)
     primal = optimizer.sol.slack[offset .+ rows]
     if S == MOI.PositiveSemidefiniteConeTriangle
         primal = sympackedLtoU(primal)
-        unscalecoef(rows, primal, length(rows))
+        primal = unscalecoef(rows, primal, length(rows))
     end
     return primal
 end
@@ -463,7 +460,7 @@ function MOI.get(optimizer::Optimizer, ::MOI.ConstraintDual, ci::CI{<:MOI.Abstra
     dual = optimizer.sol.dual[offset .+ rows]
     if S == MOI.PositiveSemidefiniteConeTriangle
         dual = sympackedLtoU(dual)
-        unscalecoef(rows, dual, length(rows))
+        dual = unscalecoef(rows, dual, length(rows))
     end
     return dual
 end
