@@ -78,8 +78,12 @@ MOIU.supports_allocate_load(::Optimizer, copy_names::Bool) = !copy_names
 function MOI.supports(::Optimizer,
                       ::Union{MOI.ObjectiveSense,
                               MOI.ObjectiveFunction{MOI.SingleVariable},
-                              MOI.ObjectiveFunction{MOI.ScalarAffineFunction{Float64}},
-                              MOI.VariablePrimalStart})
+                              MOI.ObjectiveFunction{MOI.ScalarAffineFunction{Float64}}})
+    return true
+end
+
+function MOI.supports(::Optimizer, ::MOI.VariablePrimalStart,
+                      ::Type{MOI.VariableIndex})
     return true
 end
 
@@ -292,7 +296,7 @@ function MOIU.load_variables(optimizer::Optimizer, nvars::Integer)
 end
 
 function MOIU.allocate(::Optimizer, ::MOI.VariablePrimalStart,
-                       ::MOI.VariableIndex, ::Float64)
+                       ::MOI.VariableIndex, ::Union{Nothing, Float64})
 end
 function MOIU.allocate(::Optimizer, ::MOI.ConstraintPrimalStart,
                        ::MOI.ConstraintIndex, ::Float64)
@@ -308,6 +312,9 @@ function MOIU.allocate(::Optimizer, ::MOI.ObjectiveFunction,
                                    MOI.ScalarAffineFunction{Float64}})
 end
 
+function MOIU.load(optimizer::Optimizer, ::MOI.VariablePrimalStart,
+                   vi::MOI.VariableIndex, value::Nothing)
+end
 function MOIU.load(optimizer::Optimizer, ::MOI.VariablePrimalStart,
                    vi::MOI.VariableIndex, value::Float64)
     optimizer.sol.primal[vi.value] = value
