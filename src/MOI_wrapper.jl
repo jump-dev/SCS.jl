@@ -87,6 +87,13 @@ function MOI.supports(::Optimizer, ::MOI.VariablePrimalStart,
     return true
 end
 
+function MOI.supports(::Optimizer,
+                      ::Union{MOI.ConstraintPrimalStart,
+                              MOI.ConstraintDualStart}
+                      ::Type{<:MOI.ConstraintIndex})
+    return true
+end
+
 MOI.supports_constraint(::Optimizer, ::Type{<:SF}, ::Type{<:SS}) = true
 
 function MOI.copy_to(dest::Optimizer, src::MOI.ModelLike; kws...)
@@ -299,10 +306,12 @@ function MOIU.allocate(::Optimizer, ::MOI.VariablePrimalStart,
                        ::MOI.VariableIndex, ::Union{Nothing, Float64})
 end
 function MOIU.allocate(::Optimizer, ::MOI.ConstraintPrimalStart,
-                       ::MOI.ConstraintIndex, ::Float64)
+                       ::MOI.ConstraintIndex,
+                       ::Union{Nothing, AbstractVector{Float64}})
 end
 function MOIU.allocate(::Optimizer, ::MOI.ConstraintDualStart,
-                       ::MOI.ConstraintIndex, ::Float64)
+                       ::MOI.ConstraintIndex,
+                       ::Union{Nothing, AbstractVector{Float64}})
 end
 function MOIU.allocate(optimizer::Optimizer, ::MOI.ObjectiveSense, sense::MOI.OptimizationSense)
     optimizer.maxsense = sense == MOI.MAX_SENSE
@@ -312,18 +321,24 @@ function MOIU.allocate(::Optimizer, ::MOI.ObjectiveFunction,
                                    MOI.ScalarAffineFunction{Float64}})
 end
 
-function MOIU.load(optimizer::Optimizer, ::MOI.VariablePrimalStart,
-                   vi::MOI.VariableIndex, value::Nothing)
+function MOIU.load(::Optimizer, ::MOI.VariablePrimalStart,
+                   ::MOI.VariableIndex, ::Nothing)
 end
 function MOIU.load(optimizer::Optimizer, ::MOI.VariablePrimalStart,
                    vi::MOI.VariableIndex, value::Float64)
     optimizer.sol.primal[vi.value] = value
+end
+function MOIU.load(::Optimizer, ::MOI.ConstraintPrimalStart,
+                   ::MOI.ConstraintIndex, ::Nothing)
 end
 function MOIU.load(optimizer::Optimizer, ::MOI.ConstraintPrimalStart,
                    ci::MOI.ConstraintIndex, value)
     offset = constroffset(optimizer, ci)
     rows = constrrows(optimizer, ci)
     optimizer.sol.primal[offset .+ rows] .= value
+end
+function MOIU.load(::Optimizer, ::MOI.ConstraintDualStart,
+                   ::MOI.ConstraintIndex, ::Nothing)
 end
 function MOIU.load(optimizer::Optimizer, ::MOI.ConstraintDualStart,
                    ci::MOI.ConstraintIndex, value)
