@@ -335,7 +335,7 @@ function MOIU.load(optimizer::Optimizer, ::MOI.ConstraintPrimalStart,
                    ci::MOI.ConstraintIndex, value)
     offset = constroffset(optimizer, ci)
     rows = constrrows(optimizer, ci)
-    optimizer.sol.primal[offset .+ rows] .= value
+    optimizer.sol.slack[offset .+ rows] .= value
 end
 function MOIU.load(::Optimizer, ::MOI.ConstraintDualStart,
                    ::MOI.ConstraintIndex, ::Nothing)
@@ -344,7 +344,7 @@ function MOIU.load(optimizer::Optimizer, ::MOI.ConstraintDualStart,
                    ci::MOI.ConstraintIndex, value)
     offset = constroffset(optimizer, ci)
     rows = constrrows(optimizer, ci)
-    optimizer.sol.primal[offset .+ rows] .= value
+    optimizer.sol.dual[offset .+ rows] .= value
 end
 function MOIU.load(::Optimizer, ::MOI.ObjectiveSense, ::MOI.OptimizationSense)
 end
