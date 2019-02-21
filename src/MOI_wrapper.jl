@@ -89,7 +89,7 @@ end
 
 function MOI.supports(::Optimizer,
                       ::Union{MOI.ConstraintPrimalStart,
-                              MOI.ConstraintDualStart}
+                              MOI.ConstraintDualStart},
                       ::Type{<:MOI.ConstraintIndex})
     return true
 end
