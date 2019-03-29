@@ -5,9 +5,6 @@ const VI = MOI.VariableIndex
 
 const MOIU = MOI.Utilities
 
-const SF = Union{MOI.VectorOfVariables, MOI.VectorAffineFunction{Float64}}
-const SS = Union{MOI.Zeros, MOI.Nonnegatives, MOI.SecondOrderCone, MOI.ExponentialCone, MOI.PositiveSemidefiniteConeTriangle, MOI.PowerCone, MOI.DualPowerCone}
-
 mutable struct MOISolution
     ret_val::Int
     primal::Vector{Float64}
@@ -94,7 +91,14 @@ function MOI.supports(::Optimizer,
     return true
 end
 
-MOI.supports_constraint(::Optimizer, ::Type{<:SF}, ::Type{<:SS}) = true
+function MOI.supports_constraint(
+    ::Optimizer,
+    ::Type{<:MOI.VectorAffineFunction{Float64}},
+    ::Type{<:Union{MOI.Zeros, MOI.Nonnegatives, MOI.SecondOrderCone,
+                   MOI.ExponentialCone, MOI.PositiveSemidefiniteConeTriangle,
+                   MOI.PowerCone, MOI.DualPowerCone}})
+    return true
+end
 
 function MOI.copy_to(dest::Optimizer, src::MOI.ModelLike; kws...)
     return MOIU.automatic_copy_to(dest, src; kws...)
@@ -242,7 +246,6 @@ constrrows(s::MOI.AbstractVectorSet) = 1:MOI.dimension(s)
 # When only the index is available, use the `optimizer.ncone.nrows` field
 constrrows(optimizer::Optimizer, ci::CI{<:MOI.AbstractVectorFunction, <:MOI.AbstractVectorSet}) = 1:optimizer.cone.nrows[constroffset(optimizer, ci)]
 
-MOIU.load_constraint(optimizer::Optimizer, ci, f::MOI.VectorOfVariables, s) = MOIU.load_constraint(optimizer, ci, MOI.VectorAffineFunction{Float64}(f), s)
 orderval(val, s) = val
 function orderval(val, s::MOI.PositiveSemidefiniteConeTriangle)
     sympackedUtoL(val, s.side_dimension)
