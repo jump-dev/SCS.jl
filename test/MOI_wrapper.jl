@@ -47,6 +47,10 @@ for T in [SCS.Direct, SCS.Indirect]
         MOIT.contlineartest(bridged, config)
     end
 
+    @testset "Continuous quadratic problems with $T" begin
+        MOIT.qcptest(bridged, config)
+    end
+
     @testset "Continuous conic problems with $T" begin
         MOIT.contconictest(bridged, config, ["rootdets", "logdets"])
     end
