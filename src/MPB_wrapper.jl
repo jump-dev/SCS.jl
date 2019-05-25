@@ -6,7 +6,7 @@
 # MathProgBase.jl interface for the SCS.jl solver wrapper
 #############################################################################
 
-using Compat.LinearAlgebra: dot
+using LinearAlgebra: dot
 using MathProgBase.SolverInterface
 
 import MathProgBase.SolverInterface: ConicModel, LinearQuadraticModel,

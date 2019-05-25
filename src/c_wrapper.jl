@@ -79,7 +79,7 @@ function SCS_solve(T::Union{Type{Direct}, Type{Indirect}},
         SCS_finish(T, p_work)
     end
 
-    return Solution(x, y, s, status)
+    return Solution(x, y, s, info[], status)
 
 end
 

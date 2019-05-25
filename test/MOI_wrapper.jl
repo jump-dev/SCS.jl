@@ -1,4 +1,4 @@
-using Compat.Test
+using Test
 
 using MathOptInterface
 const MOI = MathOptInterface
@@ -17,12 +17,8 @@ const cache = MOIU.UniversalFallback(ModelData{Float64}())
 import SCS
 
 for T in [SCS.Direct, SCS.Indirect]
-    optimizer = SCS.Optimizer(linear_solver=T, eps=1e-8, verbose=0)
-    MOI.empty!(cache)
-    cached = MOIU.CachingOptimizer(cache, optimizer)
-
-    # Essential bridges that are needed for all tests
-    bridged = MOIB.full_bridge_optimizer(cached, Float64)
+    optimizer = SCS.Optimizer(linear_solver=T, eps=1e-8)
+    MOI.set(optimizer, MOI.Silent(), true)
 
     @testset "SolverName" begin
         @test MOI.get(optimizer, MOI.SolverName()) == "SCS"
@@ -32,6 +28,12 @@ for T in [SCS.Direct, SCS.Indirect]
         @test MOIU.supports_allocate_load(optimizer, false)
         @test !MOIU.supports_allocate_load(optimizer, true)
     end
+
+    MOI.empty!(cache)
+    cached = MOIU.CachingOptimizer(cache, optimizer)
+
+    # Essential bridges that are needed for all tests
+    bridged = MOIB.full_bridge_optimizer(cached, Float64)
 
     config = MOIT.TestConfig(atol=1e-5)
 

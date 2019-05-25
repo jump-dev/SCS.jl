@@ -1,4 +1,4 @@
-using Compat.Test
+using Test
 using SCS
 
 tests = ["direct.jl",

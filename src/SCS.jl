@@ -1,5 +1,3 @@
-__precompile__()
-
 module SCS
 
 # To make Pkg aware that this dependency
@@ -13,8 +11,6 @@ if isfile(joinpath(dirname(@__FILE__), "..", "deps", "deps.jl"))
 else
     error("SCS not properly installed. Please run Pkg.build(\"SCS\") and restart julia")
 end
-
-using Compat
 
 function __init__()
     vnum = VersionNumber(SCS_version())
