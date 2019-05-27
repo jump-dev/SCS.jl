@@ -175,11 +175,7 @@ mutable struct Solution
     ret_val::Int
 
     function Solution(x::Array{Float64, 1}, y::Array{Float64, 1}, s::Array{Float64, 1}, info::SCSInfo, ret_val::Int)
-        if haskey(status_map, ret_val)
-            return new(x, y, s, info, status_map[ret_val], ret_val)
-        else
-            return new(x, y, s, info, :UnknownError, ret_val)
-        end
+        return new(x, y, s, info, get(status_map, ret_val, :UnknownError), ret_val)
     end
 end
 
