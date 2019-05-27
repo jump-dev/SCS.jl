@@ -431,6 +431,7 @@ function feasible_basic_conic(T)
 
     sol = SCS_solve(T, m, n, A, b, c, f, l, q, s, ep, ed, Float64[])
     @test sol.ret_val == 1
+    @test SCS.raw_status(sol.info) == "Solved"
 end
 
 # Feasible conic problem with exponential cones (no SDP cones)
@@ -554,6 +555,7 @@ function feasible_exponential_conic(T)
 
     sol = SCS_solve(T, m, n, A, b, c, f, l, q, s, ep, ed, Float64[])
     @assert sol.ret_val == 1
+    @test SCS.raw_status(sol.info) == "Solved"
 end
 
 # Feasible conic problem with exponential and SDP cones
@@ -630,6 +632,7 @@ function feasible_sdp_conic(T)
 
     sol = SCS_solve(T, m, n, A, b, c, f, l, q, s, ep, ed, Float64[])
     @test sol.ret_val == 1
+    @test SCS.raw_status(sol.info) == "Solved"
 end
 
 # Feasible conic problem with power cones
@@ -680,4 +683,5 @@ function feasible_pow_conic(T)
 
     sol = SCS_solve(T, m, n, A, b, c, f, l, q, s, ep, ed, p)
     @test sol.ret_val == 1
+    @test SCS.raw_status(sol.info) == "Solved"
 end
