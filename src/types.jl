@@ -157,26 +157,12 @@ function SCSCone(f::Int, l::Int, q::Vector{Int}, s::Vector{Int},
 end
 
 
-# TODO needs to be updated for newest constants
-const status_map = Dict{Int, Symbol}(
-    1 => :Optimal,
-    -2 => :Infeasible,
-    -1 => :Unbounded,
-    -3 => :Indeterminate,
-    -4 => :Error
-)
-
 mutable struct Solution
     x::Array{Float64, 1}
     y::Array{Float64, 1}
     s::Array{Float64, 1}
     info::SCSInfo
-    status::Symbol
     ret_val::Int
-
-    function Solution(x::Array{Float64, 1}, y::Array{Float64, 1}, s::Array{Float64, 1}, info::SCSInfo, ret_val::Int)
-        return new(x, y, s, info, get(status_map, ret_val, :UnknownError), ret_val)
-    end
 end
 
 function sanatize_SCS_options(options)

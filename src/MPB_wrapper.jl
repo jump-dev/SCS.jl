@@ -92,6 +92,15 @@ function setsense!(m::SCSMathProgModel, sns::Symbol)
 end
 =#
 
+# TODO needs to be updated for newest constants
+const status_map = Dict{Int, Symbol}(
+    1 => :Optimal,
+    -2 => :Infeasible,
+    -1 => :Unbounded,
+    -3 => :Indeterminate,
+    -4 => :Error
+)
+
 function optimize!(m::SCSMathProgModel)
     linear_solver, options = sanatize_SCS_options(m.options)
     t = time()
@@ -100,7 +109,7 @@ function optimize!(m::SCSMathProgModel)
                          m.primal_sol, m.dual_sol, m.slack; options...)
     m.solve_time = time() - t
 
-    m.solve_stat = solution.status
+    m.solve_stat = get(status_map, solution.ret_val, :UnknownError)
     m.primal_sol = solution.x
 
     m.dual_sol = solution.y
