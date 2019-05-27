@@ -437,17 +437,10 @@ function getvardual(m::SCSMathProgModel)
     return dual
 end
 
-if VERSION >= v"0.7-"
-    function addoption!(m::SCSMathProgModel, option::Symbol, value)
-        nt = NamedTuple{(option,), Tuple{typeof(value)}}((value,))
-        m.options = pairs(merge(m.options.data, nt))
-        return m
-    end
-else
-    function addoption!(m::SCSMathProgModel, option::Symbol, value)
-        push!(m.options, (option, value))
-        return m
-    end
+function addoption!(m::SCSMathProgModel, option::Symbol, value)
+    nt = NamedTuple{(option,), Tuple{typeof(value)}}((value,))
+    m.options = pairs(merge(m.options.data, nt))
+    return m
 end
 
 # warmstart
