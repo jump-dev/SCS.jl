@@ -101,12 +101,7 @@ end
 
 struct SCSInfo
     iter::Int
-    # We need to allocate 32 bytes for a character string, so we allocate 256 bits
-    # of integer instead
-    # TODO: Find a better way to do this
-    status1::UInt128
-    status2::UInt128
-
+    status::NTuple{32, Cchar} # char status[32]
     statusVal::Int
     pobj::Cdouble
     dobj::Cdouble
@@ -119,26 +114,13 @@ struct SCSInfo
     solveTime::Cdouble
 end
 
-SCSInfo() = SCSInfo(0, convert(Int128, 0), convert(Int128, 0), 0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
+SCSInfo() = SCSInfo(0, ntuple(_ -> zero(Cchar), 32), 0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
 
 function raw_status(info::SCSInfo)
-    chars = UInt8[]
-    eos = false
-    for status in [info.status1, info.status2]
-        for i in 1:16
-            char = status & 0xff
-            if iszero(char)
-                eos = true
-                break
-            end
-            push!(chars, char)
-            status >>= 8
-        end
-        if eos
-            break
-        end
-    end
-    return String(chars)
+    s = collect(info.status)
+    len = findfirst(iszero, s) - 1
+    # There is no method String(::Vector{Cchar}) so we convert to `UInt8`.
+    return String(UInt8[s[i] for i in 1:len])
 end
 
 # SCS solves a problem of the form
