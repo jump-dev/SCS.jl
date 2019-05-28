@@ -32,7 +32,6 @@ for T in [SCS.Direct, SCS.Indirect]
     MOI.empty!(cache)
     cached = MOIU.CachingOptimizer(cache, optimizer)
 
-    # Essential bridges that are needed for all tests
     bridged = MOIB.full_bridge_optimizer(cached, Float64)
 
     config = MOIT.TestConfig(atol=1e-5)

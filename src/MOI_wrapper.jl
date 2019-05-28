@@ -13,10 +13,11 @@ mutable struct MOISolution
     slack::Vector{Float64}
     objective_value::Float64
     dual_objective_value::Float64
+    objective_constant::Float64
     solve_time::Float64
 end
 MOISolution() = MOISolution(0, # SCS_UNFINISHED
-                            "", Float64[], Float64[], Float64[], NaN, NaN, 0.0)
+                            "", Float64[], Float64[], Float64[], NaN, NaN, NaN, 0.0)
 
 # Used to build the data with allocate-load during `copy_to`.
 # When `optimize!` is called, a the data is passed to SCS
@@ -28,7 +29,7 @@ mutable struct ModelData
     J::Vector{Int} # List of cols
     V::Vector{Float64} # List of coefficients
     b::Vector{Float64} # constants
-    objconstant::Float64 # The objective is min c'x + objconstant
+    objective_constant::Float64 # The objective is min c'x + objective_constant
     c::Vector{Float64}
 end
 
@@ -382,7 +383,7 @@ function MOIU.load(optimizer::Optimizer, ::MOI.ObjectiveFunction,
                    f::MOI.ScalarAffineFunction)
     c0 = Vector(sparsevec(variable_index_value.(f.terms), coefficient.(f.terms),
                           optimizer.data.n))
-    optimizer.data.objconstant = f.constant
+    optimizer.data.objective_constant = f.constant
     optimizer.data.c = optimizer.maxsense ? -c0 : c0
     return nothing
 end
@@ -393,7 +394,7 @@ function MOI.optimize!(optimizer::Optimizer)
     n = optimizer.data.n
     A = sparse(optimizer.data.I, optimizer.data.J, optimizer.data.V)
     b = optimizer.data.b
-    objconstant = optimizer.data.objconstant
+    objective_constant = optimizer.data.objective_constant
     c = optimizer.data.c
     optimizer.data = nothing # Allows GC to free optimizer.data before A is loaded to SCS
 
@@ -415,16 +416,10 @@ function MOI.optimize!(optimizer::Optimizer)
     dual = sol.y
     slack = sol.s
     objective_value = (optimizer.maxsense ? -1 : 1) * sol.info.pobj
-    if !(ret_val in (-7, -2))
-        objective_value += objconstant
-    end
     dual_objective_value = (optimizer.maxsense ? -1 : 1) * sol.info.dobj
-    if !(ret_val in (-6, -1))
-        dual_objective_value += objconstant
-    end
     optimizer.sol = MOISolution(ret_val, raw_status(sol.info), primal, dual,
                                 slack, objective_value, dual_objective_value,
-                                sol.info.solveTime)
+                                objective_constant, sol.info.solveTime)
 end
 
 function MOI.get(optimizer::Optimizer, ::MOI.SolveTime)
@@ -474,8 +469,20 @@ function MOI.get(optimizer::Optimizer, ::MOI.TerminationStatus)
     end
 end
 
-MOI.get(optimizer::Optimizer, ::MOI.ObjectiveValue) = optimizer.sol.objective_value
-MOI.get(optimizer::Optimizer, ::MOI.DualObjectiveValue) = optimizer.sol.dual_objective_value
+function MOI.get(optimizer::Optimizer, ::MOI.ObjectiveValue)
+    value = optimizer.sol.objective_value
+    if !MOIU.is_ray(MOI.get(optimizer, MOI.PrimalStatus()))
+        value += optimizer.sol.objective_constant
+    end
+    return value
+end
+function MOI.get(optimizer::Optimizer, ::MOI.DualObjectiveValue)
+    value = optimizer.sol.dual_objective_value
+    if !MOIU.is_ray(MOI.get(optimizer, MOI.DualStatus()))
+        value += optimizer.sol.objective_constant
+    end
+    return value
+end
 
 function MOI.get(optimizer::Optimizer, ::MOI.PrimalStatus)
     s = optimizer.sol.ret_val
