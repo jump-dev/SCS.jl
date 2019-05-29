@@ -419,7 +419,7 @@ function MOI.optimize!(optimizer::Optimizer)
     dual_objective_value = (optimizer.maxsense ? -1 : 1) * sol.info.dobj
     optimizer.sol = MOISolution(ret_val, raw_status(sol.info), primal, dual,
                                 slack, objective_value, dual_objective_value,
-                                objective_constant, sol.info.solveTime)
+                                objective_constant, sol.info.setupTime + sol.info.solveTime)
 end
 
 function MOI.get(optimizer::Optimizer, ::MOI.SolveTime)
