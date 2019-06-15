@@ -164,9 +164,13 @@ if !custom_library
 
         @warn(strip(replace(
         """
-        Attempting to symlink \"$(sym_file)\" => \"$(blaslib)\"; if this fails, try running it
-        manually with super user permissions via: sudo ln -s $(blaslib) $(sym_file)
+        Attempting to symlink \"$(sym_file)\" => \"$(blaslib)\".
         """, '\n' => ' ')))
+#         @warn(strip(replace(
+#         """
+#         Attempting to symlink \"$(sym_file)\" => \"$(blaslib)\"; if this fails, try running it
+#         manually with super user permissions via: sudo ln -s $(blaslib) $(sym_file)
+#         """, '\n' => ' ')))
         symlink(blaslib, sym_file)
     end
     # *END_BLAS* 
