@@ -148,7 +148,7 @@ if !custom_library
     # attempting to load.
     blaslib = first(filter(x -> occursin(Base.libblas_name, x), dllist()))
     default_blaslib_name = choose_download(default_blaslib_names, platform_key_abi())
-    if basename(blaslib) != default_blaslib_name && !isfile(joinpath(dirname(blaslib), default_blaslib_name))
+    if true #basename(blaslib) != default_blaslib_name && !isfile(joinpath(dirname(blaslib), default_blaslib_name))
         #sym_file = joinpath(abspath(joinpath(Sys.BINDIR, Base.LIBDIR)), default_blaslib_name)
         sym_file = joinpath(abspath(joinpath(@__DIR__,"usr","lib")), default_blaslib_name)
         @warn(strip(replace(
