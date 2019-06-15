@@ -152,7 +152,7 @@ if !custom_library
     if !isfile(sym_file) #basename(blaslib) != default_blaslib_name && !isfile(joinpath(dirname(blaslib), default_blaslib_name))
         #sym_file = joinpath(abspath(joinpath(Sys.BINDIR, Base.LIBDIR)), default_blaslib_name)
         
-        @warn(strip(replace(
+        @info(strip(replace(
         """
         This Julia installation uses a non-default BLAS library name (\"$(basename(blaslib))\"
         instead of \"$(default_blaslib_name)\")!  This is likely due to using a distribution
