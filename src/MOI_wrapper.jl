@@ -276,7 +276,7 @@ orderidx(idx, s) = idx
 function orderidx(idx, s::MOI.PositiveSemidefiniteConeTriangle)
     sympackedUtoLidx(idx, s.side_dimension)
 end
-function MOIU.load_constraint(optimizer::Optimizer, ci, f::MOI.VectorAffineFunction, s::MOI.AbstractVectorSet)
+function MOIU.load_constraint(optimizer::Optimizer, ci::MOI.ConstraintIndex, f::MOI.VectorAffineFunction, s::MOI.AbstractVectorSet)
     A = sparse(output_index.(f.terms), variable_index_value.(f.terms), coefficient.(f.terms))
     # sparse combines duplicates with + but does not remove zeros created so we call dropzeros!
     dropzeros!(A)
