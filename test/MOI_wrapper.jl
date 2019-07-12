@@ -6,13 +6,8 @@ const MOIT = MOI.Test
 const MOIU = MOI.Utilities
 const MOIB = MOI.Bridges
 
-MOIU.@model(ModelData, (), (),
-            (MOI.Zeros, MOI.Nonnegatives, MOI.SecondOrderCone,
-             MOI.ExponentialCone, MOI.PositiveSemidefiniteConeTriangle),
-            (), (), (), (), (MOI.VectorAffineFunction,))
-
 # UniversalFallback is needed for starting values
-const cache = MOIU.UniversalFallback(ModelData{Float64}())
+const cache = MOIU.UniversalFallback(MOIU.Model{Float64}())
 
 import SCS
 
@@ -31,17 +26,20 @@ for T in [SCS.Direct, SCS.Indirect]
 
     MOI.empty!(cache)
     cached = MOIU.CachingOptimizer(cache, optimizer)
-
     bridged = MOIB.full_bridge_optimizer(cached, Float64)
-
     config = MOIT.TestConfig(atol=1e-5)
 
     @testset "Unit" begin
-        MOIT.unittest(bridged, config,
-                      [# Quadratic functions are not supported
-                       "solve_qp_edge_cases",
-                       # Integer and ZeroOne sets are not supported
-                       "solve_integer_edge_cases", "solve_objbound_edge_cases"])
+        MOIT.unittest(bridged, config, [
+            # ArgumentError: The number of constraints in SCSModel must be greater than 0
+            "solve_unbounded_model",
+            # Quadratic functions are not supported
+            "solve_qp_edge_cases",
+            # Integer and ZeroOne sets are not supported
+            "solve_integer_edge_cases", "solve_objbound_edge_cases",
+            "solve_zero_one_with_bounds_1",
+            "solve_zero_one_with_bounds_2",
+            "solve_zero_one_with_bounds_3"])
     end
 
     @testset "Continuous linear problems with $T" begin
