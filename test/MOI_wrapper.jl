@@ -31,6 +31,8 @@ for T in [SCS.Direct, SCS.Indirect]
 
     @testset "Unit" begin
         MOIT.unittest(bridged, config, [
+            # `TimeLimitSec` not supported.
+            "time_limit_sec",
             # ArgumentError: The number of constraints in SCSModel must be greater than 0
             "solve_unbounded_model",
             # Quadratic functions are not supported
