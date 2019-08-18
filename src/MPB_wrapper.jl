@@ -6,7 +6,7 @@
 # MathProgBase.jl interface for the SCS.jl solver wrapper
 #############################################################################
 
-using Compat.LinearAlgebra: dot
+using LinearAlgebra: dot
 using MathProgBase.SolverInterface
 
 import MathProgBase.SolverInterface: ConicModel, LinearQuadraticModel,
@@ -92,6 +92,15 @@ function setsense!(m::SCSMathProgModel, sns::Symbol)
 end
 =#
 
+# TODO needs to be updated for newest constants
+const status_map = Dict{Int, Symbol}(
+    1 => :Optimal,
+    -2 => :Infeasible,
+    -1 => :Unbounded,
+    -3 => :Indeterminate,
+    -4 => :Error
+)
+
 function optimize!(m::SCSMathProgModel)
     linear_solver, options = sanatize_SCS_options(m.options)
     t = time()
@@ -100,7 +109,7 @@ function optimize!(m::SCSMathProgModel)
                          m.primal_sol, m.dual_sol, m.slack; options...)
     m.solve_time = time() - t
 
-    m.solve_stat = solution.status
+    m.solve_stat = get(status_map, solution.ret_val, :UnknownError)
     m.primal_sol = solution.x
 
     m.dual_sol = solution.y
@@ -428,17 +437,10 @@ function getvardual(m::SCSMathProgModel)
     return dual
 end
 
-if VERSION >= v"0.7-"
-    function addoption!(m::SCSMathProgModel, option::Symbol, value)
-        nt = NamedTuple{(option,), Tuple{typeof(value)}}((value,))
-        m.options = pairs(merge(m.options.data, nt))
-        return m
-    end
-else
-    function addoption!(m::SCSMathProgModel, option::Symbol, value)
-        push!(m.options, (option, value))
-        return m
-    end
+function addoption!(m::SCSMathProgModel, option::Symbol, value)
+    nt = NamedTuple{(option,), Tuple{typeof(value)}}((value,))
+    m.options = pairs(merge(m.options.data, nt))
+    return m
 end
 
 # warmstart

@@ -1,4 +1,4 @@
-using Compat.SparseArrays
+using SparseArrays
 
 export SCSMatrix, SCSData, SCSSettings, SCSSolution, SCSInfo, SCSCone, SCSVecOrMatOrSparse
 
@@ -99,15 +99,9 @@ struct SCSSolution
     s::Ptr{Nothing}
 end
 
-
 struct SCSInfo
     iter::Int
-    # We need to allocate 32 bytes for a character string, so we allocate 256 bits
-    # of integer instead
-    # TODO: Find a better way to do this
-    status1::Int128
-    status2::Int128
-
+    status::NTuple{32, Cchar} # char status[32]
     statusVal::Int
     pobj::Cdouble
     dobj::Cdouble
@@ -120,7 +114,14 @@ struct SCSInfo
     solveTime::Cdouble
 end
 
-SCSInfo() = SCSInfo(0, convert(Int128, 0), convert(Int128, 0), 0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
+SCSInfo() = SCSInfo(0, ntuple(_ -> zero(Cchar), 32), 0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
+
+function raw_status(info::SCSInfo)
+    s = collect(info.status)
+    len = findfirst(iszero, s) - 1
+    # There is no method String(::Vector{Cchar}) so we convert to `UInt8`.
+    return String(UInt8[s[i] for i in 1:len])
+end
 
 # SCS solves a problem of the form
 # minimize        c' * x
@@ -156,29 +157,12 @@ function SCSCone(f::Int, l::Int, q::Vector{Int}, s::Vector{Int},
 end
 
 
-# TODO needs to be updated for newest constants
-const status_map = Dict{Int, Symbol}(
-    1 => :Optimal,
-    -2 => :Infeasible,
-    -1 => :Unbounded,
-    -3 => :Indeterminate,
-    -4 => :Error
-)
-
 mutable struct Solution
     x::Array{Float64, 1}
     y::Array{Float64, 1}
     s::Array{Float64, 1}
-    status::Symbol
+    info::SCSInfo
     ret_val::Int
-
-    function Solution(x::Array{Float64, 1}, y::Array{Float64, 1}, s::Array{Float64, 1}, ret_val::Int)
-        if haskey(status_map, ret_val)
-            return new(x, y, s, status_map[ret_val], ret_val)
-        else
-            return new(x, y, s, :UnknownError, ret_val)
-        end
-    end
 end
 
 function sanatize_SCS_options(options)

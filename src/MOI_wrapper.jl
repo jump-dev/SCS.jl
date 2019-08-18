@@ -7,14 +7,17 @@ const MOIU = MOI.Utilities
 
 mutable struct MOISolution
     ret_val::Int
+    raw_status::String
     primal::Vector{Float64}
     dual::Vector{Float64}
     slack::Vector{Float64}
-    objval::Float64
+    objective_value::Float64
+    dual_objective_value::Float64
+    objective_constant::Float64
     solve_time::Float64
 end
 MOISolution() = MOISolution(0, # SCS_UNFINISHED
-                            Float64[], Float64[], Float64[], NaN, 0.0)
+                            "", Float64[], Float64[], Float64[], NaN, NaN, NaN, 0.0)
 
 # Used to build the data with allocate-load during `copy_to`.
 # When `optimize!` is called, a the data is passed to SCS
@@ -26,7 +29,7 @@ mutable struct ModelData
     J::Vector{Int} # List of cols
     V::Vector{Float64} # List of coefficients
     b::Vector{Float64} # constants
-    objconstant::Float64 # The objective is min c'x + objconstant
+    objective_constant::Float64 # The objective is min c'x + objective_constant
     c::Vector{Float64}
 end
 
@@ -52,14 +55,33 @@ mutable struct Optimizer <: MOI.AbstractOptimizer
     maxsense::Bool
     data::Union{Nothing, ModelData} # only non-Void between MOI.copy_to and MOI.optimize!
     sol::MOISolution
-    options
-    function Optimizer(; options...)
-        new(ConeData(), false, nothing, MOISolution(), options)
+    silent::Bool
+    options::Dict{Symbol, Any}
+    function Optimizer(; kwargs...)
+        optimizer = new(ConeData(), false, nothing, MOISolution(), false,
+                        Dict{Symbol, Any}())
+        for (key, value) in kwargs
+            MOI.set(optimizer, MOI.RawParameter(key), value)
+        end
+        return optimizer
     end
 
 end
 
 MOI.get(::Optimizer, ::MOI.SolverName) = "SCS"
+
+function MOI.set(optimizer::Optimizer, param::MOI.RawParameter, value)
+    optimizer.options[param.name] = value
+end
+function MOI.get(optimizer::Optimizer, param::MOI.RawParameter)
+    return optimizer.options[param.name]
+end
+
+MOI.supports(::Optimizer, ::MOI.Silent) = true
+function MOI.set(optimizer::Optimizer, ::MOI.Silent, value::Bool)
+    optimizer.silent = value
+end
+MOI.get(optimizer::Optimizer, ::MOI.Silent) = optimizer.silent
 
 function MOI.is_empty(optimizer::Optimizer)
     !optimizer.maxsense && optimizer.data === nothing
@@ -104,7 +126,7 @@ function MOI.copy_to(dest::Optimizer, src::MOI.ModelLike; kws...)
     return MOIU.automatic_copy_to(dest, src; kws...)
 end
 
-using Compat.SparseArrays
+using SparseArrays
 
 # Computes cone dimensions
 function constroffset(cone::ConeData,
@@ -254,7 +276,7 @@ orderidx(idx, s) = idx
 function orderidx(idx, s::MOI.PositiveSemidefiniteConeTriangle)
     sympackedUtoLidx(idx, s.side_dimension)
 end
-function MOIU.load_constraint(optimizer::Optimizer, ci, f::MOI.VectorAffineFunction, s::MOI.AbstractVectorSet)
+function MOIU.load_constraint(optimizer::Optimizer, ci::MOI.ConstraintIndex, f::MOI.VectorAffineFunction, s::MOI.AbstractVectorSet)
     A = sparse(output_index.(f.terms), variable_index_value.(f.terms), coefficient.(f.terms))
     # sparse combines duplicates with + but does not remove zeros created so we call dropzeros!
     dropzeros!(A)
@@ -361,7 +383,7 @@ function MOIU.load(optimizer::Optimizer, ::MOI.ObjectiveFunction,
                    f::MOI.ScalarAffineFunction)
     c0 = Vector(sparsevec(variable_index_value.(f.terms), coefficient.(f.terms),
                           optimizer.data.n))
-    optimizer.data.objconstant = f.constant
+    optimizer.data.objective_constant = f.constant
     optimizer.data.c = optimizer.maxsense ? -c0 : c0
     return nothing
 end
@@ -372,30 +394,41 @@ function MOI.optimize!(optimizer::Optimizer)
     n = optimizer.data.n
     A = sparse(optimizer.data.I, optimizer.data.J, optimizer.data.V)
     b = optimizer.data.b
-    objconstant = optimizer.data.objconstant
+    objective_constant = optimizer.data.objective_constant
     c = optimizer.data.c
     optimizer.data = nothing # Allows GC to free optimizer.data before A is loaded to SCS
 
-    linear_solver, options = sanatize_SCS_options(optimizer.options)
+    options = optimizer.options
+    if optimizer.silent
+        options = copy(options)
+        options[:verbose] = 0
+    end
 
-    t = time()
+    linear_solver, options = sanatize_SCS_options(options)
+
     sol = SCS_solve(linear_solver, m, n, A, b, c,
                     cone.f, cone.l, cone.qa, cone.sa, cone.ep, cone.ed, cone.p,
                     optimizer.sol.primal, optimizer.sol.dual,
                     optimizer.sol.slack; options...)
-    solve_time = time() - t
 
     ret_val = sol.ret_val
     primal = sol.x
     dual = sol.y
     slack = sol.s
-    objval = (optimizer.maxsense ? -1 : 1) * dot(c, primal) + objconstant
-    optimizer.sol = MOISolution(ret_val, primal, dual, slack, objval, solve_time)
+    objective_value = (optimizer.maxsense ? -1 : 1) * sol.info.pobj
+    dual_objective_value = (optimizer.maxsense ? -1 : 1) * sol.info.dobj
+    optimizer.sol = MOISolution(ret_val, raw_status(sol.info), primal, dual,
+                                slack, objective_value, dual_objective_value,
+                                objective_constant, sol.info.setupTime + sol.info.solveTime)
 end
 
 function MOI.get(optimizer::Optimizer, ::MOI.SolveTime)
     return optimizer.sol.solve_time
 end
+function MOI.get(optimizer::Optimizer, ::MOI.RawStatusString)
+    return optimizer.sol.raw_status
+end
+
 
 # Implements getter for result value and statuses
 # SCS returns one of the following integers:
@@ -436,7 +469,20 @@ function MOI.get(optimizer::Optimizer, ::MOI.TerminationStatus)
     end
 end
 
-MOI.get(optimizer::Optimizer, ::MOI.ObjectiveValue) = optimizer.sol.objval
+function MOI.get(optimizer::Optimizer, ::MOI.ObjectiveValue)
+    value = optimizer.sol.objective_value
+    if !MOIU.is_ray(MOI.get(optimizer, MOI.PrimalStatus()))
+        value += optimizer.sol.objective_constant
+    end
+    return value
+end
+function MOI.get(optimizer::Optimizer, ::MOI.DualObjectiveValue)
+    value = optimizer.sol.dual_objective_value
+    if !MOIU.is_ray(MOI.get(optimizer, MOI.DualStatus()))
+        value += optimizer.sol.objective_constant
+    end
+    return value
+end
 
 function MOI.get(optimizer::Optimizer, ::MOI.PrimalStatus)
     s = optimizer.sol.ret_val
