@@ -130,7 +130,7 @@ using SparseArrays
 
 # Computes cone dimensions
 function constroffset(cone::ConeData,
-                      ci::CI{<:MOI.AbstractFunction, MOI.Zeros})
+                      ci::CI{MOI.AbstractFunction, MOI.Zeros})
     return ci.value
 end
 #_allocate_constraint: Allocate indices for the constraint `f`-in-`s`
@@ -141,7 +141,7 @@ function _allocate_constraint(cone::ConeData, f, s::MOI.Zeros)
     return ci
 end
 function constroffset(cone::ConeData,
-                      ci::CI{<:MOI.AbstractFunction, MOI.Nonnegatives})
+                      ci::CI{MOI.AbstractFunction, MOI.Nonnegatives})
     return cone.f + ci.value
 end
 function _allocate_constraint(cone::ConeData, f, s::MOI.Nonnegatives)
@@ -150,7 +150,7 @@ function _allocate_constraint(cone::ConeData, f, s::MOI.Nonnegatives)
     return ci
 end
 function constroffset(cone::ConeData,
-                      ci::CI{<:MOI.AbstractFunction, <:MOI.SecondOrderCone})
+                      ci::CI{MOI.AbstractFunction, MOI.SecondOrderCone})
     return cone.f + cone.l + ci.value
 end
 function _allocate_constraint(cone::ConeData, f, s::MOI.SecondOrderCone)
@@ -160,8 +160,8 @@ function _allocate_constraint(cone::ConeData, f, s::MOI.SecondOrderCone)
     return ci
 end
 function constroffset(cone::ConeData,
-                      ci::CI{<:MOI.AbstractFunction,
-                             <:MOI.PositiveSemidefiniteConeTriangle})
+                      ci::CI{MOI.AbstractFunction,
+                             MOI.PositiveSemidefiniteConeTriangle})
     return cone.f + cone.l + cone.q + ci.value
 end
 function _allocate_constraint(cone::ConeData, f,
@@ -172,7 +172,7 @@ function _allocate_constraint(cone::ConeData, f,
     return ci
 end
 function constroffset(cone::ConeData,
-                      ci::CI{<:MOI.AbstractFunction, <:MOI.ExponentialCone})
+                      ci::CI{MOI.AbstractFunction, MOI.ExponentialCone})
     return cone.f + cone.l + cone.q + cone.s + ci.value
 end
 function _allocate_constraint(cone::ConeData, f, s::MOI.ExponentialCone)
@@ -181,7 +181,7 @@ function _allocate_constraint(cone::ConeData, f, s::MOI.ExponentialCone)
     return ci
 end
 function constroffset(cone::ConeData,
-                      ci::CI{<:MOI.AbstractFunction, <:MOI.DualExponentialCone})
+                      ci::CI{MOI.AbstractFunction, MOI.DualExponentialCone})
     return cone.f + cone.l + cone.q + cone.s + cone.ep + ci.value
 end
 function _allocate_constraint(cone::ConeData, f, s::MOI.DualExponentialCone)
@@ -190,7 +190,7 @@ function _allocate_constraint(cone::ConeData, f, s::MOI.DualExponentialCone)
     return ci
 end
 function constroffset(cone::ConeData,
-                      ci::CI{<:MOI.AbstractFunction, <:MOI.PowerCone})
+                      ci::CI{MOI.AbstractFunction, MOI.PowerCone})
     return cone.f + cone.l + cone.q + cone.s + cone.ep + cone.ed + ci.value
 end
 function _allocate_constraint(cone::ConeData, f, s::MOI.PowerCone)
@@ -199,7 +199,7 @@ function _allocate_constraint(cone::ConeData, f, s::MOI.PowerCone)
     return ci
 end
 function constroffset(cone::ConeData,
-                      ci::CI{<:MOI.AbstractFunction, <:MOI.DualPowerCone})
+                      ci::CI{MOI.AbstractFunction, MOI.DualPowerCone})
     return cone.f + cone.l + cone.q + cone.s + cone.ep + cone.ed + ci.value
 end
 function _allocate_constraint(cone::ConeData, f, s::MOI.DualPowerCone)
@@ -510,7 +510,7 @@ function MOI.get(optimizer::Optimizer, a::MOI.VariablePrimal, vi::Vector{VI})
     return MOI.get.(optimizer, a, vi)
 end
 function MOI.get(optimizer::Optimizer, ::MOI.ConstraintPrimal,
-                 ci::CI{<:MOI.AbstractFunction, S}) where S <: MOI.AbstractSet
+                 ci::CI{MOI.AbstractFunction, S}) where S <: MOI.AbstractSet
     offset = constroffset(optimizer, ci)
     rows = constrrows(optimizer, ci)
     primal = optimizer.sol.slack[offset .+ rows]
@@ -532,7 +532,7 @@ function MOI.get(optimizer::Optimizer, ::MOI.DualStatus)
     end
 end
 function MOI.get(optimizer::Optimizer, ::MOI.ConstraintDual,
-                 ci::CI{<:MOI.AbstractFunction, S}) where S <: MOI.AbstractSet
+                 ci::CI{MOI.AbstractFunction, S}) where S <: MOI.AbstractSet
     offset = constroffset(optimizer, ci)
     rows = constrrows(optimizer, ci)
     dual = optimizer.sol.dual[offset .+ rows]
