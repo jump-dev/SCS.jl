@@ -190,7 +190,7 @@ function _allocate_constraint(cone::ConeData, f, s::MOI.DualExponentialCone)
     return ci
 end
 function constroffset(cone::ConeData,
-                      ci::CI{<:MOI.AbstractFunction, MOI.PowerCone})
+                      ci::CI{<:MOI.AbstractFunction, <:MOI.PowerCone})
     return cone.f + cone.l + cone.q + cone.s + cone.ep + cone.ed + ci.value
 end
 function _allocate_constraint(cone::ConeData, f, s::MOI.PowerCone)
@@ -199,7 +199,7 @@ function _allocate_constraint(cone::ConeData, f, s::MOI.PowerCone)
     return ci
 end
 function constroffset(cone::ConeData,
-                      ci::CI{<:MOI.AbstractFunction, MOI.DualPowerCone})
+                      ci::CI{<:MOI.AbstractFunction, <:MOI.DualPowerCone})
     return cone.f + cone.l + cone.q + cone.s + cone.ep + cone.ed + ci.value
 end
 function _allocate_constraint(cone::ConeData, f, s::MOI.DualPowerCone)
