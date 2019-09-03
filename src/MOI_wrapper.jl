@@ -211,7 +211,7 @@ end
 function constroffset(optimizer::Optimizer, ci::CI)
     return constroffset(optimizer.cone, ci::CI)
 end
-function MOIU.allocate_constraint(optimizer::Optimizer, f::F, s::S) where {F <: <:MOI.AbstractFunction, S <: MOI.AbstractSet}
+function MOIU.allocate_constraint(optimizer::Optimizer, f::F, s::S) where {F <: MOI.AbstractFunction, S <: MOI.AbstractSet}
     return CI{F, S}(_allocate_constraint(optimizer.cone, f, s))
 end
 
