@@ -1,16 +1,5 @@
 export SCS_init, SCS_solve, SCS_finish, SCS_version
 
-macro compat_gc_preserve(args...)
-    vars = args[1:end-1]
-    body = args[end]
-    if VERSION > v"0.7.0-"
-        return esc(Expr(:macrocall, Expr(:., :GC, Base.Meta.quot(Symbol("@preserve"))), __source__, args...))
-    else
-        return esc(body)
-    end
-end
-
-
 # SCS solves a problem of the form
 # minimize        c' * x
 # subject to      A * x + s = b
@@ -56,11 +45,7 @@ function SCS_solve(T::Union{Type{Direct}, Type{Indirect}},
     cone = Ref(SCSCone(f, l, q, s, ep, ed, p))
     info = Ref(SCSInfo())
 
-    if VERSION >= v"0.7-"
-        ws = (:warm_start=>true) in options
-    else
-        ws = (:warm_start, true) in options
-    end
+    ws = (:warm_start=>true) in options
 
     if ws && length(primal_sol) == n && length(dual_sol) == m && length(slack) == m
         x = primal_sol
@@ -73,13 +58,13 @@ function SCS_solve(T::Union{Type{Direct}, Type{Indirect}},
     end
     solution = SCSSolution(pointer(x), pointer(y), pointer(s))
 
-    @compat_gc_preserve managed_matrix matrix settings b c q s p begin
+    Base.GC.@preserve managed_matrix matrix settings b c q s p begin
         p_work = SCS_init(T, data, cone, info)
         status = SCS_solve(T, p_work, data, cone, solution, info)
         SCS_finish(T, p_work)
     end
 
-    return Solution(x, y, s, status)
+    return Solution(x, y, s, info[], status)
 
 end
 
