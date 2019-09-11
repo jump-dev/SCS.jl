@@ -117,7 +117,8 @@ function MOI.supports_constraint(
     ::Optimizer,
     ::Type{<:MOI.VectorAffineFunction{Float64}},
     ::Type{<:Union{MOI.Zeros, MOI.Nonnegatives, MOI.SecondOrderCone,
-                   MOI.ExponentialCone, MOI.PositiveSemidefiniteConeTriangle,
+                   MOI.ExponentialCone, MOI.DualExponentialCone, 
+                   MOI.PositiveSemidefiniteConeTriangle,
                    MOI.PowerCone, MOI.DualPowerCone}})
     return true
 end
