@@ -117,7 +117,7 @@ function MOI.supports_constraint(
     ::Optimizer,
     ::Type{<:MOI.VectorAffineFunction{Float64}},
     ::Type{<:Union{MOI.Zeros, MOI.Nonnegatives, MOI.SecondOrderCone,
-                   MOI.ExponentialCone, MOI.DualExponentialCone, 
+                   MOI.ExponentialCone, MOI.DualExponentialCone,
                    MOI.PositiveSemidefiniteConeTriangle,
                    MOI.PowerCone, MOI.DualPowerCone}})
     return true
@@ -414,7 +414,7 @@ function MOI.optimize!(optimizer::Optimizer)
         options[:verbose] = 0
     end
 
-    linear_solver, options = sanatize_SCS_options(options)
+    linear_solver, options = sanitize_SCS_options(options)
 
     sol = SCS_solve(linear_solver, m, n, A, b, c,
                     cone.f, cone.l, cone.qa, cone.sa, cone.ep, cone.ed, cone.p,

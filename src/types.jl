@@ -165,7 +165,7 @@ mutable struct Solution
     ret_val::Int
 end
 
-function sanatize_SCS_options(options)
+function sanitize_SCS_options(options)
     options = Dict(options)
     if haskey(options, :linear_solver)
         linear_solver = options[:linear_solver]
