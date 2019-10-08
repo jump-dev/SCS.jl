@@ -14,7 +14,7 @@ mutable struct MOISolution
     objective_value::Float64
     dual_objective_value::Float64
     objective_constant::Float64
-    solve_time::Float64
+    solve_time_sec::Float64
 end
 MOISolution() = MOISolution(0, # SCS_UNFINISHED
                             "", Float64[], Float64[], Float64[], NaN, NaN, NaN, 0.0)
@@ -427,13 +427,14 @@ function MOI.optimize!(optimizer::Optimizer)
     slack = sol.s
     objective_value = (optimizer.maxsense ? -1 : 1) * sol.info.pobj
     dual_objective_value = (optimizer.maxsense ? -1 : 1) * sol.info.dobj
+    solve_time = (sol.info.setupTime + sol.info.solveTime) / 1000
     optimizer.sol = MOISolution(ret_val, raw_status(sol.info), primal, dual,
                                 slack, objective_value, dual_objective_value,
-                                objective_constant, sol.info.setupTime + sol.info.solveTime)
+                                objective_constant, solve_time)
 end
 
 function MOI.get(optimizer::Optimizer, ::MOI.SolveTime)
-    return optimizer.sol.solve_time
+    return optimizer.sol.solve_time_sec
 end
 function MOI.get(optimizer::Optimizer, ::MOI.RawStatusString)
     return optimizer.sol.raw_status
