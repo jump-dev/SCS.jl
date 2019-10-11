@@ -48,6 +48,11 @@ for T in [SCS.Direct, SCS.Indirect]
         MOIT.contlineartest(bridged, config)
     end
 
+    @testset "ADMMIterations attribute with $T" begin
+        MOIT.linear1test(bridged, config)
+        @test MOI.get(bridged, SCS.ADMMIterations()) > 0
+    end
+
     @testset "Continuous quadratic problems with $T" begin
         MOIT.qcptest(bridged, config)
     end
