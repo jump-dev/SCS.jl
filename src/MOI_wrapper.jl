@@ -5,6 +5,16 @@ const VI = MOI.VariableIndex
 
 const MOIU = MOI.Utilities
 
+"""
+    ADMMIterations()
+
+The number of ADMM iterations completed during the solve.
+"""
+struct ADMMIterations <: MOI.AbstractModelAttribute
+end
+
+MOI.is_set_by_optimize(::ADMMIterations) = true
+
 mutable struct MOISolution
     ret_val::Int
     raw_status::String
@@ -15,9 +25,11 @@ mutable struct MOISolution
     dual_objective_value::Float64
     objective_constant::Float64
     solve_time_sec::Float64
+    iterations::Int
 end
 MOISolution() = MOISolution(0, # SCS_UNFINISHED
-                            "", Float64[], Float64[], Float64[], NaN, NaN, NaN, 0.0)
+                            "", Float64[], Float64[], Float64[], NaN, NaN, NaN,
+                            0.0, 0)
 
 # Used to build the data with allocate-load during `copy_to`.
 # When `optimize!` is called, a the data is passed to SCS
@@ -430,7 +442,7 @@ function MOI.optimize!(optimizer::Optimizer)
     solve_time = (sol.info.setupTime + sol.info.solveTime) / 1000
     optimizer.sol = MOISolution(ret_val, raw_status(sol.info), primal, dual,
                                 slack, objective_value, dual_objective_value,
-                                objective_constant, solve_time)
+                                objective_constant, solve_time, sol.info.iter)
 end
 
 function MOI.get(optimizer::Optimizer, ::MOI.SolveTime)
@@ -440,6 +452,9 @@ function MOI.get(optimizer::Optimizer, ::MOI.RawStatusString)
     return optimizer.sol.raw_status
 end
 
+function MOI.get(optimizer::Optimizer, ::ADMMIterations)
+    return optimizer.sol.iterations
+end
 
 # Implements getter for result value and statuses
 # SCS returns one of the following integers:
