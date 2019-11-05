@@ -37,6 +37,19 @@ function SCS_solve(T::Union{Type{Direct}, Type{Indirect}},
     n > 0 || throw(ArgumentError("The number of variables in SCSModel must be greater than 0"))
     m > 0 || throw(ArgumentError("The number of constraints in SCSModel must be greater than 0"))
 
+    ws = (:warm_start=>true) in options
+
+    if ws && length(primal_sol) == n && length(dual_sol) == length(slack) == m
+        primal = primal_sol
+        dual = dual_sol
+        slack = slack
+    else
+        primal = zeros(n)
+        dual = zeros(m)
+        slack = zeros(m)
+    end
+    solution = SCSSolution(pointer(primal), pointer(dual), pointer(slack))
+
     managed_matrix = ManagedSCSMatrix(m, n, A)
     matrix = Ref(SCSMatrix(managed_matrix))
     settings = Ref(SCSSettings(T; options...))
@@ -45,27 +58,13 @@ function SCS_solve(T::Union{Type{Direct}, Type{Indirect}},
     cone = Ref(SCSCone(f, l, q, s, ep, ed, p))
     info = Ref(SCSInfo())
 
-    ws = (:warm_start=>true) in options
-
-    if ws && length(primal_sol) == n && length(dual_sol) == m && length(slack) == m
-        x = primal_sol
-        y = dual_sol
-        s = slack
-    else
-        x = zeros(n)
-        y = zeros(m)
-        s = zeros(m)
-    end
-    solution = SCSSolution(pointer(x), pointer(y), pointer(s))
-
     Base.GC.@preserve managed_matrix matrix settings b c q s p begin
         p_work = SCS_init(T, data, cone, info)
         status = SCS_solve(T, p_work, data, cone, solution, info)
         SCS_finish(T, p_work)
     end
 
-    return Solution(x, y, s, info[], status)
-
+    return Solution(primal, dual, slack, info[], status)
 end
 
 # Wrappers for the direct C API.
