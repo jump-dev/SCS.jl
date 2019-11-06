@@ -17,25 +17,19 @@ struct ManagedSCSMatrix
     values::Vector{Cdouble}
     rowval::Vector{Int}
     colptr::Vector{Int}
-    m::Int
-    n::Int
+    scsmat::Base.RefValue{SCSMatrix}
+
+    function ManagedSCSMatrix(m::Integer, n::Integer, A::SCSVecOrMatOrSparse)
+        A_sparse = sparse(A)
+
+        values = copy(A_sparse.nzval)
+        rowval = convert(Array{Int, 1}, A_sparse.rowval .- 1)
+        colptr = convert(Array{Int, 1}, A_sparse.colptr .- 1)
+
+        scsmat = SCSMatrix(pointer(values), pointer(rowval), pointer(colptr), m, n)
+        return new(values, rowval, colptr, Base.cconvert(Ref{SCSMatrix}, scsmat))
+    end
 end
-
-function ManagedSCSMatrix(m::Int, n::Int, A::SCSVecOrMatOrSparse)
-    A_sparse = sparse(A)
-
-    values = copy(A_sparse.nzval)
-    rowval = convert(Array{Int, 1}, A_sparse.rowval .- 1)
-    colptr = convert(Array{Int, 1}, A_sparse.colptr .- 1)
-
-    return ManagedSCSMatrix(values, rowval, colptr, m, n)
-end
-
-# Returns an SCSMatrix. The vectors are *not* GC tracked in the struct.
-# Use this only when you know that the managed matrix will outlive the SCSMatrix.
-SCSMatrix(m::ManagedSCSMatrix) =
-    SCSMatrix(pointer(m.values), pointer(m.rowval), pointer(m.colptr), m.m, m.n)
-
 
 struct SCSSettings
     normalize::Int # boolean, heuristic data rescaling
