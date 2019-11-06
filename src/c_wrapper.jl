@@ -50,15 +50,17 @@ function SCS_solve(T::Union{Type{Direct}, Type{Indirect}},
     end
     solution = SCSSolution(pointer(primal), pointer(dual), pointer(slack))
 
-    managed_matrix = ManagedSCSMatrix(m, n, A)
-    matrix = Ref(SCSMatrix(managed_matrix))
-    settings = Ref(SCSSettings(T; options...))
-    data = Ref(SCSData(m, n, Base.unsafe_convert(Ptr{SCSMatrix}, matrix), pointer(b), pointer(c), Base.unsafe_convert(Ptr{SCSSettings},settings)))
+    settings = Base.cconvert(Ref{SCSSettings}, SCSSettings(T; options...))
+    mmatrix = ManagedSCSMatrix(m, n, A)
+    data = Base.cconvert(Ref{SCSData}, SCSData(m, n,
+        Base.unsafe_convert(Ref{SCSMatrix}, mmatrix.scsmat), #creates Ptr{SCSMatrix}
+        pointer(b), pointer(c),
+        Base.unsafe_convert(Ref{SCSSettings}, settings))) #creates Ptr{SCSSettings}
+    # unsafe_convert doesn't protect from GC: mmatrix and settings must be GC.@preserved
+    cone = Base.cconvert(Ref{SCSCone}, SCSCone(f, l, q, s, ep, ed, p))
+    info = Base.cconvert(Ref{SCSInfo}, SCSInfo())
 
-    cone = Ref(SCSCone(f, l, q, s, ep, ed, p))
-    info = Ref(SCSInfo())
-
-    Base.GC.@preserve managed_matrix matrix settings b c q s p begin
+    Base.GC.@preserve mmatrix settings b c q s p begin
         p_work = SCS_init(T, data, cone, info)
         status = SCS_solve(T, p_work, data, cone, solution, info)
         SCS_finish(T, p_work)
@@ -82,7 +84,7 @@ for (T, lib) in zip([SCS.Direct, SCS.Indirect], [SCS.direct, SCS.indirect])
         function SCS_init(::Type{$T}, data::Ref{SCSData}, cone::Ref{SCSCone}, info::Ref{SCSInfo})
 
             p_work = ccall((:scs_init, $lib), Ptr{Nothing},
-                (Ptr{SCSData}, Ptr{SCSCone}, Ptr{SCSInfo}),
+                (Ref{SCSData}, Ref{SCSCone}, Ref{SCSInfo}),
                 data, cone, info)
 
             return p_work
@@ -92,7 +94,7 @@ for (T, lib) in zip([SCS.Direct, SCS.Indirect], [SCS.direct, SCS.indirect])
         function SCS_solve(::Type{$T}, p_work::Ptr{Nothing}, data::Ref{SCSData}, cone::Ref{SCSCone}, solution::SCSSolution, info::Ref{SCSInfo})
 
             status = ccall((:scs_solve, $lib), Int,
-                (Ptr{Nothing}, Ptr{SCSData}, Ptr{SCSCone}, Ref{SCSSolution}, Ptr{SCSInfo}),
+                (Ptr{Nothing}, Ref{SCSData}, Ref{SCSCone}, Ref{SCSSolution}, Ref{SCSInfo}),
                 p_work, data, cone, solution, info)
 
             return status
