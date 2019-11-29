@@ -265,7 +265,8 @@ function _scalecoef(rows::Union{UnitRange{Int64}, Vector{Int64}}, coef::Vector{F
     output = copy(coef)
     for i in 1:length(output)
         # See https://en.wikipedia.org/wiki/Triangular_number#Triangular_roots_and_tests_for_triangular_numbers
-        is_diagonal_index = isinteger(sqrt(8*rows[i] + 1))
+        val = 8 * rows[i] + 1
+        is_diagonal_index = isqrt(val)^2 == val
         if !is_diagonal_index
             output[i] *= scaling
         end
