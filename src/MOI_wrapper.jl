@@ -260,20 +260,20 @@ end
 # coef: List of corresponding coefficients
 # d: dimension of set
 # rev: if true, we unscale instead (e.g. divide by √2 instead of multiply for PSD cone)
-function _scalecoef(rows, coef, d, rev)
+function _scalecoef(rows::AbstractVector{<: Integer}, coef::Vector{Float64}, d::Integer, rev::Bool)
     scaling = rev ? 1 / √2 : 1 * √2
     output = copy(coef)
-    diagidx = BitSet()
-    for i in 1:d
-        push!(diagidx, trimap(i, i))
-    end
     for i in 1:length(output)
-        if !(rows[i] in diagidx)
+        # See https://en.wikipedia.org/wiki/Triangular_number#Triangular_roots_and_tests_for_triangular_numbers
+        val = 8 * rows[i] + 1
+        is_diagonal_index = isqrt(val)^2 == val
+        if !is_diagonal_index
             output[i] *= scaling
         end
     end
     return output
 end
+
 # Unscale the coefficients in `coef` with respective rows in `rows` for a set `s`
 scalecoef(rows, coef, s) = _scalecoef(rows, coef, MOI.dimension(s), false)
 # Unscale the coefficients in `coef` with respective rows in `rows` for a set of type `S` with dimension `d`
