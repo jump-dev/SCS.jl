@@ -260,9 +260,9 @@ end
 # coef: List of corresponding coefficients
 # d: dimension of set
 # rev: if true, we unscale instead (e.g. divide by √2 instead of multiply for PSD cone)
-function _scalecoef(rows::Union{UnitRange{Int64}, Vector{Int64}}, coef::Vector{Float64}, d::Int64, rev::Bool)
+function _scalecoef(rows::AbstractVector{<: Integer}, coef::Vector{<: AbstractFloat}, d::Integer, rev::Bool)
     scaling = rev ? 1 / √2 : 1 * √2
-    output = copy(coef)
+    output = deepcopy(coef)
     for i in 1:length(output)
         # See https://en.wikipedia.org/wiki/Triangular_number#Triangular_roots_and_tests_for_triangular_numbers
         val = 8 * rows[i] + 1
