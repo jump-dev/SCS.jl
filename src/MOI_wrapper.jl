@@ -108,7 +108,6 @@ MOIU.supports_allocate_load(::Optimizer, copy_names::Bool) = !copy_names
 
 function MOI.supports(::Optimizer,
                       ::Union{MOI.ObjectiveSense,
-                              MOI.ObjectiveFunction{MOI.SingleVariable},
                               MOI.ObjectiveFunction{MOI.ScalarAffineFunction{Float64}}})
     return true
 end
@@ -364,8 +363,7 @@ function MOIU.allocate(optimizer::Optimizer, ::MOI.ObjectiveSense, sense::MOI.Op
     optimizer.maxsense = sense == MOI.MAX_SENSE
 end
 function MOIU.allocate(::Optimizer, ::MOI.ObjectiveFunction,
-                       ::MOI.Union{MOI.SingleVariable,
-                                   MOI.ScalarAffineFunction{Float64}})
+                       ::MOI.Union{MOI.ScalarAffineFunction{Float64}})
 end
 
 function MOIU.load(::Optimizer, ::MOI.VariablePrimalStart,
@@ -394,12 +392,6 @@ function MOIU.load(optimizer::Optimizer, ::MOI.ConstraintDualStart,
     optimizer.sol.dual[offset .+ rows] .= value
 end
 function MOIU.load(::Optimizer, ::MOI.ObjectiveSense, ::MOI.OptimizationSense)
-end
-function MOIU.load(optimizer::Optimizer, ::MOI.ObjectiveFunction,
-                   f::MOI.SingleVariable)
-    MOIU.load(optimizer,
-              MOI.ObjectiveFunction{MOI.ScalarAffineFunction{Float64}}(),
-              MOI.ScalarAffineFunction{Float64}(f))
 end
 function MOIU.load(optimizer::Optimizer, ::MOI.ObjectiveFunction,
                    f::MOI.ScalarAffineFunction)
