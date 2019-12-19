@@ -29,26 +29,31 @@ function SCS_solve(T::Union{Type{Direct}, Type{Indirect}},
         m::Int, n::Int, A::SCSVecOrMatOrSparse, b::Array{Float64},
         c::Array{Float64}, f::Int, l::Int, q::Array{Int}, s::Array{Int},
         ep::Int, ed::Int, p::Array{Float64},
-        primal_sol::Vector{Float64}=Float64[],
-        dual_sol::Vector{Float64}=Float64[],
-        slack::Vector{Float64}=Float64[];
+        primal_sol::Vector{Float64}=zeros(n),
+        dual_sol::Vector{Float64}=zeros(m),
+        slack::Vector{Float64}=zeros(m);
         options...)
 
     n > 0 || throw(ArgumentError("The number of variables in SCSModel must be greater than 0"))
     m > 0 || throw(ArgumentError("The number of constraints in SCSModel must be greater than 0"))
 
     ws = (:warm_start=>true) in options
+    sizes_correct = length(primal_sol) == n && length(dual_sol) == length(slack) == m
 
-    if ws && length(primal_sol) == n && length(dual_sol) == length(slack) == m
-        primal = primal_sol
-        dual = dual_sol
-        slack = slack
+    if sizes_correct
+        if !ws
+            primal_sol = fill!(primal_sol, 0.0)
+            dual_sol = fill!(dual_sol, 0.0)
+            slack = fill!(slack, 0.0)
+        end
     else
-        primal = zeros(n)
-        dual = zeros(m)
+        ws && @warn "The provided warmstart doesn't match problem sizes; discarding!"
+        primal_sol = zeros(n)
+        dual_sol = zeros(m)
         slack = zeros(m)
     end
-    solution = SCSSolution(pointer(primal), pointer(dual), pointer(slack))
+
+    solution = SCSSolution(pointer(primal_sol), pointer(dual_sol), pointer(slack))
 
     settings = Base.cconvert(Ref{SCSSettings}, SCSSettings(T; options...))
     mmatrix = ManagedSCSMatrix(m, n, A)
@@ -66,7 +71,7 @@ function SCS_solve(T::Union{Type{Direct}, Type{Indirect}},
         SCS_finish(T, p_work)
     end
 
-    return Solution(primal, dual, slack, info[], status)
+    return Solution(primal_sol, dual_sol, slack, info[], status)
 end
 
 # Wrappers for the direct C API.
