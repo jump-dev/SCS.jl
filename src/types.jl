@@ -70,13 +70,18 @@ end
 function SCSSettings(linear_solver::Union{Type{Direct}, Type{Indirect}}; options...)
 
     mmatrix = ManagedSCSMatrix(0,0,spzeros(1,1))
-    matrix = Ref(SCSMatrix(mmatrix))
-    default_settings = Ref(SCSSettings())
-    dummy_data = Ref(SCSData(0,0, Base.unsafe_convert(Ptr{SCSMatrix}, matrix),
-        pointer([0.0]), pointer([0.0]),
-        Base.unsafe_convert(Ptr{SCSSettings}, default_settings)))
-    SCS_set_default_settings(linear_solver, dummy_data)
-    return _SCS_user_settings(default_settings[]; options...)
+    default_settings_ref = Base.cconvert(Ref{SCSSettings}, SCSSettings())
+    a = [0.0]
+    dummy_data_ref = Base.cconvert(Ref{SCSData}, SCSData(0,0,
+        Base.unsafe_convert(Ref{SCSMatrix}, mmatrix.scsmat),
+        pointer(a), pointer(a),
+        Base.unsafe_convert(Ref{SCSSettings}, default_settings_ref)))
+
+    Base.GC.@preserve mmatrix a begin
+        SCS_set_default_settings(linear_solver, dummy_data_ref)
+    end
+
+    return _SCS_user_settings(default_settings_ref[]; options...)
 end
 
 struct SCSData
