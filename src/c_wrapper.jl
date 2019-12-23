@@ -42,12 +42,12 @@ function SCS_solve(T::Union{Type{Direct}, Type{Indirect}},
 
     if warmstart_sizes_are_correct
         if !ws
-            primal_sol = fill!(primal_sol, 0.0)
-            dual_sol = fill!(dual_sol, 0.0)
-            slack = fill!(slack, 0.0)
+            fill!(primal_sol, 0.0)
+            fill!(dual_sol, 0.0)
+            fill!(slack, 0.0)
         end
     else
-        ws && throw(ArgumentError("The provided warmstart doesn't match problem sizes; discarding!"))
+        ws && throw(ArgumentError("The provided warmstart doesn't match problem sizes"))
         primal_sol = zeros(n)
         dual_sol = zeros(m)
         slack = zeros(m)
