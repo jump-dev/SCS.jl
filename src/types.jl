@@ -17,17 +17,31 @@ struct ManagedSCSMatrix
     values::Vector{Cdouble}
     rowval::Vector{Int}
     colptr::Vector{Int}
-    scsmat::Base.RefValue{SCSMatrix}
+    scsmatref::Base.RefValue{SCSMatrix}
 
     function ManagedSCSMatrix(m::Integer, n::Integer, A::SCSVecOrMatOrSparse)
         A_sparse = sparse(A)
 
-        values = copy(A_sparse.nzval)
-        rowval = convert(Array{Int, 1}, A_sparse.rowval .- 1)
-        colptr = convert(Array{Int, 1}, A_sparse.colptr .- 1)
+        # we convert everything to make sure that no conversion will
+        # accidentally happen when ccalling `new`, so that `scsmatref`
+        # holds pointers to actual data stored in the fields.
 
-        scsmat = SCSMatrix(pointer(values), pointer(rowval), pointer(colptr), m, n)
-        return new(values, rowval, colptr, Base.cconvert(Ref{SCSMatrix}, scsmat))
+        values = convert(Vector{Cdouble}, copy(A_sparse.nzval))
+        rowval = convert(Vector{Int}, A_sparse.rowval .- 1)
+        colptr = convert(Vector{Int}, A_sparse.colptr .- 1)
+
+        # scsmatref holds the reference to SCSMatrix created out of data in ManagedSCSMatrix.
+        # this way the reference to SCSMatrix always points to valid data
+        # as long as the ManagedSCSMatrix is not GC collected.
+        # One MUST
+        #   `Base.unsafe_convert(Ref{SCSMatrix}, scsmatref)`
+        # when assignig to a field of type `Ptr{SCSMatrix}`, or specify
+        #   `Ref{SCSMatrix}`
+        # in in the type tuple when ccalling with `scsmatref`
+
+        scsmatref = SCSMatrix(pointer(values), pointer(rowval), pointer(colptr), m, n)
+
+        return new(values, rowval, colptr, Base.cconvert(Ref{SCSMatrix}, scsmatref))
     end
 end
 
@@ -69,15 +83,15 @@ end
 
 function SCSSettings(linear_solver::Union{Type{Direct}, Type{Indirect}}; options...)
 
-    mmatrix = ManagedSCSMatrix(0,0,spzeros(1,1))
+    managed_matrix = ManagedSCSMatrix(0,0,spzeros(0,0))
     default_settings_ref = Base.cconvert(Ref{SCSSettings}, SCSSettings())
     a = [0.0]
     dummy_data_ref = Base.cconvert(Ref{SCSData}, SCSData(0,0,
-        Base.unsafe_convert(Ref{SCSMatrix}, mmatrix.scsmat),
+        Base.unsafe_convert(Ref{SCSMatrix}, managed_matrix.scsmatref),
         pointer(a), pointer(a),
         Base.unsafe_convert(Ref{SCSSettings}, default_settings_ref)))
 
-    Base.GC.@preserve mmatrix a begin
+    Base.GC.@preserve managed_matrix a begin
         SCS_set_default_settings(linear_solver, dummy_data_ref)
     end
 

@@ -58,10 +58,11 @@ function SCS_solve(T::Union{Type{Direct}, Type{Indirect}},
     settings = Base.cconvert(Ref{SCSSettings}, SCSSettings(T; options...))
     managed_matrix = ManagedSCSMatrix(m, n, A)
     data = Base.cconvert(Ref{SCSData}, SCSData(m, n,
-        Base.unsafe_convert(Ref{SCSMatrix}, managed_matrix.scsmat), #creates Ptr{SCSMatrix}
+        Base.unsafe_convert(Ref{SCSMatrix}, managed_matrix.scsmatref), # creates Ptr{SCSMatrix}
         pointer(b), pointer(c),
-        Base.unsafe_convert(Ref{SCSSettings}, settings))) #creates Ptr{SCSSettings}
-    # unsafe_convert doesn't protect from GC: mmatrix and settings must be GC.@preserved
+        Base.unsafe_convert(Ref{SCSSettings}, settings) # creates Ptr{SCSSettings}
+        ))
+    # unsafe_convert doesn't protect from GC: managed_matrix and settings must be GC.@preserved
     cone = Base.cconvert(Ref{SCSCone}, SCSCone(f, l, q, s, ep, ed, p))
     info = Base.cconvert(Ref{SCSInfo}, SCSInfo())
 
