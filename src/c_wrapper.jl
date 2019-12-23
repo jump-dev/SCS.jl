@@ -29,13 +29,31 @@ function SCS_solve(T::Union{Type{Direct}, Type{Indirect}},
         m::Int, n::Int, A::SCSVecOrMatOrSparse, b::Array{Float64},
         c::Array{Float64}, f::Int, l::Int, q::Array{Int}, s::Array{Int},
         ep::Int, ed::Int, p::Array{Float64},
-        primal_sol::Vector{Float64}=Float64[],
-        dual_sol::Vector{Float64}=Float64[],
-        slack::Vector{Float64}=Float64[];
+        primal_sol::Vector{Float64}=zeros(n),
+        dual_sol::Vector{Float64}=zeros(m),
+        slack::Vector{Float64}=zeros(m);
         options...)
 
     n > 0 || throw(ArgumentError("The number of variables in SCSModel must be greater than 0"))
     m > 0 || throw(ArgumentError("The number of constraints in SCSModel must be greater than 0"))
+
+    ws = (:warm_start=>true) in options
+    warmstart_sizes_are_correct = length(primal_sol) == n && length(dual_sol) == length(slack) == m
+
+    if warmstart_sizes_are_correct
+        if !ws
+            fill!(primal_sol, 0.0)
+            fill!(dual_sol, 0.0)
+            fill!(slack, 0.0)
+        end
+    else
+        ws && throw(ArgumentError("The provided warmstart doesn't match problem sizes"))
+        primal_sol = zeros(n)
+        dual_sol = zeros(m)
+        slack = zeros(m)
+    end
+
+    solution = SCSSolution(pointer(primal_sol), pointer(dual_sol), pointer(slack))
 
     managed_matrix = ManagedSCSMatrix(m, n, A)
     matrix = Ref(SCSMatrix(managed_matrix))
@@ -45,27 +63,13 @@ function SCS_solve(T::Union{Type{Direct}, Type{Indirect}},
     cone = Ref(SCSCone(f, l, q, s, ep, ed, p))
     info = Ref(SCSInfo())
 
-    ws = (:warm_start=>true) in options
-
-    if ws && length(primal_sol) == n && length(dual_sol) == m && length(slack) == m
-        x = primal_sol
-        y = dual_sol
-        s = slack
-    else
-        x = zeros(n)
-        y = zeros(m)
-        s = zeros(m)
-    end
-    solution = SCSSolution(pointer(x), pointer(y), pointer(s))
-
     Base.GC.@preserve managed_matrix matrix settings b c q s p begin
         p_work = SCS_init(T, data, cone, info)
         status = SCS_solve(T, p_work, data, cone, solution, info)
         SCS_finish(T, p_work)
     end
 
-    return Solution(x, y, s, info[], status)
-
+    return Solution(primal_sol, dual_sol, slack, info[], status)
 end
 
 # Wrappers for the direct C API.
