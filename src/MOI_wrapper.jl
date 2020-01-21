@@ -308,9 +308,8 @@ function MOIU.load_constraint(optimizer::Optimizer, ci::MOI.ConstraintIndex, f::
     i = offset .+ rows
     b = f.constants
     if s isa MOI.PositiveSemidefiniteConeTriangle
-        # FIXME shouldn't scale before ?
-        b = sympackedUtoL(b, s.side_dimension)
         b = scalecoef(rows, b, s)
+        b = sympackedUtoL(b, s.side_dimension)
         V = scalecoef(I, V, s)
         I = sympackedUtoLidx(I, s.side_dimension)
     end
