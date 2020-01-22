@@ -17,25 +17,33 @@ struct ManagedSCSMatrix
     values::Vector{Cdouble}
     rowval::Vector{Int}
     colptr::Vector{Int}
-    m::Int
-    n::Int
+    scsmatref::Base.RefValue{SCSMatrix}
+
+    function ManagedSCSMatrix(m::Integer, n::Integer, A::SCSVecOrMatOrSparse)
+        A_sparse = sparse(A)
+
+        # we convert everything to make sure that no conversion will
+        # accidentally happen when ccalling `new`, so that `scsmatref`
+        # holds pointers to actual data stored in the fields.
+
+        values = convert(Vector{Cdouble}, copy(A_sparse.nzval))
+        rowval = convert(Vector{Int}, A_sparse.rowval .- 1)
+        colptr = convert(Vector{Int}, A_sparse.colptr .- 1)
+
+        # scsmatref holds the reference to SCSMatrix created out of data in ManagedSCSMatrix.
+        # this way the reference to SCSMatrix always points to valid data
+        # as long as the ManagedSCSMatrix is not GC collected.
+        # One MUST
+        #   `Base.unsafe_convert(Ref{SCSMatrix}, scsmatref)`
+        # when assigning to a field of type `Ptr{SCSMatrix}`, or specify
+        #   `Ref{SCSMatrix}`
+        # in the type tuple when ccalling with `scsmatref`
+
+        scsmatref = SCSMatrix(pointer(values), pointer(rowval), pointer(colptr), m, n)
+
+        return new(values, rowval, colptr, Base.cconvert(Ref{SCSMatrix}, scsmatref))
+    end
 end
-
-function ManagedSCSMatrix(m::Int, n::Int, A::SCSVecOrMatOrSparse)
-    A_sparse = sparse(A)
-
-    values = copy(A_sparse.nzval)
-    rowval = convert(Array{Int, 1}, A_sparse.rowval .- 1)
-    colptr = convert(Array{Int, 1}, A_sparse.colptr .- 1)
-
-    return ManagedSCSMatrix(values, rowval, colptr, m, n)
-end
-
-# Returns an SCSMatrix. The vectors are *not* GC tracked in the struct.
-# Use this only when you know that the managed matrix will outlive the SCSMatrix.
-SCSMatrix(m::ManagedSCSMatrix) =
-    SCSMatrix(pointer(m.values), pointer(m.rowval), pointer(m.colptr), m.m, m.n)
-
 
 struct SCSSettings
     normalize::Int # boolean, heuristic data rescaling
@@ -75,14 +83,19 @@ end
 
 function SCSSettings(linear_solver::Union{Type{Direct}, Type{Indirect}}; options...)
 
-    mmatrix = ManagedSCSMatrix(0,0,spzeros(1,1))
-    matrix = Ref(SCSMatrix(mmatrix))
-    default_settings = Ref(SCSSettings())
-    dummy_data = Ref(SCSData(0,0, Base.unsafe_convert(Ptr{SCSMatrix}, matrix),
-        pointer([0.0]), pointer([0.0]),
-        Base.unsafe_convert(Ptr{SCSSettings}, default_settings)))
-    SCS_set_default_settings(linear_solver, dummy_data)
-    return _SCS_user_settings(default_settings[]; options...)
+    managed_matrix = ManagedSCSMatrix(0,0,spzeros(0,0))
+    default_settings_ref = Base.cconvert(Ref{SCSSettings}, SCSSettings())
+    a = [0.0]
+    dummy_data_ref = Base.cconvert(Ref{SCSData}, SCSData(0,0,
+        Base.unsafe_convert(Ref{SCSMatrix}, managed_matrix.scsmatref),
+        pointer(a), pointer(a),
+        Base.unsafe_convert(Ref{SCSSettings}, default_settings_ref)))
+
+    Base.GC.@preserve managed_matrix a begin
+        SCS_set_default_settings(linear_solver, dummy_data_ref)
+    end
+
+    return _SCS_user_settings(default_settings_ref[]; options...)
 end
 
 struct SCSData
