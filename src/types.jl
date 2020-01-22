@@ -35,9 +35,9 @@ struct ManagedSCSMatrix
         # as long as the ManagedSCSMatrix is not GC collected.
         # One MUST
         #   `Base.unsafe_convert(Ref{SCSMatrix}, scsmatref)`
-        # when assignig to a field of type `Ptr{SCSMatrix}`, or specify
+        # when assigning to a field of type `Ptr{SCSMatrix}`, or specify
         #   `Ref{SCSMatrix}`
-        # in in the type tuple when ccalling with `scsmatref`
+        # in the type tuple when ccalling with `scsmatref`
 
         scsmatref = SCSMatrix(pointer(values), pointer(rowval), pointer(colptr), m, n)
 
