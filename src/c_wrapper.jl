@@ -26,7 +26,7 @@ export SCS_init, SCS_solve, SCS_finish, SCS_version
 #
 # Returns a Solution object.
 function SCS_solve(linear_solver::Type{<:LinearSolver},
-        m::Integer, n::Integer, A::SCSVecOrMatOrSparse, b::Vector{Float64}, c::Vector{Float64},
+        m::Integer, n::Integer, A::VecOrMatOrSparse, b::Vector{Float64}, c::Vector{Float64},
         f::Integer, l::Integer, q::Vector{<:Integer}, s::Vector{<:Integer},
         ep::Integer, ed::Integer, p::Vector{Float64},
         primal_sol::Vector{Float64}=zeros(n),

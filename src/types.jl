@@ -1,8 +1,8 @@
 using SparseArrays
 
-export SCSMatrix, SCSData, SCSSettings, SCSSolution, SCSInfo, SCSCone, SCSVecOrMatOrSparse
+export SCSMatrix, SCSData, SCSSettings, SCSSolution, SCSInfo, SCSCone
 
-SCSVecOrMatOrSparse = Union{VecOrMat, SparseMatrixCSC{Float64,Int}}
+VecOrMatOrSparse = Union{VecOrMat, SparseMatrixCSC{Float64,Int}}
 
 SCSInt = Union{Int32, Int64}
 abstract type LinearSolver end
@@ -33,7 +33,7 @@ struct ManagedSCSMatrix{T<:SCSInt}
     colptr::Vector{T}
     scsmatref::Base.RefValue{SCSMatrix{T}}
 
-    function ManagedSCSMatrix{T}(m::Integer, n::Integer, A::SCSVecOrMatOrSparse) where T
+    function ManagedSCSMatrix{T}(m::Integer, n::Integer, A::VecOrMatOrSparse) where T
         A_sparse = sparse(A)
 
         # we convert everything to make sure that no conversion will
