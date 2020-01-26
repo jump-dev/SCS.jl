@@ -5,24 +5,29 @@ export SCS_init, SCS_solve, SCS_finish, SCS_version
 # subject to      A * x + s = b
 #                 s in K
 # where K is a product cone of
-# zero cones,
-# linear cones { x | x >= 0 },
+# zero cone { x | x = 0 },
+# positive orthant { x | x >= 0 },
 # second-order cones (SOC) { (t,x) | ||x||_2 <= t },
 # semi-definite cones (SDC) { X | X psd }, and
-# exponential cones {(x,y,z) | y e^(x/y) <= z, y>0 }.
+# exponential cones {(x,y,z) | y e^(x/y) <= z, y>0 },
+# power cone { (x,y,z) | x^a*y^(1-a) >= |z|, x>=0, y>=0 },
+# dual power cone { (u,v,w) | (u/a)^a * (v/(1-a))^(1-a) >= |w|, u>=0, v>=0}
 #
 #
 # Description of input argments:
 # A is the matrix with m rows and n cols
-# b is of length m x 1
-# c is of length n x 1
+# b is a vector of length m
+# c is a vector of length n
+#
+# The rows of A correspond to cones in K and need to be specified in the order above.
 #
 # f (num primal zero / dual free cones, i.e. primal equality constraints)
 # l (num linear cones)
 # q (array of SOCs sizes)
 # s (array of SDCs sizes)
 # ep (num primal exponential cones)
-# ed (num dual exponential cones).
+# ed (num dual exponential cones)
+# p (array of power cone params, must be in [-1, 1], negative values specify the dual cone)
 #
 # Returns a Solution object.
 function SCS_solve(linear_solver::Type{<:LinearSolver},
