@@ -90,6 +90,8 @@ end
 
 const available_solvers = let
     solvers = [DirectSolver, IndirectSolver]
+    Base.@isdefined(indirectgpu) && push!(solvers, IndirectGpuSolver)
+    solvers
 end
 
 # Take Ref{}s because SCS might modify the structs
