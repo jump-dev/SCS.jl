@@ -25,10 +25,10 @@ export SCS_init, SCS_solve, SCS_finish, SCS_version
 # ed (num dual exponential cones).
 #
 # Returns a Solution object.
-function SCS_solve(T::Union{Type{Direct}, Type{Indirect}},
-        m::Int, n::Int, A::SCSVecOrMatOrSparse, b::Array{Float64},
-        c::Array{Float64}, f::Int, l::Int, q::Array{Int}, s::Array{Int},
-        ep::Int, ed::Int, p::Array{Float64},
+function SCS_solve(linear_solver::Type{<:LinearSolver},
+        m::Integer, n::Integer, A::SCSVecOrMatOrSparse, b::Vector{Float64}, c::Vector{Float64},
+        f::Integer, l::Integer, q::Vector{<:Integer}, s::Vector{<:Integer},
+        ep::Integer, ed::Integer, p::Vector{Float64},
         primal_sol::Vector{Float64}=zeros(n),
         dual_sol::Vector{Float64}=zeros(m),
         slack::Vector{Float64}=zeros(m);
@@ -53,23 +53,27 @@ function SCS_solve(T::Union{Type{Direct}, Type{Indirect}},
         slack = zeros(m)
     end
 
+    T = scsint_t(linear_solver)
+    q_T = convert(Vector{T}, q)
+    s_T = convert(Vector{T}, s)
+
     solution = SCSSolution(pointer(primal_sol), pointer(dual_sol), pointer(slack))
 
-    settings = Base.cconvert(Ref{SCSSettings}, SCSSettings(T; options...))
-    managed_matrix = ManagedSCSMatrix(m, n, A)
-    data = Base.cconvert(Ref{SCSData}, SCSData(m, n,
-        Base.unsafe_convert(Ref{SCSMatrix}, managed_matrix.scsmatref), # creates Ptr{SCSMatrix}
+    settings = Base.cconvert(Ref{SCSSettings{T}}, SCSSettings(linear_solver; options...))
+    managed_matrix = ManagedSCSMatrix{T}(m, n, A)
+    data = Base.cconvert(Ref{SCSData{T}}, SCSData{T}(m, n,
+        Base.unsafe_convert(Ref{SCSMatrix{T}}, managed_matrix.scsmatref), # creates Ptr{SCSMatrix}
         pointer(b), pointer(c),
-        Base.unsafe_convert(Ref{SCSSettings}, settings) # creates Ptr{SCSSettings}
+        Base.unsafe_convert(Ref{SCSSettings{T}}, settings) # creates Ptr{SCSSettings}
         ))
     # unsafe_convert doesn't protect from GC: managed_matrix and settings must be GC.@preserved
-    cone = Base.cconvert(Ref{SCSCone}, SCSCone(f, l, q, s, ep, ed, p))
-    info = Base.cconvert(Ref{SCSInfo}, SCSInfo())
+    cone = Base.cconvert(Ref{SCSCone{T}}, SCSCone{T}(f, l, q_T, s_T, ep, ed, p))
+    info = Base.cconvert(Ref{SCSInfo{T}}, SCSInfo{T}())
 
-    Base.GC.@preserve managed_matrix settings b c q s p begin
-        p_work = SCS_init(T, data, cone, info)
-        status = SCS_solve(T, p_work, data, cone, solution, info)
-        SCS_finish(T, p_work)
+    Base.GC.@preserve managed_matrix settings b c q_T s_T p begin
+        p_work = SCS_init(linear_solver, data, cone, info)
+        status = SCS_solve(linear_solver, p_work, data, cone, solution, info)
+        SCS_finish(linear_solver, p_work)
     end
 
     return Solution(primal_sol, dual_sol, slack, info[], status)
@@ -79,34 +83,39 @@ end
 # Do not call these wrapper methods directly unless you understand the
 # use of @gc_preserve in the SCS_solve helper above.
 
-# Take Ref{}s because SCS might modify the structs
-for (T, lib) in zip([SCS.Direct, SCS.Indirect], [SCS.direct, SCS.indirect])
-    @eval begin
+const available_solvers = let
+    solvers = [DirectSolver, IndirectSolver]
+end
 
-        function SCS_set_default_settings(::Type{$T}, data::Ref{SCSData})
-            ccall((:scs_set_default_settings, $lib), Nothing, (Ref{SCSData}, ), data)
+# Take Ref{}s because SCS might modify the structs
+for linear_solver in available_solvers
+    lib = clib(linear_solver)
+    T = scsint_t(linear_solver)
+    @eval begin
+        function SCS_set_default_settings(::Type{$linear_solver}, data::Ref{SCSData{$T}})
+            ccall((:scs_set_default_settings, $lib), Nothing, (Ref{SCSData{$T}},), data)
         end
 
-        function SCS_init(::Type{$T}, data::Ref{SCSData}, cone::Ref{SCSCone}, info::Ref{SCSInfo})
+        function SCS_init(::Type{$linear_solver}, data::Ref{SCSData{$T}}, cone::Ref{SCSCone{$T}}, info::Ref{SCSInfo{$T}})
 
             p_work = ccall((:scs_init, $lib), Ptr{Nothing},
-                (Ref{SCSData}, Ref{SCSCone}, Ref{SCSInfo}),
+                (Ref{SCSData{$T}}, Ref{SCSCone{$T}}, Ref{SCSInfo{$T}}),
                 data, cone, info)
 
             return p_work
         end
 
         # solution struct is simple enough, we know it won't be modified by SCS so take by value
-        function SCS_solve(::Type{$T}, p_work::Ptr{Nothing}, data::Ref{SCSData}, cone::Ref{SCSCone}, solution::SCSSolution, info::Ref{SCSInfo})
+        function SCS_solve(::Type{$linear_solver}, p_work::Ptr{Nothing}, data::Ref{SCSData{$T}}, cone::Ref{SCSCone{$T}}, solution::SCSSolution, info::Ref{SCSInfo{$T}})
 
-            status = ccall((:scs_solve, $lib), Int,
-                (Ptr{Nothing}, Ref{SCSData}, Ref{SCSCone}, Ref{SCSSolution}, Ref{SCSInfo}),
+            status = ccall((:scs_solve, $lib), $T,
+                (Ptr{Nothing}, Ref{SCSData{$T}}, Ref{SCSCone{$T}}, Ref{SCSSolution}, Ref{SCSInfo{$T}}),
                 p_work, data, cone, solution, info)
 
             return status
         end
 
-        function SCS_finish(::Type{$T}, p_work::Ptr{Nothing})
+        function SCS_finish(::Type{$linear_solver}, p_work::Ptr{Nothing})
             ccall((:scs_finish, $lib), Nothing,
                 (Ptr{Nothing}, ),
                 p_work)
