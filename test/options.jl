@@ -79,4 +79,11 @@ catch ex
     ex
 end
 
-@test err.msg == "Unrecognized linear_solver passed to SCS: AAA;\nRecognized options are: SCS.Direct, SCS.Indirect."
+let msg = "Unrecognized linear_solver passed to SCS: AAA;\nRecognized options are: "
+    if isdefined(SCS, :indirectgpu)
+        msg *= "SCS.DirectSolver, SCS.IndirectSolver and SCS.IndirectGpuSolver."
+    else
+        msg *= "SCS.DirectSolver and SCS.IndirectSolver."
+    end
+    @test err.msg == msg
+end

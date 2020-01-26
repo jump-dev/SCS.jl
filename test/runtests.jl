@@ -1,17 +1,26 @@
 using Test
 using SCS
 
-tests = ["direct.jl",
-         "indirect.jl",
-         "options.jl"]
+solvers = SCS.available_solvers
 
 include("test_problems.jl")
 
-for curtest in tests
-    @testset "$curtest" begin
-        include(curtest)
-    end
+function feasible_basic_problems(solver)
+    A = reshape([1.0],(1,1))
+    solution = SCS_solve(solver, 1, 1, A, [1.0], [1.0], 1, 0, Int[], Int[], 0, 0, Float64[]);
+    @test solution.ret_val == 1
+
+    feasible_basic_conic(solver)
+    feasible_exponential_conic(solver)
+    feasible_sdp_conic(solver)
+    feasible_pow_conic(solver)
 end
+
+for s in solvers
+    feasible_basic_problems(s)
+end
+
+include("options.jl")
 
 include("MPB_wrapper.jl")
 include("MOI_wrapper.jl")
