@@ -64,6 +64,7 @@ end
 
 @testset "MOI.RawParameter" begin
     model = SCS.Optimizer()
+    # TODO(odow): remove symbol cases when deprecation is removed.
     MOI.set(model, MOI.RawParameter(:eps), 1.0)
     @test MOI.get(model, MOI.RawParameter(:eps)) == 1.0
     @test MOI.get(model, MOI.RawParameter("eps")) == 1.0
