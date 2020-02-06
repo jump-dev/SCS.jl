@@ -83,10 +83,10 @@ end
 MOI.get(::Optimizer, ::MOI.SolverName) = "SCS"
 
 function MOI.set(optimizer::Optimizer, param::MOI.RawParameter, value)
-    optimizer.options[param.name] = value
+    optimizer.options[Symbol(param.name)] = value
 end
 function MOI.get(optimizer::Optimizer, param::MOI.RawParameter)
-    return optimizer.options[param.name]
+    return optimizer.options[Symbol(param.name)]
 end
 
 MOI.supports(::Optimizer, ::MOI.Silent) = true

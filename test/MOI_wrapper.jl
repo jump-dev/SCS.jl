@@ -61,3 +61,13 @@ for T in [SCS.Direct, SCS.Indirect]
         MOIT.contconictest(bridged, config, ["rootdets", "logdets"])
     end
 end
+
+@testset "MOI.RawParameter" begin
+    model = SCS.Optimizer()
+    MOI.set(model, MOI.RawParameter(:eps), 1.0)
+    @test MOI.get(model, MOI.RawParameter(:eps)) == 1.0
+    @test MOI.get(model, MOI.RawParameter("eps")) == 1.0
+    MOI.set(model, MOI.RawParameter("eps"), 2.0)
+    @test MOI.get(model, MOI.RawParameter(:eps)) == 2.0
+    @test MOI.get(model, MOI.RawParameter("eps")) == 2.0
+end
