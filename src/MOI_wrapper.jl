@@ -83,10 +83,26 @@ end
 MOI.get(::Optimizer, ::MOI.SolverName) = "SCS"
 
 function MOI.set(optimizer::Optimizer, param::MOI.RawParameter, value)
-    optimizer.options[param.name] = value
+    # TODO(odow): remove warning in future version.
+    if !(param.name isa String)
+        Base.depwarn(
+            "passing `$(param.name)` to `MOI.RawParameter` as type " *
+            "`$(typeof(param.name))` is deprecated. Use a string instead.",
+            Symbol("MOI.set")
+        )
+    end
+    optimizer.options[Symbol(param.name)] = value
 end
 function MOI.get(optimizer::Optimizer, param::MOI.RawParameter)
-    return optimizer.options[param.name]
+    # TODO(odow): remove warning in future version.
+    if !(param.name isa String)
+        Base.depwarn(
+            "passing $(param.name) to `MOI.RawParameter` as type " *
+            "$(typeof(param.name)) is deprecated. Use a string instead.",
+            Symbol("MOI.get")
+        )
+    end
+    return optimizer.options[Symbol(param.name)]
 end
 
 MOI.supports(::Optimizer, ::MOI.Silent) = true
