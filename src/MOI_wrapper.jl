@@ -73,7 +73,7 @@ mutable struct Optimizer <: MOI.AbstractOptimizer
         optimizer = new(ConeData(), false, nothing, MOISolution(), false,
                         Dict{Symbol, Any}())
         for (key, value) in kwargs
-            MOI.set(optimizer, MOI.RawParameter(key), value)
+            MOI.set(optimizer, MOI.RawParameter(String(key)), value)
         end
         return optimizer
     end
