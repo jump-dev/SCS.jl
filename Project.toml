@@ -1,7 +1,7 @@
 name = "SCS"
 uuid = "c946c3f1-0d1f-5ce8-9dea-7daa1f7e2d13"
 repo = "https://github.com/JuliaOpt/SCS.jl.git"
-version = "0.6.6"
+version = "0.7.0"
 
 [deps]
 BinaryProvider = "b99e7846-7c00-51b0-8f62-c81ae34c0232"
@@ -9,12 +9,14 @@ Libdl = "8f399da3-3557-5675-b5ff-fb832c97cbdb"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 MathOptInterface = "b8f27783-ece8-5eb3-8dc8-9495eed66fee"
 MathProgBase = "fdba3010-5040-5b88-9595-932c9decdf73"
+SCS_jll = "f4f2fc5b-1d94-523c-97ea-2ab488bedf4b"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 
 [compat]
 BinaryProvider = "0.3, 0.4, 0.5"
 MathOptInterface = "0.9.7"
 MathProgBase = "~0.5.0, ~0.6, ~0.7"
+SCS_jll = "2.1"
 julia = "1"
 
 [extras]
