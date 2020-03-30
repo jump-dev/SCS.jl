@@ -61,7 +61,21 @@ this_platform = platform_key_abi()
 
 custom_library = false
 if haskey(ENV,"JULIA_SCS_LIBRARY_PATH")
-    custom_products = [LibraryProduct(ENV["JULIA_SCS_LIBRARY_PATH"],product.libnames,product.variable_name) for product in products]
+
+    names_symbols = Dict("libscsdir"=>:direct, "libscsindir"=>:indirect, "libscsgpu"=>:indirectgpu)
+
+    scs_prefix = ENV["JULIA_SCS_LIBRARY_PATH"]
+    @assert isdir(scs_prefix)
+
+    custom_products = Product[]
+    for fn in readdir(scs_prefix)
+        if endswith(fn, Libdl.dlext) && haskey(names_symbols,fn[1:end-3])
+            lib = fn[1:end-3]
+            push!(custom_products,
+                LibraryProduct(scs_prefix, [lib], names_symbols[lib]))
+        end
+    end
+
     if all(satisfied(p; verbose=verbose) for p in custom_products)
         products = custom_products
         custom_library = true
