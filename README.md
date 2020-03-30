@@ -50,8 +50,8 @@ To switch back to the default binaries delete `JULIA_SCS_LIBRARY_PATH` and call 
 
 ## Usage
 
-### MathProgBase wrapper
-SCS implements the solver-independent [MathProgBase](https://github.com/JuliaOpt/MathProgBase.jl) interface, and so can be used within modeling software like [Convex](https://github.com/JuliaOpt/Convex.jl) and [JuMP](https://github.com/JuliaOpt/JuMP.jl). The solver object is called `SCSSolver`.
+### MathOptInterface wrapper
+SCS implements the solver-independent [MathOptInterface](https://github.com/JuliaOpt/MathOptInterface.jl) interface, and so can be used within modeling softwares like [Convex](https://github.com/JuliaOpt/Convex.jl) and [JuMP](https://github.com/JuliaOpt/JuMP.jl). The optimizer constructor is `SCS.Optimizer`.
 
 ### Options
 All SCS solver options can be set through the direct interface(documented below) and through MathProgBase.
@@ -157,12 +157,12 @@ items  = [:Gold, :Silver, :Bronze]
 values = Dict(:Gold => 5.0,  :Silver => 3.0,  :Bronze => 1.0)
 weight = Dict(:Gold => 2.0,  :Silver => 1.5,  :Bronze => 0.3)
 
-m = Model(with_optimizer(SCS.Optimizer))
-@variable(m, 0 <= take[items] <= 1)  # Define a variable for each item
-@objective(m, Max, sum( values[item] * take[item] for item in items))
-@constraint(m, sum( weight[item] * take[item] for item in items) <= 3)
-optimize!(m)
-println(value.(m[:take]))
+model = Model(SCS.Optimizer)
+@variable(model, 0 <= take[items] <= 1)  # Define a variable for each item
+@objective(model, Max, sum(values[item] * take[item] for item in items))
+@constraint(model, sum(weight[item] * take[item] for item in items) <= 3)
+optimize!(model)
+println(value.(take))
 # 1-dimensional DenseAxisArray{Float64,1,...} with index sets:
 #     Dimension 1, Symbol[:Gold, :Silver, :Bronze]
 # And data, a 3-element Array{Float64,1}:
