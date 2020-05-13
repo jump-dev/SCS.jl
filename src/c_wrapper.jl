@@ -64,24 +64,26 @@ function SCS_solve(linear_solver::Type{<:LinearSolver},
 
     solution = SCSSolution(pointer(primal_sol), pointer(dual_sol), pointer(slack))
 
-    settings = Base.cconvert(Ref{SCSSettings{T}}, SCSSettings(linear_solver; options...))
+    settings_ref = Base.cconvert(Ref{SCSSettings{T}}, SCSSettings(linear_solver; options...))
     managed_matrix = ManagedSCSMatrix{T}(m, n, A)
-    data = Base.cconvert(Ref{SCSData{T}}, SCSData{T}(m, n,
+    data = SCSData{T}(m, n,
         Base.unsafe_convert(Ref{SCSMatrix{T}}, managed_matrix.scsmatref), # creates Ptr{SCSMatrix}
         pointer(b), pointer(c),
-        Base.unsafe_convert(Ref{SCSSettings{T}}, settings) # creates Ptr{SCSSettings}
-        ))
-    # unsafe_convert doesn't protect from GC: managed_matrix and settings must be GC.@preserved
-    cone = Base.cconvert(Ref{SCSCone{T}}, SCSCone{T}(f, l, q_T, s_T, ep, ed, p))
-    info = Base.cconvert(Ref{SCSInfo{T}}, SCSInfo{T}())
+        Base.unsafe_convert(Ref{SCSSettings{T}}, settings_ref) # creates Ptr{SCSSettings}
+        )
+    # unsafe_convert doesn't protect from GC:
+    # managed_matrix, settings_ref b and c must be GC.@preserved
 
-    Base.GC.@preserve managed_matrix settings b c q_T s_T p begin
-        p_work = SCS_init(linear_solver, data, cone, info)
-        status = SCS_solve(linear_solver, p_work, data, cone, solution, info)
+    cone = SCSCone{T}(f, l, q_T, s_T, ep, ed, p)
+    info_ref = Base.cconvert(Ref{SCSInfo{T}}, SCSInfo{T}())
+
+    Base.GC.@preserve managed_matrix settings_ref b c begin
+        p_work = SCS_init(linear_solver, data, cone, info_ref)
+        status = SCS_solve(linear_solver, p_work, data, cone, solution, info_ref)
         SCS_finish(linear_solver, p_work)
     end
 
-    return Solution(primal_sol, dual_sol, slack, info[], status)
+    return Solution(primal_sol, dual_sol, slack, info_ref[], status)
 end
 
 # Wrappers for the direct C API.
@@ -94,37 +96,39 @@ const available_solvers = let
     solvers
 end
 
-# Take Ref{}s because SCS might modify the structs
 for linear_solver in available_solvers
     lib = clib(linear_solver)
     T = scsint_t(linear_solver)
     @eval begin
-        function SCS_set_default_settings(::Type{$linear_solver}, data::Ref{SCSData{$T}})
-            ccall((:scs_set_default_settings, $lib), Nothing, (Ref{SCSData{$T}},), data)
+        function SCS_set_default_settings(::Type{$linear_solver}, data::SCSData{$T})
+            ccall((:scs_set_default_settings, $lib), Cvoid, (Ref{SCSData{$T}},),
+            data)
         end
 
-        function SCS_init(::Type{$linear_solver}, data::Ref{SCSData{$T}}, cone::Ref{SCSCone{$T}}, info::Ref{SCSInfo{$T}})
+        # data and cone are const in :scs_init
+        function SCS_init(::Type{$linear_solver}, data::SCSData{$T}, cone::SCSCone{$T}, info_ref::Ref{SCSInfo{$T}})
 
-            p_work = ccall((:scs_init, $lib), Ptr{Nothing},
+            p_work = ccall((:scs_init, $lib), Ptr{Cvoid},
                 (Ref{SCSData{$T}}, Ref{SCSCone{$T}}, Ref{SCSInfo{$T}}),
-                data, cone, info)
+                data, cone, info_ref)
 
             return p_work
         end
 
-        # solution struct is simple enough, we know it won't be modified by SCS so take by value
-        function SCS_solve(::Type{$linear_solver}, p_work::Ptr{Nothing}, data::Ref{SCSData{$T}}, cone::Ref{SCSCone{$T}}, solution::SCSSolution, info::Ref{SCSInfo{$T}})
+        # data and cone are const in :scs_solve
+        # solution struct contains only `Ptr`s so passing by value
+        function SCS_solve(::Type{$linear_solver}, p_work::Ptr{Nothing}, data::SCSData{$T}, cone::SCSCone{$T}, solution::SCSSolution, info_ref::Ref{SCSInfo{$T}})
 
             status = ccall((:scs_solve, $lib), $T,
-                (Ptr{Nothing}, Ref{SCSData{$T}}, Ref{SCSCone{$T}}, Ref{SCSSolution}, Ref{SCSInfo{$T}}),
-                p_work, data, cone, solution, info)
+                (Ptr{Cvoid}, Ref{SCSData{$T}}, Ref{SCSCone{$T}}, Ref{SCSSolution}, Ref{SCSInfo{$T}}),
+                p_work, data, cone, solution, info_ref)
 
             return status
         end
 
         function SCS_finish(::Type{$linear_solver}, p_work::Ptr{Nothing})
-            ccall((:scs_finish, $lib), Nothing,
-                (Ptr{Nothing}, ),
+            ccall((:scs_finish, $lib), Cvoid,
+                (Ptr{Cvoid}, ),
                 p_work)
         end
     end

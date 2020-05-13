@@ -101,13 +101,13 @@ function SCSSettings(linear_solver::Type{<:LinearSolver}; options...)
     managed_matrix = ManagedSCSMatrix{T}(0,0,spzeros(0,0))
     default_settings_ref = Base.cconvert(Ref{SCSSettings{T}}, SCSSettings{T}())
     a = [0.0]
-    dummy_data_ref = Base.cconvert(Ref{SCSData{T}}, SCSData{T}(0,0,
+    dummy_data = SCSData{T}(0,0,
         Base.unsafe_convert(Ref{SCSMatrix{T}}, managed_matrix.scsmatref),
         pointer(a), pointer(a),
-        Base.unsafe_convert(Ref{SCSSettings{T}}, default_settings_ref)))
+        Base.unsafe_convert(Ref{SCSSettings{T}}, default_settings_ref))
 
-    Base.GC.@preserve managed_matrix a begin
-        SCS_set_default_settings(linear_solver, dummy_data_ref)
+    Base.GC.@preserve managed_matrix default_settings_ref a begin
+        SCS_set_default_settings(linear_solver, dummy_data)
     end
 
     return _SCS_user_settings(default_settings_ref[]; options...)
@@ -125,9 +125,9 @@ struct SCSData{T<:SCSInt}
 end
 
 struct SCSSolution
-    x::Ptr{Nothing}
-    y::Ptr{Nothing}
-    s::Ptr{Nothing}
+    x::Ptr{Cdouble}
+    y::Ptr{Cdouble}
+    s::Ptr{Cdouble}
 end
 
 struct SCSInfo{T<:SCSInt}
