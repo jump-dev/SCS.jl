@@ -99,18 +99,19 @@ function SCSSettings(linear_solver::Type{<:LinearSolver}; options...)
     T = scsint_t(linear_solver)
 
     managed_matrix = ManagedSCSMatrix{T}(0,0,spzeros(0,0))
-    default_settings_ref = Base.cconvert(Ref{SCSSettings{T}}, SCSSettings{T}())
+    default_settings = Base.cconvert(Ref{SCSSettings{T}}, SCSSettings{T}())
     a = [0.0]
-    dummy_data = SCSData{T}(0,0,
-        Base.unsafe_convert(Ref{SCSMatrix{T}}, managed_matrix.scsmatref),
-        pointer(a), pointer(a),
-        Base.unsafe_convert(Ref{SCSSettings{T}}, default_settings_ref))
+    dummy_data = SCSData(0,0,
+        managed_matrix,
+        a,
+        a,
+        default_settings)
 
-    Base.GC.@preserve managed_matrix default_settings_ref a begin
+    Base.GC.@preserve managed_matrix default_settings a begin
         SCS_set_default_settings(linear_solver, dummy_data)
     end
 
-    return _SCS_user_settings(default_settings_ref[]; options...)
+    return _SCS_user_settings(default_settings[]; options...)
 end
 
 struct SCSData{T<:SCSInt}
@@ -122,6 +123,19 @@ struct SCSData{T<:SCSInt}
     b::Ptr{Cdouble}
     c::Ptr{Cdouble}
     stgs::Ptr{SCSSettings{T}}
+end
+
+function SCSData(m::Integer, n::Integer,
+    mat::ManagedSCSMatrix{T},
+    b::Vector{Float64},
+    c::Vector{Float64},
+    stgs::Ref{SCSSettings{T}}) where T
+    return SCSData{T}(m, n,
+        Base.unsafe_convert(Ref{SCSMatrix{T}}, mat.scsmatref), # Ptr{SCSMatrix{T}}
+        pointer(b),
+        pointer(c),
+        Base.unsafe_convert(Ref{SCSSettings{T}}, stgs) # Ptr{SCSSettings{T}}
+    )
 end
 
 struct SCSSolution

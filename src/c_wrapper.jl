@@ -64,20 +64,17 @@ function SCS_solve(linear_solver::Type{<:LinearSolver},
 
     solution = SCSSolution(pointer(primal_sol), pointer(dual_sol), pointer(slack))
 
-    settings_ref = Base.cconvert(Ref{SCSSettings{T}}, SCSSettings(linear_solver; options...))
+    settings = Base.cconvert(Ref{SCSSettings{T}}, SCSSettings(linear_solver; options...))
     managed_matrix = ManagedSCSMatrix{T}(m, n, A)
-    data = SCSData{T}(m, n,
-        Base.unsafe_convert(Ref{SCSMatrix{T}}, managed_matrix.scsmatref), # creates Ptr{SCSMatrix}
-        pointer(b), pointer(c),
-        Base.unsafe_convert(Ref{SCSSettings{T}}, settings_ref) # creates Ptr{SCSSettings}
-        )
-    # unsafe_convert doesn't protect from GC:
-    # managed_matrix, settings_ref b and c must be GC.@preserved
+
+    data = SCSData(m, n, managed_matrix, b, c, settings)
+    # data holds pointers to objects which need to be protected from GC:
+    # managed_matrix, b, c and settings
 
     cone = SCSCone{T}(f, l, q_T, s_T, ep, ed, p)
     info_ref = Base.cconvert(Ref{SCSInfo{T}}, SCSInfo{T}())
 
-    Base.GC.@preserve managed_matrix settings_ref b c begin
+    Base.GC.@preserve managed_matrix settings b c begin
         p_work = SCS_init(linear_solver, data, cone, info_ref)
         status = SCS_solve(linear_solver, p_work, data, cone, solution, info_ref)
         SCS_finish(linear_solver, p_work)
