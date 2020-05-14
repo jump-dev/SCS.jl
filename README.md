@@ -58,14 +58,21 @@ A legacy [MathProgBase](https://github.com/JuliaOpt/MathProgBase.jl) interface i
 ### Options
 All SCS solver options can be set through the direct interface(documented below), through `Convex.jl` or `MathOptInterface.jl`.
 The list of options follows the [`glbopts.h` header](https://github.com/cvxgrp/scs/blob/0fd7ea85e8b0d878cacf5b1dbce557b330422ff7/include/glbopts.h#L30) in lowercase.
-To use these settings you can either pass them as keyword arguments to `SCS_solve` (high level interface) or as arguments to the `SCS.Optimizer` constructor (MathOptInterface), e.g.
+To use these settings you can either pass them as keyword arguments to `SCS_solve` (high level interface) or using the `SCS.Optimizer` constructor (MathOptInterface), e.g.
 ```julia
 # Direct
 solution = SCS_solve(m, n, A, ..., psize; max_iters=10, verbose=0);
 # via MathOptInterface:
-solver = SCS.Optimizer(max_iters=10, verbose=0)
-optimize!(problem, solver) # JuMP
-solve!(problem, solver) # Convex
+optimizer = SCS.Optimizer()
+MOI.set(optimizer, MOI.RawParameter("max_iters"), 10)
+MOI.set(optimizer, MOI.RawParameter("verbose"), 0)
+```
+or via specific helper functions:
+```julia
+problem = ... # JuMP problem
+optimizer_constructor = optimizer_with_attributes(SCS.Optimizer, "max_iters" => 10, "verbose" => 0)
+set_optimizer(problem, optimizer_constructor)
+optimize!(problem)
 ```
 
 Moreover, You may select one of the linear solvers to be used by `SCS.Optimizer` via `linear_solver` keyword.
