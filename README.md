@@ -50,25 +50,38 @@ To switch back to the default binaries delete `JULIA_SCS_LIBRARY_PATH` and call 
 
 ## Usage
 
-### MathOptInterface wrapper
+### High-level interfaces
 SCS implements the solver-independent [MathOptInterface](https://github.com/JuliaOpt/MathOptInterface.jl) interface, and so can be used within modeling softwares like [Convex](https://github.com/JuliaOpt/Convex.jl) and [JuMP](https://github.com/JuliaOpt/JuMP.jl). The optimizer constructor is `SCS.Optimizer`.
 
+A legacy [MathProgBase](https://github.com/JuliaOpt/MathProgBase.jl) interface is available as well, in maintanence mode only.
+
 ### Options
-All SCS solver options can be set through the direct interface(documented below) and through MathProgBase.
-The list of options is defined the [`scs.h` header](https://github.com/cvxgrp/scs/blob/58e9af926fabc6674a9f488d4e9761a4f0fc451c/include/scs.h#L43).
-To use these settings you can either pass them as keyword arguments to `SCS_solve` (high level interface) or as arguments to the `SCSSolver` constructor (MathProgBase interface), e.g.
+All SCS solver options can be set through the direct interface(documented below), through `Convex.jl` or `MathOptInterface.jl`.
+The list of options follows the [`glbopts.h` header](https://github.com/cvxgrp/scs/blob/0fd7ea85e8b0d878cacf5b1dbce557b330422ff7/include/glbopts.h#L30) in lowercase.
+To use these settings you can either pass them as keyword arguments to `SCS_solve` (high level interface) or using the `SCS.Optimizer` constructor (MathOptInterface), e.g.
 ```julia
 # Direct
 solution = SCS_solve(m, n, A, ..., psize; max_iters=10, verbose=0);
-# MathProgBase (with Convex)
-m = solve!(problem, SCSSolver(max_iters=10, verbose=0))
+# via MathOptInterface:
+optimizer = SCS.Optimizer()
+MOI.set(optimizer, MOI.RawParameter("max_iters"), 10)
+MOI.set(optimizer, MOI.RawParameter("verbose"), 0)
+```
+or via specific helper functions:
+```julia
+problem = ... # JuMP problem
+optimizer_constructor = optimizer_with_attributes(SCS.Optimizer, "max_iters" => 10, "verbose" => 0)
+set_optimizer(problem, optimizer_constructor)
+optimize!(problem)
 ```
 
-Moreover, You may select one of the linear solvers to be used by `SCSSolver` via `linear_solver` keyword. The options available are `SCS.IndirectSolver` (the default) and `SCS.DirectSolver`.
+Moreover, You may select one of the linear solvers to be used by `SCS.Optimizer` via `linear_solver` keyword.
+The options available are `SCS.IndirectSolver` (the default) and `SCS.DirectSolver`.
+An experimental `SCS.IndirectGpuSolver` can be used only with custom installation.
 
 ### High level wrapper
 
-The file [`high_level_wrapper.jl`](https://github.com/JuliaOpt/SCS.jl/blob/master/src/high_level_wrapper.jl) is thoroughly commented. Here is the basic usage
+The file [`c_wrapper.jl`](https://github.com/JuliaOpt/SCS.jl/blob/master/src/c_wrapper.jl) is thoroughly commented. Here is the basic usage.
 
 We assume we are solving a problem of the form
 ```
@@ -76,14 +89,15 @@ minimize        c' * x
 subject to      A * x + s = b
                 s in K
 ```
-where K is a product cone of
+where `K` is a product cone of
 
 - zero cones,
-- linear cones `{ x | x >= 0 }`,
-- second-order cones `{ (t,x) | ||x||_2 <= t }`,
-- semi-definite cones `{ X | X psd }`,
-- exponential cones `{(x,y,z) | y e^(x/y) <= z, y>0 }`, and
-- power cone `{(x,y,z) | x^a * y^(1-a) >= |z|, x>=0, y>=0}`.
+- positive orthant `{ x | x >= 0 }`,
+- second-order cones (SOC) `{ (t,x) | ||x||_2 <= t }`,
+- semi-definite cones (SDC) `{ X | X is psd }`,
+- exponential cones `{ (x,y,z) | y e^(x/y) <= z, y>0 }`,
+- power cone `{ (x,y,z) | x^a * y^(1-a) >= |z|, x>=0, y>=0 }`, and
+- dual power cone `{ (u,v,w) | (u/a)^a * (v/(1-a))^(1-a) >= |w|, u>=0, v>=0 }`.
 
 The problem data are
 
@@ -96,14 +110,15 @@ The problem data are
 - `s` is the array of SDCs sizes
 - `ep` is the number of primal exponential cones
 - `ed` is the number of dual exponential cones
-- `p` is the array of power cone parameters
+- `p` is the array of power cone parameters (±1, with negative values for the dual cone)
 - `options` is a dictionary of options (see above).
 
 The function is
 
 ```julia
 function SCS_solve(linear_solver::Type{<:LinearSolver},
-        m::Integer, n::Integer, A::SCS.VecOrMatOrSparse, b::Vector{Float64}, c::Vector{Float64},
+        m::Integer, n::Integer,
+        A::SCS.VecOrMatOrSparse, b::Vector{Float64}, c::Vector{Float64},
         f::Integer, l::Integer, q::Vector{<:Integer}, s::Vector{<:Integer},
         ep::Integer, ed::Integer, p::Vector{Float64},
         primal_sol::Vector{Float64}=zeros(n),
@@ -112,24 +127,20 @@ function SCS_solve(linear_solver::Type{<:LinearSolver},
         options...)
 ```
 
-and it returns an object of type Solution, which contains the following fields
+and it returns an object of type `Solution`, which contains the following fields
 
 ```julia
 mutable struct Solution{T<:SCSInt}
-  x::Array{Float64, 1}
-  y::Array{Float64, 1}
-  s::Array{Float64, 1}
-  status::SCSInfo{T}
-  ret_val::T
-  ...
+    x::Array{Float64, 1}
+    y::Array{Float64, 1}
+    s::Array{Float64, 1}
+    info::SCSInfo{T}
+    ret_val::T
+end
 ```
 
-Where `x` stores the optimal value of the primal variable, `y` stores the optimal value of the dual variable, `s` is the slack variable, and `status` contains various information about the solve step.
+Where `x` stores the optimal value of the primal variable, `y` stores the optimal value of the dual variable, `s` is the slack variable, and `info` contains various information about the solve step.
 E.g. `SCS.raw_status(::SCSInfo)::String` describes the status, e.g. 'Solved', 'Intedeterminate', 'Infeasible/Inaccurate', etc.
-
-### Low level wrapper
-
-The low level wrapper directly calls SCS and is also thoroughly documented in [low_level_wrapper.jl](https://github.com/JuliaOpt/SCS.jl/blob/master/src/low_level_wrapper.jl). The low level wrapper performs the pointer manipulation necessary for the direct C call.
 
 ### Convex and JuMP examples
 This example shows how we can model a simple knapsack problem with Convex and use SCS to solve it.
@@ -142,7 +153,7 @@ weights = [2.0, 1.5, 0.3]
 # Define a variable of size 3, each index representing an item
 x = Variable(3)
 p = maximize(x' * values, 0 <= x, x <= 1, x' * weights <= 3)
-solve!(p, SCSSolver())
+solve!(p, SCS.Optimizer)
 println([items x.value])
 
 # [:Gold 0.9999971880377178
