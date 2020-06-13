@@ -1,8 +1,8 @@
 # SCS
 
-[![Build Status](https://travis-ci.org/JuliaOpt/SCS.jl.svg?branch=master)](https://travis-ci.org/JuliaOpt/SCS.jl)
+[![Build Status](https://travis-ci.org/jump-dev/SCS.jl.svg?branch=master)](https://travis-ci.org/jump-dev/SCS.jl)
 [![Build status](https://ci.appveyor.com/api/projects/status/yb4yfg4oryw7yten/branch/master?svg=true)](https://ci.appveyor.com/project/mlubin/scs-jl/branch/master)
-[![Coverage Status](https://coveralls.io/repos/JuliaOpt/SCS.jl/badge.svg?branch=master)](https://coveralls.io/r/JuliaOpt/SCS.jl?branch=master)
+[![Coverage Status](https://coveralls.io/repos/jump-dev/SCS.jl/badge.svg?branch=master)](https://coveralls.io/r/jump-dev/SCS.jl?branch=master)
 
 Julia wrapper for the [SCS](https://github.com/cvxgrp/scs) splitting cone
 solver. SCS can solve linear programs, second-order cone programs, semidefinite
@@ -51,7 +51,7 @@ To switch back to the default binaries delete `JULIA_SCS_LIBRARY_PATH` and call 
 ## Usage
 
 ### High-level interfaces
-SCS implements the solver-independent [MathOptInterface](https://github.com/JuliaOpt/MathOptInterface.jl) interface, and so can be used within modeling softwares like [Convex](https://github.com/JuliaOpt/Convex.jl) and [JuMP](https://github.com/JuliaOpt/JuMP.jl). The optimizer constructor is `SCS.Optimizer`.
+SCS implements the solver-independent [MathOptInterface](https://github.com/jump-dev/MathOptInterface.jl) interface, and so can be used within modeling softwares like [Convex](https://github.com/JuliaOpt/Convex.jl) and [JuMP](https://github.com/jump-dev/JuMP.jl). The optimizer constructor is `SCS.Optimizer`.
 
 A legacy [MathProgBase](https://github.com/JuliaOpt/MathProgBase.jl) interface is available as well, in maintanence mode only.
 
@@ -81,7 +81,7 @@ An experimental `SCS.IndirectGpuSolver` can be used only with custom installatio
 
 ### High level wrapper
 
-The file [`c_wrapper.jl`](https://github.com/JuliaOpt/SCS.jl/blob/master/src/c_wrapper.jl) is thoroughly commented. Here is the basic usage.
+The file [`c_wrapper.jl`](https://github.com/jump-dev/SCS.jl/blob/master/src/c_wrapper.jl) is thoroughly commented. Here is the basic usage.
 
 We assume we are solving a problem of the form
 ```

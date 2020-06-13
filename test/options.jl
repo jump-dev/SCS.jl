@@ -1,7 +1,7 @@
 #############################################################################
 # SCS.jl
 # Wrapper around the SCS solver https://github.com/cvxgrp/scs
-# See http://github.com/JuliaOpt/SCS.jl
+# See http://github.com/jump-dev/SCS.jl
 #############################################################################
 # test/options.jl
 # Tests the ability to pass options
