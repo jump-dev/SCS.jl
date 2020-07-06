@@ -60,7 +60,7 @@ function ManagedSCSMatrix{T}(m::Integer, n::Integer, A::SparseMatrixCSC) where T
     rowval = convert(Vector{T}, A.rowval .- 1)
     colptr = convert(Vector{T}, A.colptr .- 1)
 
-    return ManagedSCSMatrix(m, n, values, rowval, colptr)
+    return ManagedSCSMatrix{T}(m, n, values, rowval, colptr)
 end
 
 function ManagedSCSMatrix{T}(m::Integer, n::Integer, A::AbstractMatrix) where T
