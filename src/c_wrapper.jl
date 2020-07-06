@@ -85,7 +85,7 @@ end
 
 # Wrappers for the direct C API.
 # Do not call these wrapper methods directly unless you understand the
-# use of @gc_preserve in the SCS_solve helper above.
+# use of GC.@preserve in the SCS_solve helper above.
 
 const available_solvers = let
     solvers = [DirectSolver, IndirectSolver]
