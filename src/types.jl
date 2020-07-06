@@ -63,8 +63,8 @@ function ManagedSCSMatrix{T}(m::Integer, n::Integer, A::SparseMatrixCSC) where T
     return ManagedSCSMatrix(m, n, values, rowval, colptr)
 end
 
-function ManagedSCSMatrix{T}(m::Integer, n::Integer, A::Matrix) where T
-    return ManagedSCSMatrix(m, n, sparse(A))
+function ManagedSCSMatrix{T}(m::Integer, n::Integer, A::AbstractMatrix) where T
+    return ManagedSCSMatrix{T}(m, n, sparse(A))
 end
 
 struct SCSSettings{T<:SCSInt}
