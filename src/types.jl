@@ -33,17 +33,8 @@ struct ManagedSCSMatrix{T<:SCSInt}
     colptr::Vector{T}
     scsmatref::Base.RefValue{SCSMatrix{T}}
 
-    function ManagedSCSMatrix{T}(m::Integer, n::Integer, A::VecOrMatOrSparse) where T
-        A_sparse = sparse(A)
-
-        # we convert everything to make sure that no conversion will
-        # accidentally happen when ccalling `new`, so that `scsmatref`
-        # holds pointers to actual data stored in the fields.
-
-        values = convert(Vector{Cdouble}, copy(A_sparse.nzval))
-        rowval = convert(Vector{T}, A_sparse.rowval .- 1)
-        colptr = convert(Vector{T}, A_sparse.colptr .- 1)
-
+    function ManagedSCSMatrix{T}(m::Integer, n::Integer, values::Vector{Cdouble},
+                                 rowval::Vector{T}, colptr::Vector{T}) where T
         # scsmatref holds the reference to SCSMatrix created out of data in ManagedSCSMatrix.
         # this way the reference to SCSMatrix always points to valid data
         # as long as the ManagedSCSMatrix is not GC collected.
@@ -58,6 +49,22 @@ struct ManagedSCSMatrix{T<:SCSInt}
 
         return new{T}(values, rowval, colptr, Base.cconvert(Ref{SCSMatrix{T}}, scsmat))
     end
+end
+
+function ManagedSCSMatrix{T}(m::Integer, n::Integer, A::SparseMatrixCSC) where T
+    # we convert everything to make sure that no conversion will
+    # accidentally happen when ccalling `new`, so that `scsmatref`
+    # holds pointers to actual data stored in the fields.
+
+    values = convert(Vector{Cdouble}, copy(A.nzval))
+    rowval = convert(Vector{T}, A.rowval .- 1)
+    colptr = convert(Vector{T}, A.colptr .- 1)
+
+    return ManagedSCSMatrix{T}(m, n, values, rowval, colptr)
+end
+
+function ManagedSCSMatrix{T}(m::Integer, n::Integer, A::AbstractMatrix) where T
+    return ManagedSCSMatrix{T}(m, n, sparse(A))
 end
 
 struct SCSSettings{T<:SCSInt}
