@@ -87,12 +87,6 @@ end
 # Do not call these wrapper methods directly unless you understand the
 # use of GC.@preserve in the SCS_solve helper above.
 
-const available_solvers = let
-    solvers = [DirectSolver, IndirectSolver]
-    Base.@isdefined(indirectgpu) && push!(solvers, IndirectGpuSolver)
-    solvers
-end
-
 for linear_solver in available_solvers
     lib = clib(linear_solver)
     T = scsint_t(linear_solver)

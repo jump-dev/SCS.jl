@@ -80,8 +80,8 @@ catch ex
 end
 
 let msg = "Unrecognized linear_solver passed to SCS: AAA;\nRecognized options are: "
-    if isdefined(SCS, :indirectgpu)
-        msg *= "SCS.DirectSolver, SCS.IndirectSolver and SCS.IndirectGpuSolver."
+    if isdefined(SCS, :gpuindirect)
+        msg *= "SCS.DirectSolver, SCS.IndirectSolver and SCS.GpuIndirectSolver."
     else
         msg *= "SCS.DirectSolver and SCS.IndirectSolver."
     end
