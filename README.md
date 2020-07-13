@@ -23,30 +23,31 @@ Custom build binaries will allow to use e.g. the indirect solver on (a CUDA-enab
 however special caution is required during the compilation of the `scs` libraries to ensure proper options and linking:
 
   * `libscsdir` and `libscsindir` need to be compiled with `DLONG=1`.
-  * (optional) `libscsgpu` needs to be compiled with `DLONG=0`
+  * (optional) `libscsgpuindir` needs to be compiled with `DLONG=0`
 
 All of these libraries should be linked against the OpenBLAS library which julia uses.
-For the official julia binaries this can be achieved by e.g.
+For the official julia binaries this can be achieved (starting from (this commit)[https://github.com/cvxgrp/scs/commit/e6ab81db115bb37502de0a9917041a0bc2ded313]) by e.g.
 
 ```bash
 cd SCS_SOURCE_DIR
 make purge
-make USE_OPENMP=1 BLAS64=1 BLASSUFFIX=_64_ DLONG=1 BLASLDFLAGS="-L$JULIA_LIBRARY_PATH -lopenblas64_" out/libscsdir.so out/libscsindir.so
+make USE_OPENMP=1 BLAS64=1 BLASSUFFIX=_64_ DLONG=1 BLASLDFLAGS="-L$JULIA_BLAS_PATH -lopenblas64_" out/libscsdir.so out/libscsindir.so
 make clean
-make USE_OPENMP=1 BLAS64=1 BLASSUFFIX=_64_ DLONG=0 BLASLDFLAGS="-L$JULIA_LIBRARY_PATH -lopenblas64_" out/libscsgpu.so
+make USE_OPENMP=1 BLAS64=1 BLASSUFFIX=_64_ DLONG=0 BLASLDFLAGS="-L$JULIA_BLAS_PATH -lopenblas64_" out/libscsgpuindir.so
 ```
 where
  * `SCS_SOURCE_DIR` is the main directory of the source of `scs`, and
- * `JULIA_LIBRARY_PATH` is the path to julia-shipped libraries (e.g. `abspath(joinpath(Sys.BINDIR, "..", "lib", "julia"))`)
+ * `JULIA_BLAS_PATH` is the path to the directory containing BLAS library used by `julia`.
+(Before `julia-1.3`: the path to julia-shipped libraries e.g. `abspath(joinpath(Sys.BINDIR, "..", "lib", "julia"))`), afterwards the path to `BLAS` library artifact).
 
 To use custom built SCS binaries with `SCS.jl` set the environment variable
 `JULIA_SCS_LIBRARY_PATH` to `SCS_SOURCE_DIR/opt` and build `SCS.jl`:
 ```julia
-ENV["JULIA_SCS_LIBRARY_PATH"]="<scs_source_dir>/out"
+ENV["JULIA_SCS_LIBRARY_PATH"]="SCS_SOURCE_DIR/out"
 using Pkg; Pkg.build("SCS")
 ```
 
-To switch back to the default binaries delete `JULIA_SCS_LIBRARY_PATH` and call `Pkg.build("SCS")` again.
+To switch back to the default binaries delete `JULIA_SCS_LIBRARY_PATH` from `ENV` and call `Pkg.build("SCS")` again.
 
 ## Usage
 
@@ -77,7 +78,21 @@ optimize!(problem)
 
 Moreover, You may select one of the linear solvers to be used by `SCS.Optimizer` via `linear_solver` keyword.
 The options available are `SCS.IndirectSolver` (the default) and `SCS.DirectSolver`.
-An experimental `SCS.IndirectGpuSolver` can be used only with custom installation.
+
+#### SCS on Gpu
+An experimental `SCS.GpuIndirectSolver` could be used by either providing the appropriate libraries in a custom installation, or through `SCS_GPU_jll`.
+Note that the latter depends on `CUDA_jll-9.0` which must be provided by the user.
+Unfortunately, due to static code generation during precompile it is not possible to support automatic detection. Then additional code must be `eval`ed into `SCS` module:
+```julia
+using CUDA_jll # optional, to load the correct libcublas.so
+using SCS
+SCS.eval(:(
+    import SCS_GPU_jll;
+    const gpuindirect = SCS_GPU_jll.libscsgpuindir;
+    GpuIndirectSolver in available_solvers || push!(available_solvers, GpuIndirectSolver);
+    include("src/c_wrapper.jl");
+    ))
+```
 
 ### High level wrapper
 
