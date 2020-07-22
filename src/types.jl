@@ -56,7 +56,8 @@ function ManagedSCSMatrix{T}(m::Integer, n::Integer, A::SparseMatrixCSC) where T
     # accidentally happen when ccalling `new`, so that `scsmatref`
     # holds pointers to actual data stored in the fields.
 
-    values = convert(Vector{Cdouble}, copy(A.nzval))
+    # A reference to A.nzval is kept if no conversion is needed.
+    values = convert(Vector{Cdouble}, A.nzval)
     rowval = convert(Vector{T}, A.rowval .- 1)
     colptr = convert(Vector{T}, A.colptr .- 1)
 
