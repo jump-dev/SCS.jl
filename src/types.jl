@@ -44,6 +44,9 @@ struct ManagedSCSMatrix{T<:SCSInt}
         #   `Ref{SCSMatrix}`
         # in the type tuple when ccalling with `scsmatref`
 
+        @show values
+        @show rowval
+        @show colptr
         scsmat = SCSMatrix{T}(
             pointer(values), pointer(rowval), pointer(colptr), m, n)
 
@@ -138,6 +141,8 @@ function SCSData(m::Integer, n::Integer,
     b::Vector{Float64},
     c::Vector{Float64},
     stgs::Ref{SCSSettings{T}}) where T
+    @show b
+    @show c
     return SCSData{T}(m, n,
         Base.unsafe_convert(Ref{SCSMatrix{T}}, mat.scsmatref), # Ptr{SCSMatrix{T}}
         pointer(b),

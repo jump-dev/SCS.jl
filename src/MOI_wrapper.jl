@@ -34,15 +34,37 @@ MOISolution() = MOISolution(0, # SCS_UNFINISHED
 # Used to build the data with allocate-load during `copy_to`.
 # When `optimize!` is called, a the data is passed to SCS
 # using `SCS_solve` and the `ModelData` struct is discarded
-mutable struct ModelData
+mutable struct ModelData{T<:SCSInt}
     m::Int # Number of rows/constraints
     n::Int # Number of cols/variables
-    I::Vector{Int} # List of rows
-    J::Vector{Int} # List of cols
-    V::Vector{Float64} # List of coefficients
+    colptr::Vector{T}
+    rowval::Vector{T}
+    nzval::Vector{Float64}
     b::Vector{Float64} # constants
     objective_constant::Float64 # The objective is min c'x + objective_constant
     c::Vector{Float64}
+    function ModelData{T}(n) where T
+        data = new()
+        data.n = n
+        data.colptr = zeros(T, n + 1)
+        data.objective_constant = 0.0
+        data.c = zeros(n)
+        return data
+    end
+end
+function _allocate_nzvals(data::ModelData{T}) where T
+    for i in 3:length(data.colptr)
+        data.colptr[i] += data.colptr[i - 1]
+    end
+    data.rowval = Vector{T}(undef, data.colptr[end])
+    data.nzval = Vector{Float64}(undef, data.colptr[end])
+end
+function _managed_matrix(data::ModelData{T}) where T
+    for i in length(data.colptr):-1:2
+        data.colptr[i] = data.colptr[i - 1]
+    end
+    data.colptr[1] = 0
+    return ManagedSCSMatrix{T}(data.m, data.n, data.nzval, data.rowval, data.colptr)
 end
 
 # This is tied to SCS's internal representation
@@ -65,7 +87,7 @@ end
 mutable struct Optimizer <: MOI.AbstractOptimizer
     cone::ConeData
     maxsense::Bool
-    data::Union{Nothing, ModelData} # only non-Void between MOI.copy_to and MOI.optimize!
+    data::Union{Nothing, ModelData{Int}, ModelData{Int32}} # only non-Void between MOI.copy_to and MOI.optimize!
     sol::MOISolution
     silent::Bool
     options::Dict{Symbol, Any}
@@ -239,8 +261,15 @@ end
 function constroffset(optimizer::Optimizer, ci::CI)
     return constroffset(optimizer.cone, ci::CI)
 end
-function MOIU.allocate_constraint(optimizer::Optimizer, f::F, s::S) where {F <: MOI.AbstractFunction, S <: MOI.AbstractSet}
-    return CI{F, S}(_allocate_constraint(optimizer.cone, f, s))
+function allocate_terms(colptr, terms)
+    for term in terms
+        colptr[term.scalar_term.variable_index.value + 1] += 1
+    end
+end
+function MOIU.allocate_constraint(optimizer::Optimizer, f::MOI.VectorAffineFunction{Float64}, s::S) where S <: MOI.AbstractSet
+    func = MOIU.canonical(f)
+    allocate_terms(optimizer.data.colptr, func.terms)
+    return CI{MOI.VectorAffineFunction{Float64}, S}(_allocate_constraint(optimizer.cone, func, s))
 end
 
 # Vectorized length for matrix dimension n
@@ -262,7 +291,7 @@ sympackedUtoL(x, n=sympackeddim(length(x))) = _sympackedto(x, n, trimap, (i, j) 
 
 function sympackedUtoLidx(x::AbstractVector{<:Integer}, n)
     y = similar(x)
-    map = sympackedLtoU(1:sympackedlen(n), n)
+    map =
     for i in eachindex(y)
         y[i] = map[x[i]]
     end
@@ -279,10 +308,7 @@ function _scalecoef(rows::AbstractVector{<: Integer}, coef::Vector{Float64}, d::
     scaling = rev ? 1 / √2 : 1 * √2
     output = copy(coef)
     for i in 1:length(output)
-        # See https://en.wikipedia.org/wiki/Triangular_number#Triangular_roots_and_tests_for_triangular_numbers
-        val = 8 * rows[i] + 1
-        is_diagonal_index = isqrt(val)^2 == val
-        if !is_diagonal_index
+        if !MOI.Utilities.is_diagonal_vectorized_index(rows[i])
             output[i] *= scaling
         end
     end
@@ -313,43 +339,80 @@ orderidx(idx, s) = idx
 function orderidx(idx, s::MOI.PositiveSemidefiniteConeTriangle)
     sympackedUtoLidx(idx, s.side_dimension)
 end
-function MOIU.load_constraint(optimizer::Optimizer, ci::MOI.ConstraintIndex, f::MOI.VectorAffineFunction, s::MOI.AbstractVectorSet)
-    func = MOIU.canonical(f)
-    I = Int[output_index(term) for term in func.terms]
-    J = Int[variable_index_value(term) for term in func.terms]
-    V = Float64[-coefficient(term) for term in func.terms]
-    offset = constroffset(optimizer, ci)
-    rows = constrrows(s)
-    optimizer.cone.nrows[offset] = length(rows)
-    i = offset .+ rows
-    b = f.constants
-    if s isa MOI.PositiveSemidefiniteConeTriangle
-        b = scalecoef(rows, b, s)
-        b = sympackedUtoL(b, s.side_dimension)
-        V = scalecoef(I, V, s)
-        I = sympackedUtoLidx(I, s.side_dimension)
+
+# The SCS format is b - Ax ∈ cone
+function _load_terms(colptr, rowval, nzval, terms, offset)
+    @show terms
+    @show offset
+    for term in terms
+        ptr = colptr[term.scalar_term.variable_index.value] += 1
+        @show ptr
+        rowval[ptr] = offset + term.output_index - 1
+        @show rowval[ptr]
+        nzval[ptr] = -term.scalar_term.coefficient
+        @show nzval[ptr]
     end
-    # The SCS format is b - Ax ∈ cone
-    optimizer.data.b[i] = b
-    append!(optimizer.data.I, offset .+ I)
-    append!(optimizer.data.J, J)
-    append!(optimizer.data.V, V)
+end
+function _load_constant(b, offset, rows, constant::Function)
+    for row in rows
+        b[offset + row] = constant(row)
+    end
+end
+
+function _scale(i, coef)
+    if MOI.Utilities.is_diagonal_vectorized_index(i)
+        return coef
+    else
+        return coef * √2
+    end
+end
+function _load_con(data, func, set::MOI.PositiveSemidefiniteConeTriangle, offset)
+    n = set.side_dimension
+    map = sympackedLtoU(1:sympackedlen(n), n)
+    function map_term(t::MOI.VectorAffineTerm)
+        return MOI.VectorAffineTerm(
+            map[t.output_index],
+            MOI.ScalarAffineTerm(
+                _scale(t.output_index, t.scalar_term.coefficient),
+                t.scalar_term.variable_index
+            )
+        )
+    end
+    new_func = MOI.VectorAffineFunction{Float64}(MOI.VectorAffineTerm{Float64}[map_term(t) for t in func.terms], func.constants)
+    # The rows have been reordered in `map_term` so we need to re-canonicalize to reorder the rows.
+    MOI.Utilities.canonicalize!(new_func)
+    _load_terms(data.colptr, data.rowval, data.nzval, new_func.terms, offset)
+    function constant(row)
+        i = map[row]
+        return _scale(i, func.constants[i])
+    end
+    _load_constant(data.b, offset, eachindex(func.constants), constant)
+end
+function _load_con(data, func, set, offset)
+    _load_terms(data.colptr, data.rowval, data.nzval, func.terms, offset)
+    _load_constant(data.b, offset, eachindex(func.constants), i -> func.constants[i])
+end
+function MOIU.load_constraint(optimizer::Optimizer, ci::MOI.ConstraintIndex, f::MOI.VectorAffineFunction{Float64}, s::MOI.AbstractVectorSet)
+    func = MOIU.canonical(f)
+    offset = constroffset(optimizer, ci)
+    _load_con(optimizer.data, func, s, offset)
+    optimizer.cone.nrows[offset] = MOI.output_dimension(f)
 end
 
 function MOIU.allocate_variables(optimizer::Optimizer, nvars::Integer)
     optimizer.cone = ConeData()
-    VI.(1:nvars)
+    linear_solver, _ = sanitize_SCS_options(optimizer.options)
+    T = scsint_t(linear_solver)
+    optimizer.data = ModelData{T}(nvars)
+    return MOI.VariableIndex.(1:nvars)
 end
 
 function MOIU.load_variables(optimizer::Optimizer, nvars::Integer)
     cone = optimizer.cone
     m = cone.f + cone.l + cone.q + cone.s + 3cone.ep + 3cone.ed + 3length(cone.p)
-    I = Int[]
-    J = Int[]
-    V = Float64[]
-    b = zeros(m)
-    c = zeros(nvars)
-    optimizer.data = ModelData(m, nvars, I, J, V, b, 0., c)
+    optimizer.data.m = m
+    optimizer.data.b = zeros(m)
+    _allocate_nzvals(optimizer.data)
     # `optimizer.sol` contains the result of the previous optimization.
     # It is used as a warm start if its length is the same, e.g.
     # probably because no variable and/or constraint has been added.
@@ -421,11 +484,9 @@ function MOI.optimize!(optimizer::Optimizer)
     cone = optimizer.cone
     m = optimizer.data.m
     n = optimizer.data.n
-    A = sparse(optimizer.data.I, optimizer.data.J, optimizer.data.V, m, n)
     b = optimizer.data.b
     objective_constant = optimizer.data.objective_constant
     c = optimizer.data.c
-    optimizer.data = nothing # Allows GC to free optimizer.data before A is loaded to SCS
 
     options = optimizer.options
     if optimizer.silent
@@ -435,7 +496,7 @@ function MOI.optimize!(optimizer::Optimizer)
 
     linear_solver, options = sanitize_SCS_options(options)
 
-    sol = SCS_solve(linear_solver, m, n, A, b, c,
+    sol = SCS_solve(linear_solver, m, n, _managed_matrix(optimizer.data), b, c,
                     cone.f, cone.l, cone.qa, cone.sa, cone.ep, cone.ed, cone.p,
                     optimizer.sol.primal, optimizer.sol.dual,
                     optimizer.sol.slack; options...)
