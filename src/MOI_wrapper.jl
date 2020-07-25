@@ -421,7 +421,7 @@ function MOI.optimize!(optimizer::Optimizer)
     cone = optimizer.cone
     m = optimizer.data.m
     n = optimizer.data.n
-    A = sparse(optimizer.data.I, optimizer.data.J, optimizer.data.V)
+    A = sparse(optimizer.data.I, optimizer.data.J, optimizer.data.V, m, n)
     b = optimizer.data.b
     objective_constant = optimizer.data.objective_constant
     c = optimizer.data.c
