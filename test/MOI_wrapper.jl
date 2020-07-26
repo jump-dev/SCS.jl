@@ -19,11 +19,6 @@ for T in solvers
         @test MOI.get(optimizer, MOI.SolverName()) == "SCS"
     end
 
-    @testset "supports_allocate_load" begin
-        @test MOIU.supports_allocate_load(optimizer, false)
-        @test !MOIU.supports_allocate_load(optimizer, true)
-    end
-
     MOI.empty!(CACHE)
     cached = MOIU.CachingOptimizer(CACHE, optimizer)
     bridged = MOIB.full_bridge_optimizer(cached, Float64)

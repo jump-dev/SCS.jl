@@ -183,7 +183,8 @@ end
 
 function _allocate_con(optimizer::Optimizer, src, indexmap, ci)
     # TODO use `CanonicalConstraintFunction`
-    func = MOI.Utilities.canonical(MOI.get(src, MOI.ConstraintFunction(), ci))
+    func = MOI.get(src, MOI.ConstraintFunction(), ci)
+    func = MOIU.is_canonical(func) ? func : MOI.Utilities.canonical(func)
     set = MOI.get(src, MOI.ConstraintSet(), ci)
     ci_dest = _allocate_con(optimizer, indexmap, func, set)
     indexmap[ci] = ci_dest
@@ -403,15 +404,10 @@ end
 
 # The SCS format is b - Ax ∈ cone
 function _load_terms(colptr, rowval, nzval, indexmap, terms, offset)
-    @show terms
-    @show offset
     for term in terms
         ptr = colptr[indexmap[term.scalar_term.variable_index].value] += 1
-        @show ptr
         rowval[ptr] = offset + term.output_index - 1
-        @show rowval[ptr]
         nzval[ptr] = -term.scalar_term.coefficient
-        @show nzval[ptr]
     end
 end
 function _load_constant(b, offset, rows, constant::Function)
@@ -429,10 +425,10 @@ function _scale(i, coef)
 end
 function _load_con(data, indexmap, func, set::MOI.PositiveSemidefiniteConeTriangle, offset)
     n = set.side_dimension
-    map = sympackedLtoU(1:sympackedlen(n), n)
+    LtoU_map = sympackedLtoU(1:sympackedlen(n), n)
     function map_term(t::MOI.VectorAffineTerm)
         return MOI.VectorAffineTerm(
-            map[t.output_index],
+            LtoU_map[t.output_index],
             MOI.ScalarAffineTerm(
                 _scale(t.output_index, t.scalar_term.coefficient),
                 t.scalar_term.variable_index
@@ -443,8 +439,9 @@ function _load_con(data, indexmap, func, set::MOI.PositiveSemidefiniteConeTriang
     # The rows have been reordered in `map_term` so we need to re-canonicalize to reorder the rows.
     MOI.Utilities.canonicalize!(new_func)
     _load_terms(data.colptr, data.rowval, data.nzval, indexmap, new_func.terms, offset)
+    UtoL_map = sympackedUtoL(1:sympackedlen(n), n)
     function constant(row)
-        i = map[row]
+        i = UtoL_map[row]
         return _scale(i, func.constants[i])
     end
     _load_constant(data.b, offset, eachindex(func.constants), constant)
