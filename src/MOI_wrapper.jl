@@ -142,8 +142,6 @@ function MOI.empty!(optimizer::Optimizer)
     optimizer.sol.ret_val = 0
 end
 
-MOIU.supports_allocate_load(::Optimizer, copy_names::Bool) = !copy_names
-
 function MOI.supports(::Optimizer,
                       ::Union{MOI.ObjectiveSense,
                               MOI.ObjectiveFunction{MOI.ScalarAffineFunction{Float64}}})
@@ -168,12 +166,76 @@ function MOI.supports_constraint(
     ::Type{<:Union{MOI.Zeros, MOI.Nonnegatives, MOI.SecondOrderCone,
                    MOI.ExponentialCone, MOI.DualExponentialCone,
                    MOI.PositiveSemidefiniteConeTriangle,
-                   MOI.PowerCone, MOI.DualPowerCone}})
+                   MOI.PowerCone{Float64}, MOI.DualPowerCone{Float64}}})
     return true
 end
 
-function MOI.copy_to(dest::Optimizer, src::MOI.ModelLike; kws...)
-    return MOIU.automatic_copy_to(dest, src; kws...)
+const CONE_TYPES = [MOI.Zeros, MOI.Nonnegatives, MOI.SecondOrderCone, MOI.PositiveSemidefiniteConeTriangle, MOI.ExponentialCone, MOI.DualExponentialCone, MOI.PowerCone{Float64}, MOI.DualPowerCone{Float64}]
+
+function _set_index(FS)
+    F, S = FS
+    i = findfirst(s -> s == S, CONE_TYPES)
+    if i === nothing || F != MOI.VectorAffineFunction{Float64}
+        throw(MOI.UnsupportedConstraint{F, S}())
+    end
+    return (i, S)
+end
+
+function _allocate_con(optimizer::Optimizer, src, indexmap, ci)
+    # TODO use `CanonicalConstraintFunction`
+    func = MOI.Utilities.canonical(MOI.get(src, MOI.ConstraintFunction(), ci))
+    set = MOI.get(src, MOI.ConstraintSet(), ci)
+    ci_dest = _allocate_con(optimizer, indexmap, func, set)
+    indexmap[ci] = ci_dest
+    return ci_dest, func, set
+end
+
+function _allocate_constraints(optimizer::Optimizer, src, indexmap, ::Type{S}) where S
+    cis = MOI.get(src, MOI.ListOfConstraintIndices{MOI.VectorAffineFunction{Float64}, S}())
+    return map(cis) do ci
+        _allocate_con(optimizer, src, indexmap, ci)
+    end
+end
+
+function MOI.copy_to(dest::Optimizer, src::MOI.ModelLike; copy_names::Bool=true)
+    MOI.empty!(dest)
+
+    vis_src = MOI.get(src, MOI.ListOfVariableIndices())
+    idxmap = MOIU.IndexMap()
+
+    constraint_types = MOI.get(src, MOI.ListOfConstraints())
+    constraints = map(_set_index, constraint_types)
+    sort!(constraints, by = iS -> iS[1])
+
+    _allocate_variables(dest, vis_src, idxmap)
+
+    # Allocate variable attributes
+    MOIU.pass_attributes(dest, src, copy_names, idxmap, vis_src, MOIU.allocate)
+
+    # Allocate model attributes
+    MOIU.pass_attributes(dest, src, copy_names, idxmap, MOIU.allocate)
+
+    # Allocate constraints
+    ci_func_sets = map(constraints) do iS
+        _allocate_constraints(dest, src, idxmap, iS[2])
+    end
+
+    # Load variables
+    MOIU.load_variables(dest, length(vis_src))
+
+    # Load variable attributes
+    MOIU.pass_attributes(dest, src, copy_names, idxmap, vis_src, MOIU.load)
+
+    # Load model attributes
+    MOIU.pass_attributes(dest, src, copy_names, idxmap, MOIU.load)
+
+    # Load constraints
+    for ci_func_set in ci_func_sets
+        _load_constraints(dest, idxmap, ci_func_set)
+    end
+
+    return idxmap
+
 end
 
 using SparseArrays
@@ -240,19 +302,19 @@ function _allocate_constraint(cone::ConeData, f, s::MOI.DualExponentialCone)
     return ci
 end
 function constroffset(cone::ConeData,
-                      ci::CI{<:MOI.AbstractFunction, <:MOI.PowerCone})
+                      ci::CI{<:MOI.AbstractFunction, MOI.PowerCone{Float64}})
     return cone.f + cone.l + cone.q + cone.s + 3cone.ep + 3cone.ed + ci.value
 end
-function _allocate_constraint(cone::ConeData, f, s::MOI.PowerCone)
+function _allocate_constraint(cone::ConeData, f, s::MOI.PowerCone{Float64})
     ci = length(cone.p)
     push!(cone.p, s.exponent)
     return ci
 end
 function constroffset(cone::ConeData,
-                      ci::CI{<:MOI.AbstractFunction, <:MOI.DualPowerCone})
+                      ci::CI{<:MOI.AbstractFunction, MOI.DualPowerCone{Float64}})
     return cone.f + cone.l + cone.q + cone.s + 3cone.ep + 3cone.ed + ci.value
 end
-function _allocate_constraint(cone::ConeData, f, s::MOI.DualPowerCone)
+function _allocate_constraint(cone::ConeData, f, s::MOI.DualPowerCone{Float64})
     ci = length(cone.p)
     # SCS' convention: dual cones have a negative exponent.
     push!(cone.p, -s.exponent)
@@ -261,14 +323,13 @@ end
 function constroffset(optimizer::Optimizer, ci::CI)
     return constroffset(optimizer.cone, ci::CI)
 end
-function allocate_terms(colptr, terms)
+function allocate_terms(colptr, indexmap, terms)
     for term in terms
-        colptr[term.scalar_term.variable_index.value + 1] += 1
+        colptr[indexmap[term.scalar_term.variable_index].value + 1] += 1
     end
 end
-function MOIU.allocate_constraint(optimizer::Optimizer, f::MOI.VectorAffineFunction{Float64}, s::S) where S <: MOI.AbstractSet
-    func = MOIU.canonical(f)
-    allocate_terms(optimizer.data.colptr, func.terms)
+function _allocate_con(optimizer::Optimizer, indexmap, func::MOI.VectorAffineFunction{Float64}, s::S) where S <: MOI.AbstractSet
+    allocate_terms(optimizer.data.colptr, indexmap, func.terms)
     return CI{MOI.VectorAffineFunction{Float64}, S}(_allocate_constraint(optimizer.cone, func, s))
 end
 
@@ -341,11 +402,11 @@ function orderidx(idx, s::MOI.PositiveSemidefiniteConeTriangle)
 end
 
 # The SCS format is b - Ax ∈ cone
-function _load_terms(colptr, rowval, nzval, terms, offset)
+function _load_terms(colptr, rowval, nzval, indexmap, terms, offset)
     @show terms
     @show offset
     for term in terms
-        ptr = colptr[term.scalar_term.variable_index.value] += 1
+        ptr = colptr[indexmap[term.scalar_term.variable_index].value] += 1
         @show ptr
         rowval[ptr] = offset + term.output_index - 1
         @show rowval[ptr]
@@ -366,7 +427,7 @@ function _scale(i, coef)
         return coef * √2
     end
 end
-function _load_con(data, func, set::MOI.PositiveSemidefiniteConeTriangle, offset)
+function _load_con(data, indexmap, func, set::MOI.PositiveSemidefiniteConeTriangle, offset)
     n = set.side_dimension
     map = sympackedLtoU(1:sympackedlen(n), n)
     function map_term(t::MOI.VectorAffineTerm)
@@ -381,30 +442,37 @@ function _load_con(data, func, set::MOI.PositiveSemidefiniteConeTriangle, offset
     new_func = MOI.VectorAffineFunction{Float64}(MOI.VectorAffineTerm{Float64}[map_term(t) for t in func.terms], func.constants)
     # The rows have been reordered in `map_term` so we need to re-canonicalize to reorder the rows.
     MOI.Utilities.canonicalize!(new_func)
-    _load_terms(data.colptr, data.rowval, data.nzval, new_func.terms, offset)
+    _load_terms(data.colptr, data.rowval, data.nzval, indexmap, new_func.terms, offset)
     function constant(row)
         i = map[row]
         return _scale(i, func.constants[i])
     end
     _load_constant(data.b, offset, eachindex(func.constants), constant)
 end
-function _load_con(data, func, set, offset)
-    _load_terms(data.colptr, data.rowval, data.nzval, func.terms, offset)
+function _load_con(data, indexmap, func, set, offset)
+    _load_terms(data.colptr, data.rowval, data.nzval, indexmap, func.terms, offset)
     _load_constant(data.b, offset, eachindex(func.constants), i -> func.constants[i])
 end
-function MOIU.load_constraint(optimizer::Optimizer, ci::MOI.ConstraintIndex, f::MOI.VectorAffineFunction{Float64}, s::MOI.AbstractVectorSet)
-    func = MOIU.canonical(f)
+function _load_constraint(optimizer::Optimizer, indexmap, ci::MOI.ConstraintIndex, func::MOI.VectorAffineFunction{Float64}, s::MOI.AbstractVectorSet)
     offset = constroffset(optimizer, ci)
-    _load_con(optimizer.data, func, s, offset)
-    optimizer.cone.nrows[offset] = MOI.output_dimension(f)
+    _load_con(optimizer.data, indexmap, func, s, offset)
+    optimizer.cone.nrows[offset] = MOI.output_dimension(func)
+end
+function _load_constraints(optimizer::Optimizer, indexmap, ci_func_sets)
+    for (ci, func, set) in ci_func_sets
+        _load_constraint(optimizer, indexmap, ci, func, set)
+    end
 end
 
-function MOIU.allocate_variables(optimizer::Optimizer, nvars::Integer)
+function _allocate_variables(optimizer::Optimizer, vis_src, idxmap)
     optimizer.cone = ConeData()
     linear_solver, _ = sanitize_SCS_options(optimizer.options)
     T = scsint_t(linear_solver)
-    optimizer.data = ModelData{T}(nvars)
-    return MOI.VariableIndex.(1:nvars)
+    optimizer.data = ModelData{T}(length(vis_src))
+    for (i, vi) in enumerate(vis_src)
+        idxmap[vi] = MOI.VariableIndex(i)
+    end
+    return
 end
 
 function MOIU.load_variables(optimizer::Optimizer, nvars::Integer)
