@@ -83,11 +83,11 @@ if !custom_library
         error(
             "The following dependencies could not be satisfied by binaries " *
             "from BinaryProvider: \n$failed.\nIn case You are using non-" *
-            "official Julia binaries, try installing SCS from source.\nMake " *
-            "sure Julia and SCS are linked against the same OpenBLAS library."
+            "official Julia binaries, try compiling SCS from source.\nMake " *
+            "sure Julia and SCS are linked against the same OpenBLAS library.\n"
         )
     end
 end
 
 # Write out a deps.jl file that will contain mappings for our products
-#write_deps_file(joinpath(@__DIR__, "deps.jl"), products, verbose=verbose)
+write_deps_file(joinpath(@__DIR__, "deps.jl"), products, verbose=verbose)
