@@ -77,6 +77,10 @@ if !custom_library
         install(dl_info...; prefix=prefix, force=true, verbose=verbose)
     end
 
+    # Warn the user that the packeges from BinaryProvider are incompatible with
+    # their installation of Julia. While this is mentioned in README.md users
+    # might still try. In that case, BinaryProvider (--verbose) fails with
+    # a confusing message "could not locate," instead of "could not dlopen."
     usable(p) = satisfied(p; verbose=verbose, isolate=true)
     failed = [p.libnames for p in products if !usable(p)]
     if !isempty(failed)
