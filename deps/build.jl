@@ -1,5 +1,10 @@
 using BinaryProvider, Libdl # requires BinaryProvider 0.3.0 or later
 
+if !(haskey(ENV, "JULIA_SCS_LIBRARY_PATH") || VERSION < v"1.3")
+    @info("Installing default SCS binaries")
+    exit(0)
+end
+
 ## NOTE: This is not a typical build.jl file; it has extra stuff toward the bottom.
 ## Don't just replace this file with the output of a BinaryBuilder repository!
 
