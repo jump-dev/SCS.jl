@@ -13,12 +13,10 @@ mutable struct GeometricConicForm{T, AT, C} <: MOI.ModelLike
     dual::Vector{T}
     function GeometricConicForm{T, AT}(cone_types) where {T, AT}
         model = new{T, AT, typeof(cone_types)}()
-
         model.cone_types = cone_types
-        model.cone_types_dict = Dict{DataType, Int}()
-        for (i,s) in enumerate(cone_types)
-            model.cone_types_dict[s] = i
-        end
+        model.cone_types_dict = Dict{DataType, Int}(
+            s => i for (i, s) in enumerate(cone_types)
+        )
         model.num_rows = zeros(Int, length(cone_types))
         model.dimension = Dict{Int, Int}()
         model.A = nothing
@@ -37,13 +35,11 @@ function MOI.empty!(model::GeometricConicForm{T}) where T
     model.objective_constant = zero(T)
 end
 
-_findfirst(s::DataType, d::D) where {D<:AbstractDict} = get(d, s, nothing)
-
 function MOI.supports_constraint(
     model::GeometricConicForm,
     ::Type{MOI.VectorAffineFunction{Float64}},
     ::Type{S}) where S <: MOI.AbstractVectorSet
-    return _findfirst(S, model.cone_types_dict) !== nothing
+    return haskey(model.cone_types_dict, S)
 end
 
 function _allocate_variables(model::GeometricConicForm{T, AT}, vis_src, idxmap) where {T, AT}
@@ -153,7 +149,7 @@ function MOI.copy_to(dest::GeometricConicForm, src::MOI.ModelLike; preprocess = 
 
     has_constraints = BitSet()
     for (F, S) in MOI.get(src, MOI.ListOfConstraints())
-        i = _findfirst(S, dest.cone_types_dict)
+        i = get(dest.cone_types_dict, S, nothing)
         if i === nothing || F != MOI.VectorAffineFunction{Float64}
             throw(MOI.UnsupportedConstraint{F, S}())
         end
