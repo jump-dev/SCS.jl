@@ -31,13 +31,13 @@ export SCS_init, SCS_solve, SCS_finish, SCS_version
 #
 # Returns a Solution object.
 function SCS_solve(linear_solver::Type{<:LinearSolver},
-        m::Integer, n::Integer, A::VecOrMatOrSparse, b::Vector{Float64}, c::Vector{Float64},
+        m::Integer, n::Integer, A::ManagedSCSMatrix{T}, b::Vector{Float64}, c::Vector{Float64},
         f::Integer, l::Integer, q::Vector{<:Integer}, s::Vector{<:Integer},
         ep::Integer, ed::Integer, p::Vector{Float64},
         primal_sol::Vector{Float64}=zeros(n),
         dual_sol::Vector{Float64}=zeros(m),
         slack::Vector{Float64}=zeros(m);
-        options...)
+        options...) where T
 
     n > 0 || throw(ArgumentError("The number of variables in SCSModel must be greater than 0"))
     m > 0 || throw(ArgumentError("The number of constraints in SCSModel must be greater than 0"))
@@ -58,23 +58,22 @@ function SCS_solve(linear_solver::Type{<:LinearSolver},
         slack = zeros(m)
     end
 
-    T = scsint_t(linear_solver)
+    @assert T == scsint_t(linear_solver)
     q_T = convert(Vector{T}, q)
     s_T = convert(Vector{T}, s)
 
     solution = SCSSolution(pointer(primal_sol), pointer(dual_sol), pointer(slack))
 
     settings = Base.cconvert(Ref{SCSSettings{T}}, SCSSettings(linear_solver; options...))
-    managed_matrix = ManagedSCSMatrix{T}(m, n, A)
 
-    data = SCSData(m, n, managed_matrix, b, c, settings)
+    data = SCSData(m, n, A, b, c, settings)
     # data holds pointers to objects which need to be protected from GC:
-    # managed_matrix, b, c and settings
+    # A, b, c and settings
 
     cone = SCSCone{T}(f, l, q_T, s_T, ep, ed, p)
     info_ref = Base.cconvert(Ref{SCSInfo{T}}, SCSInfo{T}())
 
-    Base.GC.@preserve managed_matrix settings b c begin
+    Base.GC.@preserve A settings b c begin
         p_work = SCS_init(linear_solver, data, cone, info_ref)
         status = SCS_solve(linear_solver, p_work, data, cone, solution, info_ref)
         SCS_finish(linear_solver, p_work)
@@ -82,6 +81,19 @@ function SCS_solve(linear_solver::Type{<:LinearSolver},
 
     return Solution(primal_sol, dual_sol, slack, info_ref[], status)
 end
+function SCS_solve(linear_solver::Type{<:LinearSolver},
+        m::Integer, n::Integer, A::VecOrMatOrSparse, b::Vector{Float64}, c::Vector{Float64},
+        f::Integer, l::Integer, q::Vector{<:Integer}, s::Vector{<:Integer},
+        ep::Integer, ed::Integer, p::Vector{Float64},
+        primal_sol::Vector{Float64}=zeros(n),
+        dual_sol::Vector{Float64}=zeros(m),
+        slack::Vector{Float64}=zeros(m);
+        options...)
+    T = scsint_t(linear_solver)
+    return SCS_solve(linear_solver, m, n, ManagedSCSMatrix{T}(m, n, A), b, c,
+                     f, l, q, s, ep, ed, p, primal_sol, dual_sol, slack; options...)
+end
+
 
 # Wrappers for the direct C API.
 # Do not call these wrapper methods directly unless you understand the
