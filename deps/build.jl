@@ -62,15 +62,17 @@ this_platform = platform_key_abi()
 custom_library = false
 if haskey(ENV,"JULIA_SCS_LIBRARY_PATH")
 
-    names_symbols = Dict("libscsdir"=>:direct, "libscsindir"=>:indirect, "libscsgpu"=>:indirectgpu)
+    names_symbols = Dict("libscsdir"=>:direct, "libscsindir"=>:indirect, "libscsgpuindir"=>:gpuindirect)
 
     scs_prefix = ENV["JULIA_SCS_LIBRARY_PATH"]
     @assert isdir(scs_prefix)
 
     custom_products = Product[]
+    @info "looking for scs libs in $scs_prefix"
     for fn in readdir(scs_prefix)
-        if endswith(fn, Libdl.dlext) && haskey(names_symbols,fn[1:end-3])
-            lib = fn[1:end-3]
+        if endswith(fn, Libdl.dlext) && haskey(names_symbols,first(split(fn, '.')))
+            lib = first(split(fn, '.'))
+            @info "found scs library: $lib"
             push!(custom_products,
                 LibraryProduct(scs_prefix, [lib], names_symbols[lib]))
         end

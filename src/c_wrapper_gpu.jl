@@ -1,6 +1,10 @@
-import SCS_GPU_jll
-const gpuindirect = SCS_GPU_jll.libscsgpuindir
-push!(available_solvers, GpuIndirectSolver)
+if haskey(ENV,"JULIA_SCS_LIBRARY_PATH")
+    @isdefined(libscsgpuindir) && push!(available_solvers, GpuIndirectSolver)
+else
+    import SCS_GPU_jll
+    const gpuindirect = SCS_GPU_jll.libscsgpuindir
+    push!(available_solvers, GpuIndirectSolver)
+end
 for linear_solver in (GpuIndirectSolver,)
     # lib = gpuindirect # clib(linear_solver)
     T = scsint_t(linear_solver)
