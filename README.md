@@ -81,17 +81,28 @@ The options available are `SCS.IndirectSolver` (the default) and `SCS.DirectSolv
 
 #### SCS on Gpu
 An experimental `SCS.GpuIndirectSolver` could be used by either providing the appropriate libraries in a custom installation, or through `SCS_GPU_jll`.
-Note that the latter depends on `CUDA_jll-9.0` which must be provided by the user.
-Unfortunately, due to static code generation during precompile it is not possible to support automatic detection. Then additional code must be `eval`ed into `SCS` module:
+Note that the latter depends on `CUDA_jll-9.0` which must be loaded **before* `SCS` by the user.
+
 ```julia
-using CUDA_jll # optional, to load the correct libcublas.so
-using SCS
-SCS.eval(:(
-    import SCS_GPU_jll;
-    const gpuindirect = SCS_GPU_jll.libscsgpuindir;
-    GpuIndirectSolver in available_solvers || push!(available_solvers, GpuIndirectSolver);
-    include("src/c_wrapper.jl");
-    ))
+julia> using SCS
+
+julia> SCS.available_solvers
+2-element Array{DataType,1}:
+ SCS.DirectSolver
+ SCS.IndirectSolver
+```
+
+```julia
+julia> using CUDA_jll # optional, to enable SCS.GpuIndirectSolver
+
+julia> using SCS
+
+julia> SCS.available_solvers
+3-element Array{DataType,1}:
+ SCS.DirectSolver
+ SCS.IndirectSolver
+ SCS.GpuIndirectSolver
+
 ```
 
 ### High level wrapper
