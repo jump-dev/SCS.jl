@@ -258,9 +258,9 @@ function MOI.optimize!(optimizer::Optimizer)
 
     cone = optimizer.cone
     sol = SCS_solve(linear_solver, m, n, _managed_matrix(data.A), b, c,
-                    data.num_rows[1], data.num_rows[2], cone.qa, cone.sa, div(data.num_rows[5], 3), div(data.num_rows[6], 3), cone.p,
-                    data.primal, data.dual,
-                    data.slack; options...)
+                    data.num_rows[1], data.num_rows[2], Float64[], Float64[],
+                    cone.qa, cone.sa, div(data.num_rows[5], 3), div(data.num_rows[6], 3), cone.p,
+                    data.primal, data.dual, data.slack; options...)
 
     data.primal = sol.x
     data.dual = sol.y
