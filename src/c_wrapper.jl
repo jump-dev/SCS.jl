@@ -7,7 +7,7 @@ export SCS_init, SCS_solve, SCS_finish, SCS_version
 # where K is a product cone of
 # zero cone { x | x = 0 },
 # positive orthant { x | x >= 0 },
-# TODO: document box cone
+# box cone { (t, x) | t * l <= x <= t * u, t >= 0 },
 # second-order cones (SOC) { (t,x) | ||x||_2 <= t },
 # semi-definite cones (SDC) { X | X psd }, and
 # exponential cones {(x,y,z) | y e^(x/y) <= z, y>0 },

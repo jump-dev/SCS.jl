@@ -79,11 +79,19 @@ struct SCSSettings{T<:SCSInt}
     verbose::T # boolean, write out progress
     warm_start::T # boolean, warm start (put initial guess in Sol struct)
     acceleration_lookback::T # acceleration memory parameter
+    adaptive_scaling::T # whether to adaptively update the scale param
     write_data_filename::Cstring
+    log_csv_filename::Cstring
 
     SCSSettings{T}() where T = new{T}()
-    SCSSettings{T}(normalize, scale, rho_x, max_iters, eps, alpha, cg_rate, verbose, warm_start, acceleration_lookback, write_data_filename) where T =
-        new{T}(normalize, scale, rho_x, max_iters, eps, alpha, cg_rate, verbose, warm_start, acceleration_lookback, write_data_filename)
+    function SCSSettings{T}(normalize, scale, rho_x, max_iters, eps, alpha,
+                            cg_rate, verbose, warm_start,
+                            acceleration_lookback, adaptive_scaling,
+                            write_data_filename, log_csv_filename) where T
+        return new{T}(normalize, scale, rho_x, max_iters, eps, alpha, cg_rate,
+                      verbose, warm_start, acceleration_lookback, adaptive_scaling,
+                      write_data_filename, log_csv_filename)
+    end
 end
 
 function _SCS_user_settings(default_settings::SCSSettings{T};
@@ -97,11 +105,14 @@ function _SCS_user_settings(default_settings::SCSSettings{T};
         verbose=default_settings.verbose,
         warm_start=default_settings.warm_start,
         acceleration_lookback=default_settings.acceleration_lookback,
-        write_data_filename=default_settings.write_data_filename
+        adaptive_scaling=default_settings.adaptive_scaling,
+        write_data_filename=default_settings.write_data_filename,
+        log_csv_filename=default_settings.log_csv_filename
         ) where T
     return SCSSettings{T}(normalize, scale, rho_x, max_iters, eps, alpha,
                          cg_rate, verbose,warm_start, acceleration_lookback,
-                         write_data_filename)
+                         adaptive_scaling, write_data_filename,
+                         log_csv_filename)
 end
 
 function SCSSettings(linear_solver::Type{<:LinearSolver}; options...)
@@ -184,7 +195,7 @@ end
 # where K is a product cone of
 # zero cones,
 # linear cones { x | x >= 0 },
-# TODO: document box cone
+# box cones { (t, x) | t * l <= x <= t * u, t >= 0 },
 # second-order cones { (t,x) | ||x||_2 <= t },
 # semi-definite cones { X | X psd }, and
 # exponential cones {(x,y,z) | y e^(x/y) <= z, y>0 }.
