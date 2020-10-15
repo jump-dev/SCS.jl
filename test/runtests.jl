@@ -1,3 +1,10 @@
+if haskey(ENV, "GITLAB_CI")
+    # This file requires a GPU in order to run. It gets tested as part of the
+    # JuliaGPU CI on Gitlab. Contact @odow for more details.
+    include("test_gpu.jl")
+    exit(0)
+end
+
 using Test
 using SCS
 
