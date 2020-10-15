@@ -77,7 +77,7 @@ function SCS_solve(linear_solver::Type{<:LinearSolver},
     cone = SCSCone{T}(f, l, bu, bl, q_T, s_T, ep, ed, p)
     info_ref = Base.cconvert(Ref{SCSInfo{T}}, SCSInfo{T}())
 
-    Base.GC.@preserve A P settings b c begin
+    Base.GC.@preserve A P settings b c options begin
         p_work = SCS_init(linear_solver, data, cone, info_ref)
         status = SCS_solve(linear_solver, p_work, data, cone, solution, info_ref)
         SCS_finish(linear_solver, p_work)

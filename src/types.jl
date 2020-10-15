@@ -106,15 +106,19 @@ function _SCS_user_settings(default_settings::SCSSettings{T};
         warm_start=default_settings.warm_start,
         acceleration_lookback=default_settings.acceleration_lookback,
         adaptive_scaling=default_settings.adaptive_scaling,
-        write_data_filename=default_settings.write_data_filename,
-        log_csv_filename=default_settings.log_csv_filename
+        write_data_filename=C_NULL,
+        log_csv_filename=C_NULL
         ) where T
+    write_data_filename_p = write_data_filename isa String ? pointer(write_data_filename) : C_NULL
+    log_csv_filename_p = log_csv_filename isa String ? pointer(log_csv_filename) : C_NULL
     return SCSSettings{T}(normalize, scale, rho_x, max_iters, eps, alpha,
                          cg_rate, verbose,warm_start, acceleration_lookback,
-                         adaptive_scaling, write_data_filename,
-                         log_csv_filename)
+                         adaptive_scaling, write_data_filename_p,
+                         log_csv_filename_p)
 end
 
+# Warning: Strings provided through options must outlive the solve.
+# SCSSettings keeps only a pointer to the strings.
 function SCSSettings(linear_solver::Type{<:LinearSolver}; options...)
 
     T = scsint_t(linear_solver)
