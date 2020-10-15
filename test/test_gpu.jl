@@ -1,6 +1,10 @@
 # This file requires a GPU in order to run. It gets tested as part of the
 # JuliaGPU CI on Gitlab. Contact @odow for more details.
 
+# CUDA_jll is not in our Project.toml, so we need to install it on GITLAB_CI.
+import Pkg
+Pkg.add("CUDA_jll")
+
 using CUDA_jll  # CUDA_jll must be loaded _before_ SCS!
 using SCS
 
