@@ -76,24 +76,24 @@ set_optimizer(problem, optimizer_constructor)
 optimize!(problem)
 ```
 
-Moreover, You may select one of the linear solvers to be used by `SCS.Optimizer` via `linear_solver` keyword.
-The options available are `SCS.IndirectSolver` (the default) and `SCS.DirectSolver`.
+Moreover, you may select one of the linear solvers to be used by `SCS.Optimizer`
+via `linear_solver` keyword. The options available are `SCS.IndirectSolver` (the
+default) and `SCS.DirectSolver`. A third option for using a GPU is experimental,
+see the section below.
 
-#### SCS on Gpu
-An experimental `SCS.GpuIndirectSolver` could be used by either providing the appropriate libraries in a custom installation, or through `SCS_GPU_jll`.
-Note that the latter depends on `CUDA_jll-9.0` which must be loaded **before* `SCS` by the user.
+#### SCS on GPU
 
-```julia
-julia> using SCS
-
-julia> SCS.available_solvers
-2-element Array{DataType,1}:
- SCS.DirectSolver
- SCS.IndirectSolver
-```
+An experimental `SCS.GpuIndirectSolver` can be used by either providing the
+appropriate libraries in a custom installation, or via the default binaries. The
+latter depends on `CUDA_jll` version `9.0`, which must be installed and loaded
+**before* `SCS`.
 
 ```julia
-julia> using CUDA_jll # optional, to enable SCS.GpuIndirectSolver
+julia> import Pkg
+
+julia> Pkg.add(Pkg.PackageSpec(name = "CUDA_jll", version = "9.0"))
+
+julia> using CUDA_jll  # This must be called before `using SCS`.
 
 julia> using SCS
 
@@ -103,6 +103,7 @@ julia> SCS.available_solvers
  SCS.IndirectSolver
  SCS.GpuIndirectSolver
 
+julia> solver = SCS.Optimizer(linear_solver = SCS.GpuIndirectSolver)
 ```
 
 ### High level wrapper
