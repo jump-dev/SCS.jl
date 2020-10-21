@@ -685,3 +685,15 @@ function feasible_pow_conic(T)
     @test sol.ret_val == 1
     @test SCS.raw_status(sol.info) == "Solved"
 end
+
+function feasible_basic_problems(solver)
+    A = reshape([1.0],(1,1))
+    solution = SCS_solve(solver, 1, 1, A, [1.0], [1.0], 1, 0, Int[], Int[], 0, 0, Float64[]);
+    @test solution.ret_val == 1
+
+    feasible_basic_conic(solver)
+    feasible_exponential_conic(solver)
+    feasible_sdp_conic(solver)
+    feasible_pow_conic(solver)
+end
+

@@ -10,29 +10,11 @@ using SCS
 
 using Test
 
-using MathOptInterface
-const MOI = MathOptInterface
-
-const CONFIG = MOI.Test.TestConfig(atol=1e-5)
-
-function _new_optimizer()
-    return MOI.Bridges.full_bridge_optimizer(
-        MOI.Utilities.CachingOptimizer(
-            MOI.Utilities.UniversalFallback(MOI.Utilities.Model{Float64}()),
-            SCS.Optimizer(linear_solver = SCS.GpuIndirectSolver, eps = 1e-6),
-        ),
-        Float64,
-    )
-end
-
 @test SCS.GpuIndirectSolver in SCS.available_solvers
 
-@testset "contconictest" begin
-    optimizer = _new_optimizer()
-    MOI.Test.contlineartest(optimizer, CONFIG)
-end
+include("test_problems.jl")
+feasible_basic_problems(SCS.GpuIndirectSolver)
 
-@testset "contconictest" begin
-    optimizer = _new_optimizer()
-    MOI.Test.contconictest(optimizer, CONFIG, ["rootdets", "logdets"])
-end
+include("MOI_wrapper.jl")
+moi_tests(SCS.GpuIndirectSolver)
+
