@@ -11,12 +11,15 @@ using SCS
 solvers = SCS.available_solvers
 
 include("test_problems.jl")
+include("MOI_wrapper.jl")
 
 for s in solvers
     feasible_basic_problems(s)
 end
-
 include("options.jl")
-
-include("MOI_wrapper.jl")
 include("MPB_wrapper.jl")
+
+for s in solvers
+    moi_tests(s)
+end
+
