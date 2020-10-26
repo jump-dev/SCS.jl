@@ -1,0 +1,8 @@
+include: https://raw.githubusercontent.com/JuliaGPU/gitlab-ci/master/templates/v6.yml
+
+test:1.x:
+  extends:
+    - .julia:1
+    - .test
+  tags:
+      - nvidia
