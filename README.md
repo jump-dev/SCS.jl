@@ -1,8 +1,7 @@
 # SCS
 
-[![Build Status](https://travis-ci.org/jump-dev/SCS.jl.svg?branch=master)](https://travis-ci.org/jump-dev/SCS.jl)
-[![Build status](https://ci.appveyor.com/api/projects/status/yb4yfg4oryw7yten/branch/master?svg=true)](https://ci.appveyor.com/project/mlubin/scs-jl/branch/master)
-[![Coverage Status](https://coveralls.io/repos/jump-dev/SCS.jl/badge.svg?branch=master)](https://coveralls.io/r/jump-dev/SCS.jl?branch=master)
+[![Build Status](https://github.com/jump-dev/SCS.jl/workflows/CI/badge.svg?branch=master)](https://github.com/jump-dev/SCS.jl/actions?query=workflow%3ACI)
+[![codecov](https://codecov.io/gh/jump-dev/SCS.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/jump-dev/SCS.jl)
 
 Julia wrapper for the [SCS](https://github.com/cvxgrp/scs) splitting cone
 solver. SCS can solve linear programs, second-order cone programs, semidefinite
