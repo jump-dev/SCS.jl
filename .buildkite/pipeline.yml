@@ -1,0 +1,11 @@
+steps:
+  - label: "Julia 1.5"
+    plugins:
+      - JuliaCI/julia#v0.2:
+          version: 1.5
+      - JuliaCI/julia-test#v0.2: ~
+      - JuliaCI/julia-coverage#v0.2:
+          codecov: true
+    agents:
+      queue: "juliagpu"
+      cuda: "*"
