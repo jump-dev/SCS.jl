@@ -179,5 +179,7 @@ function MOI.copy_to(dest::GeometricConicForm, src::MOI.ModelLike; preprocess = 
         offset += dest.num_rows[i]
     end
 
+    final_touch(dest.A)
+
     return idxmap
 end

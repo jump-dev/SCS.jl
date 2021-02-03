@@ -32,7 +32,6 @@ MOISolution() = MOISolution(0, # SCS_UNFINISHED
                             0.0, 0)
 
 function _managed_matrix(A::SparseMatrixCSRtoCSC{T}) where T
-    final_touch(A)
     return ManagedSCSMatrix{T}(A.m, A.n, A.nzval, A.rowval, A.colptr)
 end
 
