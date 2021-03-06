@@ -79,5 +79,5 @@ end
     x = MOI.add_variable(model)
     MOI.add_constraint(model, MOI.SingleVariable(x), MOI.LessThan(Inf))
     MOI.optimize!(model)
-    @test !isnan(MOI.get(model, MOI.VariablePrimal(), x)
+    @test !isnan(MOI.get(model, MOI.VariablePrimal(), x))
 end
