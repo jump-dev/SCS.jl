@@ -134,6 +134,13 @@ function _load_constraints(model::GeometricConicForm, src, indexmap, cone_offset
         new_func = preprocess(func, set)
         load_terms(model.A, indexmap, new_func, offset)
         copyto!(model.b, offset + 1, new_func.constants)
+        for i = 1:length(new_func.constants)
+            if new_func.constants[i] > SCS_INFINITY
+                model.b[offset + i] = SCS_INFINITY
+            elseif new_func.constants[i] < -SCS_INFINITY
+                model.b[offset + i] = -SCS_INFINITY
+            end
+        end
         model.dimension[offset] = MOI.output_dimension(func)
         indexmap[ci_src] = typeof(ci_src)(offset)
     end

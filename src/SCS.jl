@@ -31,6 +31,8 @@ include("types.jl")
 
 const available_solvers = [DirectSolver, IndirectSolver]
 
+const SCS_INFINITY = 1e100
+
 include("c_wrapper.jl")
 include("MPB_wrapper.jl")
 include("MOI_wrapper.jl")

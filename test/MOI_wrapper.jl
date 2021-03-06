@@ -67,3 +67,17 @@ end
     @test MOI.get(model, MOI.RawParameter(:eps)) == 2.0
     @test MOI.get(model, MOI.RawParameter("eps")) == 2.0
 end
+
+@testset "Inf bounds" begin
+    model = MOI.Bridges.full_bridge_optimizer(
+        MOI.Utilities.CachingOptimizer(
+            MOI.Utilities.Model{Float64}(),
+            SCS.Optimizer(),
+        ),
+        Float64,
+    )
+    x = MOI.add_variable(model)
+    MOI.add_constraint(model, MOI.SingleVariable(x), MOI.LessThan(Inf))
+    MOI.optimize!(model)
+    @test !isnan(MOI.get(model, MOI.VariablePrimal(), x)
+end
