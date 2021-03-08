@@ -227,7 +227,7 @@ function sanitize_SCS_options(options)
         end
         delete!(options, :linear_solver)
     else
-        linear_solver = IndirectSolver # the default linear_solver
+        linear_solver = DirectSolver # the default linear_solver
     end
 
     SCS_options = append!([:linear_solver], fieldnames(SCSSettings))
