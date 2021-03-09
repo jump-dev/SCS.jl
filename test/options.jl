@@ -21,23 +21,22 @@ m = MathProgBase.ConicModel(s)
 MathProgBase.loadproblem!(m, -obj, A, rowub, [(:NonNeg,1:3)],[(:NonNeg,1:5)])
 MathProgBase.optimize!(m)
 
-@test isapprox(MathProgBase.getobjval(m), -99.0, atol=1e-9, rtol=0.0)
-@test !isapprox(MathProgBase.getobjval(m), -99.0, atol=1e-10, rtol=0.0)
+@test isapprox(MathProgBase.getobjval(m), -99.0, rtol=1e-9)
+@test !isapprox(MathProgBase.getobjval(m), -99.0, rtol=1e-10)
+# we test above to check if the next optimize actually does something
 
 # With eps = 1e-14, solution should be far more accurate
 s = SCSSolver(eps=1e-14)
 m = MathProgBase.ConicModel(s)
 MathProgBase.loadproblem!(m, -obj, A, rowub, [(:NonNeg,1:3)],[(:NonNeg,1:5)])
 MathProgBase.optimize!(m)
-@test isapprox(MathProgBase.getobjval(m), -99.0, atol=1e-12, rtol=0.0)
-@test !isapprox(MathProgBase.getobjval(m), -99.0, atol=1e-14, rtol=0.0)
+@test isapprox(MathProgBase.getobjval(m), -99.0, rtol=1e-14)
 
 # With a warmstart from the eps = 1e-14 solution, solution should be extremely accurate even after 1 iteration
 SCS.addoption!(m, :warm_start, true)
 SCS.addoption!(m, :max_iters, 1)
 MathProgBase.optimize!(m)
-@test isapprox(MathProgBase.getobjval(m), -99.0, atol=1e-12, rtol=0.0)
-@test !isapprox(MathProgBase.getobjval(m), -99.0, atol=1e-14, rtol=0.0)
+@test isapprox(MathProgBase.getobjval(m), -99.0, rtol=1e-14)
 
 # Now let's do the same warmstart, but on a new instance of the same problem
 primal_sol = m.primal_sol
@@ -48,8 +47,7 @@ m = MathProgBase.ConicModel(s)
 MathProgBase.loadproblem!(m, -obj, A, rowub, [(:NonNeg,1:3)],[(:NonNeg,1:5)])
 MathProgBase.setwarmstart!(m, primal_sol; dual_sol = dual_sol, slack = slack)
 MathProgBase.optimize!(m)
-@test isapprox(MathProgBase.getobjval(m), -99.0, atol=1e-12, rtol=0.0)
-@test !isapprox(MathProgBase.getobjval(m), -99.0, atol=1e-14, rtol=0.0)
+@test isapprox(MathProgBase.getobjval(m), -99.0, rtol=1e-14)
 
 # tests for incorrect options
 s = SCSSolver(eps=1e-12, epps=1.0)
