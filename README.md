@@ -14,18 +14,17 @@ You can install SCS.jl through the Julia package manager:
 julia> Pkg.add("SCS")
 ```
 
-SCS.jl will use [BinaryProvider.jl](https://github.com/JuliaPackaging/BinaryProvider.jl) to automatically install the SCS binaries. Note that if you are not using the official Julia binaries from `https://julialang.org/downloads/` you may need a custom install of the SCS binaries.
+SCS.jl will use `SCS_jll` and binaries built by the [Yggdrasil](https://github.com/JuliaPackaging/Yggdrasil) infrastructure. Note that if you are not using the official Julia binaries from `https://julialang.org/downloads/` you may need a custom install of the SCS binaries.
 
 ## Custom Installation
 
-Custom build binaries will allow to use e.g. the indirect solver on (a CUDA-enabled) gpu,
-however special caution is required during the compilation of the `scs` libraries to ensure proper options and linking:
+Custom build binaries are needed when using non-standard compile options, or non-official julia binaries. Special caution is required during the compilation of the `scs` libraries to ensure proper options and linking:
 
   * `libscsdir` and `libscsindir` need to be compiled with `DLONG=1`.
   * (optional) `libscsgpuindir` needs to be compiled with `DLONG=0`
 
 All of these libraries should be linked against the OpenBLAS library which julia uses.
-For the official julia binaries this can be achieved (starting from (this commit)[https://github.com/cvxgrp/scs/commit/e6ab81db115bb37502de0a9917041a0bc2ded313]) by e.g.
+For the official julia binaries this can be achieved (starting from [this commit](https://github.com/cvxgrp/scs/commit/e6ab81db115bb37502de0a9917041a0bc2ded313)) by e.g.
 
 ```bash
 cd SCS_SOURCE_DIR
@@ -37,7 +36,8 @@ make USE_OPENMP=1 BLAS64=1 BLASSUFFIX=_64_ DLONG=0 BLASLDFLAGS="-L$JULIA_BLAS_PA
 where
  * `SCS_SOURCE_DIR` is the main directory of the source of `scs`, and
  * `JULIA_BLAS_PATH` is the path to the directory containing BLAS library used by `julia`.
-(Before `julia-1.3`: the path to julia-shipped libraries e.g. `abspath(joinpath(Sys.BINDIR, "..", "lib", "julia"))`), afterwards the path to `BLAS` library artifact).
+   - Before `julia-1.3`: `abspath(joinpath(Sys.BINDIR, "..", "lib", "julia"))`),
+   - afterwards: the path to `BLAS` library artifact, e.g. `joinpath(OpenBLAS_jll.artifact_dir, "lib", "julia")`
 
 To use custom built SCS binaries with `SCS.jl` set the environment variable
 `JULIA_SCS_LIBRARY_PATH` to `SCS_SOURCE_DIR/opt` and build `SCS.jl`:
