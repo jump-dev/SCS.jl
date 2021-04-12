@@ -76,8 +76,8 @@ optimize!(problem)
 ```
 
 Moreover, you may select one of the linear solvers to be used by `SCS.Optimizer`
-via `linear_solver` keyword. The options available are `SCS.IndirectSolver` (the
-default) and `SCS.DirectSolver`. A third option for using a GPU is experimental,
+via `linear_solver` keyword. The options available are `SCS.DirectSolver` (the
+default) and `SCS.IndirectSolver`. A third option for using a GPU is experimental,
 see the section below.
 
 #### SCS on GPU
