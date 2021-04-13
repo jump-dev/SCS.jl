@@ -83,14 +83,15 @@ see the section below.
 #### SCS on GPU
 
 An experimental `SCS.GpuIndirectSolver` can be used by either providing the
-appropriate libraries in a custom installation, or via the default binaries. The
-latter depends on `CUDA_jll` version `9.0`, which must be installed and loaded
+appropriate libraries in a custom installation, or via the default binaries.
+`SCS_jll-2.1.3` depends on `CUDA_jll` version `10.1`, while prior versions require
+`CUDA_jll` in version`9.0`. In both cases `CUDA_jll` must be installed and loaded
 **before* `SCS`.
 
 ```julia
 julia> import Pkg
 
-julia> Pkg.add(Pkg.PackageSpec(name = "CUDA_jll", version = "9.0"))
+julia> Pkg.add(Pkg.PackageSpec(name = "CUDA_jll", version = "10.1"))
 
 julia> using CUDA_jll  # This must be called before `using SCS`.
 
