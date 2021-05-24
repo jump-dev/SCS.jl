@@ -54,6 +54,13 @@ function rows(model::GeometricConicForm, ci::CI{MOI.VectorAffineFunction{Float64
     return ci.value .+ (1:model.dimension[ci.value])
 end
 
+function MOI.supports(
+    ::GeometricConicForm,
+    ::MOI.VariablePrimalStart,
+    ::Type{MOI.VariableIndex},
+)
+    return true
+end
 function MOI.set(::GeometricConicForm, ::MOI.VariablePrimalStart,
                  ::MOI.VariableIndex, ::Nothing)
 end
