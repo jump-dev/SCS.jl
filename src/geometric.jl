@@ -54,12 +54,26 @@ function rows(model::GeometricConicForm, ci::CI{MOI.VectorAffineFunction{Float64
     return ci.value .+ (1:model.dimension[ci.value])
 end
 
+function MOI.supports(
+    ::GeometricConicForm,
+    ::MOI.VariablePrimalStart,
+    ::Type{MOI.VariableIndex},
+)
+    return true
+end
 function MOI.set(::GeometricConicForm, ::MOI.VariablePrimalStart,
                  ::MOI.VariableIndex, ::Nothing)
 end
 function MOI.set(model::GeometricConicForm, ::MOI.VariablePrimalStart,
                  vi::MOI.VariableIndex, value::Float64)
     model.primal[vi.value] = value
+end
+function MOI.supports(
+    ::GeometricConicForm,
+    ::MOI.ConstraintPrimalStart,
+    ::Type{<:MOI.ConstraintIndex},
+)
+    return true
 end
 function MOI.set(::GeometricConicForm, ::MOI.ConstraintPrimalStart,
                  ::MOI.ConstraintIndex, ::Nothing)
@@ -68,6 +82,14 @@ function MOI.set(model::GeometricConicForm, ::MOI.ConstraintPrimalStart,
                  ci::MOI.ConstraintIndex, value)
     offset = constroffset(model, ci)
     model.slack[rows(model, ci)] .= value
+end
+
+function MOI.supports(
+    ::GeometricConicForm,
+    ::MOI.ConstraintDualStart,
+    ::Type{<:MOI.ConstraintIndex},
+)
+    return true
 end
 function MOI.set(::GeometricConicForm, ::MOI.ConstraintDualStart,
                   ::MOI.ConstraintIndex, ::Nothing)
