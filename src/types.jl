@@ -33,8 +33,13 @@ struct ManagedSCSMatrix{T<:SCSInt}
     colptr::Vector{T}
     scsmatref::Base.RefValue{SCSMatrix{T}}
 
-    function ManagedSCSMatrix{T}(m::Integer, n::Integer, values::Vector{Cdouble},
-                                 rowval::Vector{T}, colptr::Vector{T}) where T
+    function ManagedSCSMatrix{T}(
+        m::Integer,
+        n::Integer,
+        values::Vector{Cdouble},
+        rowval::Vector{T},
+        colptr::Vector{T},
+    ) where {T}
         # scsmatref holds the reference to SCSMatrix created out of data in ManagedSCSMatrix.
         # this way the reference to SCSMatrix always points to valid data
         # as long as the ManagedSCSMatrix is not GC collected.
@@ -44,8 +49,7 @@ struct ManagedSCSMatrix{T<:SCSInt}
         #   `Ref{SCSMatrix}`
         # in the type tuple when ccalling with `scsmatref`
 
-        scsmat = SCSMatrix{T}(
-            pointer(values), pointer(rowval), pointer(colptr), m, n)
+        scsmat = SCSMatrix{T}(pointer(values), pointer(rowval), pointer(colptr), m, n)
 
         return new{T}(values, rowval, colptr, Base.cconvert(Ref{SCSMatrix{T}}, scsmat))
     end
@@ -65,7 +69,7 @@ function ManagedSCSMatrix{T}(m::Integer, n::Integer, A::SparseMatrixCSC) where T
     return ManagedSCSMatrix{T}(m, n, values, rowval, colptr)
 end
 
-function ManagedSCSMatrix{T}(m::Integer, n::Integer, A::AbstractMatrix) where T
+function ManagedSCSMatrix{T}(m::Integer, n::Integer, A::AbstractMatrix) where {T}
     return ManagedSCSMatrix{T}(m, n, sparse(A))
 end
 
@@ -168,16 +172,11 @@ function SCSSettings(linear_solver::Type{<:LinearSolver}; options...)
 
     T = scsint_t(linear_solver)
 
-    A = ManagedSCSMatrix{T}(0,0,spzeros(0,0))
-    P = ManagedSCSMatrix{T}(0,0,spzeros(0,0))
+    A = ManagedSCSMatrix{T}(0, 0, spzeros(0, 0))
+    P = ManagedSCSMatrix{T}(0, 0, spzeros(0, 0))
     default_settings = Base.cconvert(Ref{SCSSettings{T}}, SCSSettings{T}())
     a = Float64[]
-    dummy_data = SCSData(0,0,
-        A,
-        P,
-        a,
-        a,
-        default_settings)
+    dummy_data = SCSData(0, 0, A, P, a, a, default_settings)
 
     Base.GC.@preserve A P default_settings a begin
         SCS_set_default_settings(linear_solver, dummy_data)
@@ -196,20 +195,32 @@ struct SCSData{T<:SCSInt}
     stgs::Ptr{SCSSettings{T}}
 end
 
-function SCSData(m::Integer, n::Integer,
+"""
+    SCSData
+SCS struct with problem definition.
+
+NOTE: The `A`, `P`, `b` and `c` are stored as **pointers** in the struct, so be careful to ensure
+that a Julia references to these arrays exists as long as `SCSData` will be used.
+"""
+function SCSData(
+    m::Integer,
+    n::Integer,
     A::ManagedSCSMatrix{T},
     P::ManagedSCSMatrix{T},
     b::Vector{Float64},
     c::Vector{Float64},
-    stgs::Ref{SCSSettings{T}}) where T
+    stgs::Ref{SCSSettings{T}},
+) where {T}
     @assert csize(A) == (size(b, 1), size(c, 1)) == (m, n)
     @assert csize(P) == (n, n)
-    return SCSData{T}(m, n,
+    return SCSData{T}(
+        m,
+        n,
         Base.unsafe_convert(Ref{SCSMatrix{T}}, A.scsmatref), # Ptr{SCSMatrix{T}}
         Base.unsafe_convert(Ref{SCSMatrix{T}}, P.scsmatref), # Ptr{SCSMatrix{T}}
         pointer(b),
         pointer(c),
-        Base.unsafe_convert(Ref{SCSSettings{T}}, stgs) # Ptr{SCSSettings{T}}
+        Base.unsafe_convert(Ref{SCSSettings{T}}, stgs), # Ptr{SCSSettings{T}}
     )
 end
 
