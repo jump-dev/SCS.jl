@@ -4,6 +4,7 @@ using Libdl
 using Requires
 
 if haskey(ENV, "JULIA_SCS_LIBRARY_PATH") || VERSION < v"1.3"
+    haskey(ENV, "JULIA_SCS_LIBRARY_PATH") && @info "using local SCS libraries at $(ENV["JULIA_SCS_LIBRARY_PATH"])"
     if isfile(joinpath(dirname(@__FILE__), "..", "deps", "deps.jl"))
         include(joinpath(dirname(@__FILE__), "..", "deps", "deps.jl"))
     else
