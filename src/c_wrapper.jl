@@ -1,5 +1,3 @@
-export SCS_init, SCS_solve, SCS_finish, SCS_version
-
 # SCS solves a problem of the form
 # minimize        c' * x
 # subject to      A * x + s = b
