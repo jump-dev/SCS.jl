@@ -8,6 +8,7 @@
 #############################################################################
 
 using MathProgBase
+using DelimitedFiles
 
 @testset "SCS options" begin
     # The normal test
@@ -35,7 +36,7 @@ using MathProgBase
 
     # With a warmstart from the eps = 1e-10 solution, solution should be extremely accurate even after 1 iteration
     SCS.addoption!(m, :warm_start, true)
-    SCS.addoption!(m, :max_iters, 151) #!!!! below 151 it gets Nan
+    SCS.addoption!(m, :max_iters, 51) #!!!! below 51 it gets Nan
     MathProgBase.optimize!(m)
     @test isapprox(MathProgBase.getobjval(m), -99.0, atol=1e-9, rtol=0.0)
     @test !isapprox(MathProgBase.getobjval(m), -99.0, atol=1e-10, rtol=0.0)
@@ -86,5 +87,32 @@ using MathProgBase
             msg *= "SCS.DirectSolver and SCS.IndirectSolver."
         end
         @test err.msg == msg
+    end
+
+    let
+        tn = tempname()
+        dtn = deepcopy(tn)
+        s = SCSSolver(eps_abs=1e-12, log_csv_filename=tn)
+        m = MathProgBase.ConicModel(s)
+        MathProgBase.loadproblem!(m, -obj, A, rowub, [(:NonNeg,1:3)],[(:NonNeg,1:5)])
+
+        @test !isfile(dtn)
+        MathProgBase.optimize!(m)
+        @test isfile(dtn)
+
+        scs_log = readdlm(dtn, ',')
+        @test scs_log[1,1:4] == ["iter", "res_pri", "res_dual", "gap"]
+    end
+
+    let
+        tn = tempname()
+        dtn = deepcopy(tn)
+        s = SCSSolver(eps_abs=1e-12, write_data_filename=tn)
+        m = MathProgBase.ConicModel(s)
+        MathProgBase.loadproblem!(m, -obj, A, rowub, [(:NonNeg,1:3)],[(:NonNeg,1:5)])
+
+        @test !isfile(dtn)
+        MathProgBase.optimize!(m)
+        @test isfile(dtn)
     end
 end

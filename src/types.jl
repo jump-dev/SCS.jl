@@ -73,6 +73,13 @@ function ManagedSCSMatrix{T}(m::Integer, n::Integer, A::AbstractMatrix) where {T
     return ManagedSCSMatrix{T}(m, n, sparse(A))
 end
 
+"""
+    SCSSettings
+SCS struct with parameters controlling scs.
+
+NOTE: The `write_data_filename` and `log_csv_filename` are stored as **pointers** in the struct,
+so be careful to ensure that a Julia references to these arrays exists as long as `SCSSettings` will be used.
+"""
 struct SCSSettings{T<:SCSInt}
     normalize::T # boolean, heuristic data rescaling
     scale::Cdouble # if normalized, set factor for rescales
@@ -107,8 +114,8 @@ struct SCSSettings{T<:SCSInt}
         acceleration_lookback,
         acceleration_interval,
         adaptive_scaling,
-        write_data_filename,
-        log_csv_filename,
+        write_data_filename::Union{String, Cstring},
+        log_csv_filename::Union{String, Cstring},
     ) where {T} = new{T}(
         normalize,
         scale,
@@ -124,8 +131,8 @@ struct SCSSettings{T<:SCSInt}
         acceleration_lookback,
         acceleration_interval,
         adaptive_scaling,
-        write_data_filename,
-        log_csv_filename,
+        Base.unsafe_convert(Cstring, write_data_filename),
+        Base.unsafe_convert(Cstring, log_csv_filename),
     )
 end
 
@@ -169,18 +176,14 @@ function _SCS_user_settings(
 end
 
 function SCSSettings(linear_solver::Type{<:LinearSolver}; options...)
-
     T = scsint_t(linear_solver)
-
-    A = ManagedSCSMatrix{T}(0, 0, spzeros(0, 0))
-    P = ManagedSCSMatrix{T}(0, 0, spzeros(0, 0))
     default_settings = Base.cconvert(Ref{SCSSettings{T}}, SCSSettings{T}())
-    a = Float64[]
-    dummy_data = SCSData(0, 0, A, P, a, a, default_settings)
+    scsm_ptr = convert(Ptr{SCSMatrix{T}}, C_NULL)
+    ptr_d = convert(Ptr{Cdouble}, C_NULL)
+    data = SCSData{T}(0, 0, scsm_ptr, scsm_ptr, ptr_d, ptr_d,
+        Base.unsafe_convert(Ref{SCSSettings{T}}, default_settings))
 
-    Base.GC.@preserve A P default_settings a begin
-        SCS_set_default_settings(linear_solver, dummy_data)
-    end
+    SCS_set_default_settings(linear_solver, data)
 
     return _SCS_user_settings(default_settings[]; options...)
 end
@@ -199,7 +202,7 @@ end
     SCSData
 SCS struct with problem definition.
 
-NOTE: The `A`, `P`, `b` and `c` are stored as **pointers** in the struct, so be careful to ensure
+NOTE: The `A`, `P`, `b`, `c` and `stgs` are stored as **pointers** in the struct, so be careful to ensure
 that a Julia references to these arrays exists as long as `SCSData` will be used.
 """
 function SCSData(

@@ -72,12 +72,12 @@ function SCS_solve(linear_solver::Type{<:LinearSolver},
 
     data = SCSData(m, n, A, P, b, c, settings)
     # data holds pointers to objects which need to be protected from GC:
-    # A, b, c and settings
+    # A, P, b, c and settings
 
     cone = SCSCone{T}(f, l, bu, bl, q_T, s_T, ep, ed, p)
     info_ref = Base.cconvert(Ref{SCSInfo{T}}, SCSInfo{T}())
 
-    Base.GC.@preserve A P b c settings bu bl q_T s_T p begin
+    Base.GC.@preserve A P b c settings bu bl q_T s_T p options begin
         p_work = SCS_init(linear_solver, data, cone, info_ref)
         status = SCS_solve(linear_solver, p_work, data, cone, solution, info_ref)
         SCS_finish(linear_solver, p_work)
