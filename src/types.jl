@@ -292,8 +292,8 @@ end
 struct SCSCone{T<:SCSInt}
     f::T # number of linear equality constraints
     l::T # length of LP cone
-    bu::Ptr{Cdouble} # upper box values, length = bsize - 1
-    bl::Ptr{Cdouble} # lower box values, length = bsize - 1
+    bu::Ptr{Cdouble} # upper box values, length = bsize
+    bl::Ptr{Cdouble} # lower box values, length = bsize
     bsize::T # length of box cone constraint, including scale t
     q::Ptr{T} # array of second-order cone constraints
     qsize::T # length of SOC array
