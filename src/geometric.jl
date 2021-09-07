@@ -1,6 +1,6 @@
 mutable struct GeometricConicForm{T, AT, C} <: MOI.ModelLike
     cone_types::C
-    cone_types_dict::Dict{DataType, Int}
+    cone_types_dict::Dict{Type, Int}
     num_rows::Vector{Int}
     dimension::Dict{Int, Int}
     A::Union{Nothing, AT} # The constraints are
@@ -14,7 +14,7 @@ mutable struct GeometricConicForm{T, AT, C} <: MOI.ModelLike
     function GeometricConicForm{T, AT}(cone_types) where {T, AT}
         model = new{T, AT, typeof(cone_types)}()
         model.cone_types = cone_types
-        model.cone_types_dict = Dict{DataType, Int}(
+        model.cone_types_dict = Dict{Type, Int}(
             s => i for (i, s) in enumerate(cone_types)
         )
         model.num_rows = zeros(Int, length(cone_types))
@@ -102,7 +102,7 @@ end
 function MOI.set(model::GeometricConicForm, ::MOI.ObjectiveSense, sense::MOI.OptimizationSense)
     model.sense = sense
 end
-variable_index_value(t::MOI.ScalarAffineTerm) = t.variable_index.value
+variable_index_value(t::MOI.ScalarAffineTerm) = t.variable.value
 variable_index_value(t::MOI.VectorAffineTerm) = variable_index_value(t.scalar_term)
 function MOI.set(model::GeometricConicForm, ::MOI.ObjectiveFunction,
                  f::MOI.ScalarAffineFunction{Float64})
@@ -170,7 +170,7 @@ function MOI.copy_to(dest::GeometricConicForm, src::MOI.ModelLike; preprocess = 
     idxmap = MOIU.IndexMap()
 
     has_constraints = BitSet()
-    for (F, S) in MOI.get(src, MOI.ListOfConstraints())
+    for (F, S) in MOI.get(src, MOI.ListOfConstraintTypesPresent())
         i = get(dest.cone_types_dict, S, nothing)
         if i === nothing || F != MOI.VectorAffineFunction{Float64}
             throw(MOI.UnsupportedConstraint{F, S}())

@@ -2,7 +2,7 @@ using Test
 
 using MathOptInterface
 const MOI = MathOptInterface
-const MOIT = MOI.Test
+const MOIT = MOI.DeprecatedTest
 const MOIU = MOI.Utilities
 const MOIB = MOI.Bridges
 
@@ -22,7 +22,7 @@ function moi_tests(T)
     MOI.empty!(CACHE)
     cached = MOIU.CachingOptimizer(CACHE, optimizer)
     bridged = MOIB.full_bridge_optimizer(cached, Float64)
-    config = MOIT.TestConfig(atol=1e-5)
+    config = MOIT.Config(atol=1e-5)
 
     @testset "Unit" begin
         MOIT.unittest(bridged, config, [
@@ -57,13 +57,12 @@ function moi_tests(T)
     end
 end
 
-@testset "MOI.RawParameter" begin
+@testset "MOI.RawOptimizerAttribute" begin
     model = SCS.Optimizer()
-    # TODO(odow): remove symbol cases when deprecation is removed.
-    MOI.set(model, MOI.RawParameter(:eps), 1.0)
-    @test MOI.get(model, MOI.RawParameter(:eps)) == 1.0
-    @test MOI.get(model, MOI.RawParameter("eps")) == 1.0
-    MOI.set(model, MOI.RawParameter("eps"), 2.0)
-    @test MOI.get(model, MOI.RawParameter(:eps)) == 2.0
-    @test MOI.get(model, MOI.RawParameter("eps")) == 2.0
+    MOI.set(model, MOI.RawOptimizerAttribute("eps"), 1.0)
+    @test MOI.get(model, MOI.RawOptimizerAttribute("eps")) == 1.0
+    @test MOI.get(model, MOI.RawOptimizerAttribute("eps")) == 1.0
+    MOI.set(model, MOI.RawOptimizerAttribute("eps"), 2.0)
+    @test MOI.get(model, MOI.RawOptimizerAttribute("eps")) == 2.0
+    @test MOI.get(model, MOI.RawOptimizerAttribute("eps")) == 2.0
 end
