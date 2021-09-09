@@ -30,20 +30,39 @@ export SCS_init, SCS_solve, SCS_finish, SCS_version
 # p (array of power cone params, must be in [-1, 1], negative values specify the dual cone)
 #
 # Returns a Solution object.
-function SCS_solve(linear_solver::Type{<:LinearSolver},
-        m::Integer, n::Integer, A::ManagedSCSMatrix{T}, b::Vector{Float64}, c::Vector{Float64},
-        f::Integer, l::Integer, q::Vector{<:Integer}, s::Vector{<:Integer},
-        ep::Integer, ed::Integer, p::Vector{Float64},
-        primal_sol::Vector{Float64}=zeros(n),
-        dual_sol::Vector{Float64}=zeros(m),
-        slack::Vector{Float64}=zeros(m);
-        options...) where T
+function SCS_solve(
+    linear_solver::Type{<:LinearSolver},
+    m::Integer,
+    n::Integer,
+    A::ManagedSCSMatrix{T},
+    b::Vector{Float64},
+    c::Vector{Float64},
+    f::Integer,
+    l::Integer,
+    q::Vector{<:Integer},
+    s::Vector{<:Integer},
+    ep::Integer,
+    ed::Integer,
+    p::Vector{Float64},
+    primal_sol::Vector{Float64} = zeros(n),
+    dual_sol::Vector{Float64} = zeros(m),
+    slack::Vector{Float64} = zeros(m);
+    options...,
+) where {T}
+    n > 0 || throw(
+        ArgumentError(
+            "The number of variables in SCSModel must be greater than 0",
+        ),
+    )
+    m > 0 || throw(
+        ArgumentError(
+            "The number of constraints in SCSModel must be greater than 0",
+        ),
+    )
 
-    n > 0 || throw(ArgumentError("The number of variables in SCSModel must be greater than 0"))
-    m > 0 || throw(ArgumentError("The number of constraints in SCSModel must be greater than 0"))
-
-    ws = (:warm_start=>true) in options
-    warmstart_sizes_are_correct = length(primal_sol) == n && length(dual_sol) == length(slack) == m
+    ws = (:warm_start => true) in options
+    warmstart_sizes_are_correct =
+        length(primal_sol) == n && length(dual_sol) == length(slack) == m
 
     if warmstart_sizes_are_correct
         if !ws
@@ -52,7 +71,9 @@ function SCS_solve(linear_solver::Type{<:LinearSolver},
             fill!(slack, 0.0)
         end
     else
-        ws && throw(ArgumentError("The provided warmstart doesn't match problem sizes"))
+        ws && throw(
+            ArgumentError("The provided warmstart doesn't match problem sizes"),
+        )
         primal_sol = zeros(n)
         dual_sol = zeros(m)
         slack = zeros(m)
@@ -62,9 +83,13 @@ function SCS_solve(linear_solver::Type{<:LinearSolver},
     q_T = convert(Vector{T}, q)
     s_T = convert(Vector{T}, s)
 
-    solution = SCSSolution(pointer(primal_sol), pointer(dual_sol), pointer(slack))
+    solution =
+        SCSSolution(pointer(primal_sol), pointer(dual_sol), pointer(slack))
 
-    settings = Base.cconvert(Ref{SCSSettings{T}}, SCSSettings(linear_solver; options...))
+    settings = Base.cconvert(
+        Ref{SCSSettings{T}},
+        SCSSettings(linear_solver; options...),
+    )
 
     data = SCSData(m, n, A, b, c, settings)
     # data holds pointers to objects which need to be protected from GC:
@@ -75,25 +100,53 @@ function SCS_solve(linear_solver::Type{<:LinearSolver},
 
     Base.GC.@preserve A settings b c begin
         p_work = SCS_init(linear_solver, data, cone, info_ref)
-        status = SCS_solve(linear_solver, p_work, data, cone, solution, info_ref)
+        status =
+            SCS_solve(linear_solver, p_work, data, cone, solution, info_ref)
         SCS_finish(linear_solver, p_work)
     end
 
     return Solution(primal_sol, dual_sol, slack, info_ref[], status)
 end
-function SCS_solve(linear_solver::Type{<:LinearSolver},
-        m::Integer, n::Integer, A::VecOrMatOrSparse, b::Vector{Float64}, c::Vector{Float64},
-        f::Integer, l::Integer, q::Vector{<:Integer}, s::Vector{<:Integer},
-        ep::Integer, ed::Integer, p::Vector{Float64},
-        primal_sol::Vector{Float64}=zeros(n),
-        dual_sol::Vector{Float64}=zeros(m),
-        slack::Vector{Float64}=zeros(m);
-        options...)
+function SCS_solve(
+    linear_solver::Type{<:LinearSolver},
+    m::Integer,
+    n::Integer,
+    A::VecOrMatOrSparse,
+    b::Vector{Float64},
+    c::Vector{Float64},
+    f::Integer,
+    l::Integer,
+    q::Vector{<:Integer},
+    s::Vector{<:Integer},
+    ep::Integer,
+    ed::Integer,
+    p::Vector{Float64},
+    primal_sol::Vector{Float64} = zeros(n),
+    dual_sol::Vector{Float64} = zeros(m),
+    slack::Vector{Float64} = zeros(m);
+    options...,
+)
     T = scsint_t(linear_solver)
-    return SCS_solve(linear_solver, m, n, ManagedSCSMatrix{T}(m, n, A), b, c,
-                     f, l, q, s, ep, ed, p, primal_sol, dual_sol, slack; options...)
+    return SCS_solve(
+        linear_solver,
+        m,
+        n,
+        ManagedSCSMatrix{T}(m, n, A),
+        b,
+        c,
+        f,
+        l,
+        q,
+        s,
+        ep,
+        ed,
+        p,
+        primal_sol,
+        dual_sol,
+        slack;
+        options...,
+    )
 end
-
 
 # Wrappers for the direct C API.
 # Do not call these wrapper methods directly unless you understand the
@@ -103,36 +156,69 @@ for linear_solver in available_solvers
     lib = clib(linear_solver)
     T = scsint_t(linear_solver)
     @eval begin
-        function SCS_set_default_settings(::Type{$linear_solver}, data::SCSData{$T})
-            ccall((:scs_set_default_settings, $lib), Cvoid, (Ref{SCSData{$T}},),
-            data)
+        function SCS_set_default_settings(
+            ::Type{$linear_solver},
+            data::SCSData{$T},
+        )
+            return ccall(
+                (:scs_set_default_settings, $lib),
+                Cvoid,
+                (Ref{SCSData{$T}},),
+                data,
+            )
         end
 
         # data and cone are const in :scs_init
-        function SCS_init(::Type{$linear_solver}, data::SCSData{$T}, cone::SCSCone{$T}, info_ref::Ref{SCSInfo{$T}})
-
-            p_work = ccall((:scs_init, $lib), Ptr{Cvoid},
+        function SCS_init(
+            ::Type{$linear_solver},
+            data::SCSData{$T},
+            cone::SCSCone{$T},
+            info_ref::Ref{SCSInfo{$T}},
+        )
+            p_work = ccall(
+                (:scs_init, $lib),
+                Ptr{Cvoid},
                 (Ref{SCSData{$T}}, Ref{SCSCone{$T}}, Ref{SCSInfo{$T}}),
-                data, cone, info_ref)
+                data,
+                cone,
+                info_ref,
+            )
 
             return p_work
         end
 
         # data and cone are const in :scs_solve
         # solution struct contains only `Ptr`s so passing by value
-        function SCS_solve(::Type{$linear_solver}, p_work::Ptr{Nothing}, data::SCSData{$T}, cone::SCSCone{$T}, solution::SCSSolution, info_ref::Ref{SCSInfo{$T}})
-
-            status = ccall((:scs_solve, $lib), $T,
-                (Ptr{Cvoid}, Ref{SCSData{$T}}, Ref{SCSCone{$T}}, Ref{SCSSolution}, Ref{SCSInfo{$T}}),
-                p_work, data, cone, solution, info_ref)
+        function SCS_solve(
+            ::Type{$linear_solver},
+            p_work::Ptr{Nothing},
+            data::SCSData{$T},
+            cone::SCSCone{$T},
+            solution::SCSSolution,
+            info_ref::Ref{SCSInfo{$T}},
+        )
+            status = ccall(
+                (:scs_solve, $lib),
+                $T,
+                (
+                    Ptr{Cvoid},
+                    Ref{SCSData{$T}},
+                    Ref{SCSCone{$T}},
+                    Ref{SCSSolution},
+                    Ref{SCSInfo{$T}},
+                ),
+                p_work,
+                data,
+                cone,
+                solution,
+                info_ref,
+            )
 
             return status
         end
 
         function SCS_finish(::Type{$linear_solver}, p_work::Ptr{Nothing})
-            ccall((:scs_finish, $lib), Cvoid,
-                (Ptr{Cvoid}, ),
-                p_work)
+            return ccall((:scs_finish, $lib), Cvoid, (Ptr{Cvoid},), p_work)
         end
     end
 end

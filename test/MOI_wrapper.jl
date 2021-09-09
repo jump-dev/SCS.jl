@@ -12,7 +12,7 @@ const CACHE = MOIU.UniversalFallback(MOIU.Model{Float64}())
 import SCS
 
 function moi_tests(T)
-    optimizer = SCS.Optimizer(linear_solver=T, eps=1e-6)
+    optimizer = SCS.Optimizer(linear_solver = T, eps = 1e-6)
     MOI.set(optimizer, MOI.Silent(), true)
 
     @testset "SolverName" begin
@@ -22,21 +22,27 @@ function moi_tests(T)
     MOI.empty!(CACHE)
     cached = MOIU.CachingOptimizer(CACHE, optimizer)
     bridged = MOIB.full_bridge_optimizer(cached, Float64)
-    config = MOIT.TestConfig(atol=1e-5)
+    config = MOIT.TestConfig(atol = 1e-5)
 
     @testset "Unit" begin
-        MOIT.unittest(bridged, config, [
-            # FIXME `NumberOfThreads` not supported.
-            "number_threads",
-            # `TimeLimitSec` not supported.
-            "time_limit_sec",
-            # ArgumentError: The number of constraints in SCSModel must be greater than 0
-            "solve_unbounded_model",
-            # Integer and ZeroOne sets are not supported
-            "solve_integer_edge_cases", "solve_objbound_edge_cases",
-            "solve_zero_one_with_bounds_1",
-            "solve_zero_one_with_bounds_2",
-            "solve_zero_one_with_bounds_3"])
+        MOIT.unittest(
+            bridged,
+            config,
+            [
+                # FIXME `NumberOfThreads` not supported.
+                "number_threads",
+                # `TimeLimitSec` not supported.
+                "time_limit_sec",
+                # ArgumentError: The number of constraints in SCSModel must be greater than 0
+                "solve_unbounded_model",
+                # Integer and ZeroOne sets are not supported
+                "solve_integer_edge_cases",
+                "solve_objbound_edge_cases",
+                "solve_zero_one_with_bounds_1",
+                "solve_zero_one_with_bounds_2",
+                "solve_zero_one_with_bounds_3",
+            ],
+        )
     end
 
     @testset "Continuous linear problems with $T" begin

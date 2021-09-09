@@ -18,4 +18,3 @@ end
 for s in SCS.available_solvers
     moi_tests(s)
 end
-

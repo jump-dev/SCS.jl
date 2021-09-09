@@ -17,4 +17,3 @@ feasible_basic_problems(SCS.GpuIndirectSolver)
 
 include("MOI_wrapper.jl")
 moi_tests(SCS.GpuIndirectSolver)
-

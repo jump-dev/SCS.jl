@@ -4,33 +4,33 @@ mutable struct SparseMatrixCSRtoCSC{T}
     colptr::Vector{T}
     rowval::Vector{T}
     nzval::Vector{Float64}
-    function SparseMatrixCSRtoCSC{T}(n) where T
+    function SparseMatrixCSRtoCSC{T}(n) where {T}
         A = new()
         A.n = n
         A.colptr = zeros(T, n + 1)
         return A
     end
 end
-function allocate_nonzeros(A::SparseMatrixCSRtoCSC{T}) where T
+function allocate_nonzeros(A::SparseMatrixCSRtoCSC{T}) where {T}
     for i in 3:length(A.colptr)
-        A.colptr[i] += A.colptr[i - 1]
+        A.colptr[i] += A.colptr[i-1]
     end
     A.rowval = Vector{T}(undef, A.colptr[end])
-    A.nzval = Vector{Float64}(undef, A.colptr[end])
+    return A.nzval = Vector{Float64}(undef, A.colptr[end])
 end
 function final_touch(A::SparseMatrixCSRtoCSC)
     for i in length(A.colptr):-1:2
-        A.colptr[i] = A.colptr[i - 1]
+        A.colptr[i] = A.colptr[i-1]
     end
-    A.colptr[1] = 0
+    return A.colptr[1] = 0
 end
 function _allocate_terms(colptr, indexmap, terms)
     for term in terms
-        colptr[indexmap[term.scalar_term.variable_index].value + 1] += 1
+        colptr[indexmap[term.scalar_term.variable_index].value+1] += 1
     end
 end
 function allocate_terms(A::SparseMatrixCSRtoCSC, indexmap, func)
-    _allocate_terms(A.colptr, indexmap, func.terms)
+    return _allocate_terms(A.colptr, indexmap, func.terms)
 end
 function _load_terms(colptr, rowval, nzval, indexmap, terms, offset)
     for term in terms
@@ -40,5 +40,12 @@ function _load_terms(colptr, rowval, nzval, indexmap, terms, offset)
     end
 end
 function load_terms(A::SparseMatrixCSRtoCSC, indexmap, func, offset)
-    _load_terms(A.colptr, A.rowval, A.nzval, indexmap, func.terms, offset)
+    return _load_terms(
+        A.colptr,
+        A.rowval,
+        A.nzval,
+        indexmap,
+        func.terms,
+        offset,
+    )
 end
