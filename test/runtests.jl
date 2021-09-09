@@ -8,18 +8,14 @@ end
 using Test
 using SCS
 
-solvers = SCS.available_solvers
-
 include("test_problems.jl")
 include("MOI_wrapper.jl")
 
-for s in solvers
+for s in SCS.available_solvers
     feasible_basic_problems(s)
 end
-include("options.jl")
-include("MPB_wrapper.jl")
 
-for s in solvers
+for s in SCS.available_solvers
     moi_tests(s)
 end
 

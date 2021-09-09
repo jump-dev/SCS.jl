@@ -32,7 +32,6 @@ include("types.jl")
 const available_solvers = [DirectSolver, IndirectSolver]
 
 include("c_wrapper.jl")
-include("MPB_wrapper.jl")
 include("MOI_wrapper.jl")
 
 end # module
