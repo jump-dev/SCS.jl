@@ -2,12 +2,16 @@ using SparseArrays
 
 export SCSMatrix, SCSData, SCSSettings, SCSSolution, SCSInfo, SCSCone
 
-VecOrMatOrSparse = Union{VecOrMat,SparseMatrixCSC{Float64,Int}}
+const VecOrMatOrSparse = Union{VecOrMat,SparseMatrixCSC{Float64,Int}}
 
-SCSInt = Union{Int32,Int64}
+const SCSInt = Union{Int32,Int64}
+
 abstract type LinearSolver end
+
 struct DirectSolver <: LinearSolver end
+
 struct IndirectSolver <: LinearSolver end
+
 struct GpuIndirectSolver <: LinearSolver end
 
 scsint_t(::Type{<:LinearSolver}) = Int
@@ -39,7 +43,8 @@ struct ManagedSCSMatrix{T<:SCSInt}
         rowval::Vector{T},
         colptr::Vector{T},
     ) where {T}
-        # scsmatref holds the reference to SCSMatrix created out of data in ManagedSCSMatrix.
+        # scsmatref holds the reference to SCSMatrix created out of data in
+        # ManagedSCSMatrix.
         # this way the reference to SCSMatrix always points to valid data
         # as long as the ManagedSCSMatrix is not GC collected.
         # One MUST
@@ -47,7 +52,6 @@ struct ManagedSCSMatrix{T<:SCSInt}
         # when assigning to a field of type `Ptr{SCSMatrix}`, or specify
         #   `Ref{SCSMatrix}`
         # in the type tuple when ccalling with `scsmatref`
-
         scsmat = SCSMatrix{T}(
             pointer(values),
             pointer(rowval),
@@ -55,7 +59,6 @@ struct ManagedSCSMatrix{T<:SCSInt}
             m,
             n,
         )
-
         return new{T}(
             values,
             rowval,

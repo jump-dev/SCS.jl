@@ -107,6 +107,7 @@ function SCS_solve(
 
     return Solution(primal_sol, dual_sol, slack, info_ref[], status)
 end
+
 function SCS_solve(
     linear_solver::Type{<:LinearSolver},
     m::Integer,

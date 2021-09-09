@@ -8,7 +8,8 @@ if haskey(ENV, "JULIA_SCS_LIBRARY_PATH") || VERSION < v"1.3"
         include(joinpath(dirname(@__FILE__), "..", "deps", "deps.jl"))
     else
         error(
-            "SCS not properly installed. Please run Pkg.build(\"SCS\") and restart julia",
+            "SCS not properly installed. Please run `Pkg.build(\"SCS\")` and " *
+            "restart julia",
         )
     end
 
@@ -17,7 +18,8 @@ if haskey(ENV, "JULIA_SCS_LIBRARY_PATH") || VERSION < v"1.3"
         depsdir = realpath(joinpath(dirname(@__FILE__), "..", "deps"))
         if vnum < v"2.1.0"
             error(
-                "Current SCS version installed is $vnum, but we require version 2.1.*",
+                "Current SCS version installed is $vnum, but we require " *
+                "version 2.1.*",
             )
         end
     end
@@ -27,8 +29,9 @@ else
     const direct = SCS_jll.libscsdir
 
     function __init__()
-        @require CUDA_jll = "e9e359dc-d701-5aa8-82ae-09bbf812ea83" include(
-            "c_wrapper_gpu.jl",
+        @require(
+            CUDA_jll = "e9e359dc-d701-5aa8-82ae-09bbf812ea83",
+            include("c_wrapper_gpu.jl"),
         )
     end
 end

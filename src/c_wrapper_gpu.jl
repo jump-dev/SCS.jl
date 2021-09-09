@@ -5,6 +5,7 @@ else
     const gpuindirect = SCS_GPU_jll.libscsgpuindir
     push!(available_solvers, GpuIndirectSolver)
 end
+
 for linear_solver in (GpuIndirectSolver,)
     # lib = gpuindirect # clib(linear_solver)
     T = scsint_t(linear_solver)

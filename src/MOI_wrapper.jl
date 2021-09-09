@@ -1,9 +1,5 @@
 using MathOptInterface
 const MOI = MathOptInterface
-const CI = MOI.ConstraintIndex
-const VI = MOI.VariableIndex
-
-const MOIU = MOI.Utilities
 
 include("matrix.jl")
 include("geometric.jl")
@@ -26,15 +22,18 @@ mutable struct MOISolution
     solve_time_sec::Float64
     iterations::Int
 end
-MOISolution() = MOISolution(
-    0, # SCS_UNFINISHED
-    "",
-    NaN,
-    NaN,
-    NaN,
-    0.0,
-    0,
-)
+
+function MOISolution()
+    return MOISolution(
+        0, # SCS_UNFINISHED
+        "",
+        NaN,
+        NaN,
+        NaN,
+        0.0,
+        0,
+    )
+end
 
 function _managed_matrix(A::SparseMatrixCSRtoCSC{T}) where {T}
     return ManagedSCSMatrix{T}(A.m, A.n, A.nzval, A.rowval, A.colptr)
@@ -95,6 +94,7 @@ function MOI.set(optimizer::Optimizer, param::MOI.RawParameter, value)
     end
     return optimizer.options[Symbol(param.name)] = value
 end
+
 function MOI.get(optimizer::Optimizer, param::MOI.RawParameter)
     # TODO(odow): remove warning in future version.
     if !(param.name isa String)
@@ -108,12 +108,15 @@ function MOI.get(optimizer::Optimizer, param::MOI.RawParameter)
 end
 
 MOI.supports(::Optimizer, ::MOI.Silent) = true
+
 function MOI.set(optimizer::Optimizer, ::MOI.Silent, value::Bool)
     return optimizer.silent = value
 end
+
 MOI.get(optimizer::Optimizer, ::MOI.Silent) = optimizer.silent
 
 MOI.is_empty(optimizer::Optimizer) = MOI.is_empty(optimizer.data)
+
 function MOI.empty!(optimizer::Optimizer)
     empty!(optimizer.cone.qa)
     empty!(optimizer.cone.sa)
@@ -175,22 +178,29 @@ function MOI.copy_to(dest::Optimizer, src::MOI.ModelLike; kws...)
     )
 end
 
-function _store_cone_data(::ConeData, ::MOI.Zeros) end
-function _store_cone_data(::ConeData, ::MOI.Nonnegatives) end
+_store_cone_data(::ConeData, ::MOI.Zeros) = nothing
+
+_store_cone_data(::ConeData, ::MOI.Nonnegatives) = nothing
+
 function _store_cone_data(cone::ConeData, set::MOI.SecondOrderCone)
     return push!(cone.qa, set.dimension)
 end
+
 function _store_cone_data(
     cone::ConeData,
     set::MOI.PositiveSemidefiniteConeTriangle,
 )
     return push!(cone.sa, set.side_dimension)
 end
-function _store_cone_data(::ConeData, ::MOI.ExponentialCone) end
-function _store_cone_data(::ConeData, ::MOI.DualExponentialCone) end
+
+_store_cone_data(::ConeData, ::MOI.ExponentialCone) = nothing
+
+_store_cone_data(::ConeData, ::MOI.DualExponentialCone) = nothing
+
 function _store_cone_data(cone::ConeData, set::MOI.PowerCone{Float64})
     return push!(cone.p, set.exponent)
 end
+
 function _store_cone_data(cone::ConeData, set::MOI.DualPowerCone{Float64})
     # SCS' convention: dual cones have a negative exponent.
     return push!(cone.p, -set.exponent)
@@ -198,12 +208,16 @@ end
 
 # Vectorized length for matrix dimension n
 sympackedlen(n) = div(n * (n + 1), 2)
+
 # Matrix dimension for vectorized length n
 sympackeddim(n) = div(isqrt(1 + 8n) - 1, 2)
+
 trimap(i::Integer, j::Integer) = i < j ? trimap(j, i) : div((i - 1) * i, 2) + j
+
 function trimapL(i::Integer, j::Integer, n::Integer)
     return i < j ? trimapL(j, i, n) : i + div((2n - j) * (j - 1), 2)
 end
+
 function _sympackedto(x, n, mapfrom, mapto)
     @assert length(x) == sympackedlen(n)
     y = similar(x)
@@ -212,16 +226,19 @@ function _sympackedto(x, n, mapfrom, mapto)
     end
     return y
 end
+
 function sympackedLtoU(x, n = sympackeddim(length(x)))
     return _sympackedto(x, n, (i, j) -> trimapL(i, j, n), trimap)
 end
+
 sympackedUtoL(x, n) = _sympackedto(x, n, trimap, (i, j) -> trimapL(i, j, n))
 
 # Scale coefficients depending on rows index
 # rows: List of row indices
 # coef: List of corresponding coefficients
 # d: dimension of set
-# rev: if true, we unscale instead (e.g. divide by √2 instead of multiply for PSD cone)
+# rev: if true, we unscale instead (e.g. divide by √2 instead of multiply for
+#      PSD cone)
 function _scalecoef(
     rows::AbstractVector{<:Integer},
     coef::Vector{Float64},
@@ -240,7 +257,9 @@ end
 
 # Unscale the coefficients in `coef` with respective rows in `rows` for a set `s`
 scalecoef(rows, coef, s) = _scalecoef(rows, coef, MOI.dimension(s), false)
-# Unscale the coefficients in `coef` with respective rows in `rows` for a set of type `S` with dimension `d`
+
+# Unscale the coefficients in `coef` with respective rows in `rows` for a set of
+# type `S` with dimension `d`
 function unscalecoef(coef)
     return _scalecoef(eachindex(coef), coef, sympackeddim(length(coef)), true)
 end
@@ -274,10 +293,12 @@ function _preprocess_function(func, set::MOI.PositiveSemidefiniteConeTriangle)
         MOI.VectorAffineTerm{Float64}[map_term(t) for t in func.terms],
         constant.(eachindex(func.constants)),
     )
-    # The rows have been reordered in `map_term` so we need to re-canonicalize to reorder the rows.
+    # The rows have been reordered in `map_term` so we need to re-canonicalize
+    # to reorder the rows.
     MOI.Utilities.canonicalize!(new_func)
     return new_func
 end
+
 _preprocess_function(func, set) = func
 
 function MOI.optimize!(optimizer::Optimizer)
@@ -343,6 +364,7 @@ end
 function MOI.get(optimizer::Optimizer, ::MOI.SolveTime)
     return optimizer.sol.solve_time_sec
 end
+
 function MOI.get(optimizer::Optimizer, ::MOI.RawStatusString)
     return optimizer.sol.raw_status
 end
@@ -393,15 +415,16 @@ end
 function MOI.get(optimizer::Optimizer, attr::MOI.ObjectiveValue)
     MOI.check_result_index_bounds(optimizer, attr)
     value = optimizer.sol.objective_value
-    if !MOIU.is_ray(MOI.get(optimizer, MOI.PrimalStatus()))
+    if !MOI.Utilities.is_ray(MOI.get(optimizer, MOI.PrimalStatus()))
         value += optimizer.sol.objective_constant
     end
     return value
 end
+
 function MOI.get(optimizer::Optimizer, attr::MOI.DualObjectiveValue)
     MOI.check_result_index_bounds(optimizer, attr)
     value = optimizer.sol.dual_objective_value
-    if !MOIU.is_ray(MOI.get(optimizer, MOI.DualStatus()))
+    if !MOI.Utilities.is_ray(MOI.get(optimizer, MOI.DualStatus()))
         value += optimizer.sol.objective_constant
     end
     return value
@@ -420,21 +443,34 @@ function MOI.get(optimizer::Optimizer, attr::MOI.PrimalStatus)
         MOI.INFEASIBLE_POINT
     end
 end
-function MOI.get(optimizer::Optimizer, attr::MOI.VariablePrimal, vi::VI)
+
+function MOI.get(
+    optimizer::Optimizer,
+    attr::MOI.VariablePrimal,
+    vi::MOI.VariableIndex,
+)
     MOI.check_result_index_bounds(optimizer, attr)
     return optimizer.data.primal[vi.value]
 end
-function MOI.get(optimizer::Optimizer, attr::MOI.VariablePrimal, vi::Vector{VI})
+
+function MOI.get(
+    optimizer::Optimizer,
+    attr::MOI.VariablePrimal,
+    vi::Vector{MOI.VariableIndex},
+)
     return MOI.get.(optimizer, attr, vi)
 end
+
 function post_process_result(x, ::Type{MOI.PositiveSemidefiniteConeTriangle})
     return unscalecoef(sympackedLtoU(x))
 end
+
 post_process_result(x, ::Type) = x
+
 function MOI.get(
     optimizer::Optimizer,
     attr::MOI.ConstraintPrimal,
-    ci::CI{F,S},
+    ci::MOI.ConstraintIndex{F,S},
 ) where {F,S}
     MOI.check_result_index_bounds(optimizer, attr)
     return post_process_result(
@@ -456,10 +492,11 @@ function MOI.get(optimizer::Optimizer, attr::MOI.DualStatus)
         MOI.INFEASIBLE_POINT
     end
 end
+
 function MOI.get(
     optimizer::Optimizer,
     attr::MOI.ConstraintDual,
-    ci::CI{F,S},
+    ci::MOI.ConstraintIndex{F,S},
 ) where {F,S}
     MOI.check_result_index_bounds(optimizer, attr)
     return post_process_result(optimizer.data.dual[rows(optimizer.data, ci)], S)

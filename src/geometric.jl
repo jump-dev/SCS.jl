@@ -25,13 +25,16 @@ mutable struct GeometricConicForm{T,AT,C} <: MOI.ModelLike
         return model
     end
 end
+
 MOI.is_empty(model::GeometricConicForm) = model.A === nothing
+
 function MOI.empty!(model::GeometricConicForm{T}) where {T}
     empty!(model.dimension)
     fill!(model.num_rows, 0)
     model.A = nothing
     model.sense = MOI.FEASIBILITY_SENSE
-    return model.objective_constant = zero(T)
+    model.objective_constant = zero(T)
+    return
 end
 
 function MOI.supports_constraint(
@@ -56,7 +59,7 @@ end
 
 function rows(
     model::GeometricConicForm,
-    ci::CI{MOI.VectorAffineFunction{Float64}},
+    ci::MOI.ConstraintIndex{MOI.VectorAffineFunction{Float64}},
 )
     return ci.value .+ (1:model.dimension[ci.value])
 end
@@ -68,20 +71,26 @@ function MOI.supports(
 )
     return true
 end
+
 function MOI.set(
     ::GeometricConicForm,
     ::MOI.VariablePrimalStart,
     ::MOI.VariableIndex,
     ::Nothing,
-) end
+)
+    return
+end
+
 function MOI.set(
     model::GeometricConicForm,
     ::MOI.VariablePrimalStart,
     vi::MOI.VariableIndex,
     value::Float64,
 )
-    return model.primal[vi.value] = value
+    model.primal[vi.value] = value
+    return
 end
+
 function MOI.supports(
     ::GeometricConicForm,
     ::MOI.ConstraintPrimalStart,
@@ -89,20 +98,26 @@ function MOI.supports(
 )
     return true
 end
+
 function MOI.set(
     ::GeometricConicForm,
     ::MOI.ConstraintPrimalStart,
     ::MOI.ConstraintIndex,
     ::Nothing,
-) end
+)
+    return
+end
+
 function MOI.set(
     model::GeometricConicForm,
     ::MOI.ConstraintPrimalStart,
     ci::MOI.ConstraintIndex,
     value,
 )
+    # TODO(odow): why is offset not used?
     offset = constroffset(model, ci)
-    return model.slack[rows(model, ci)] .= value
+    model.slack[rows(model, ci)] .= value
+    return
 end
 
 function MOI.supports(
@@ -112,32 +127,43 @@ function MOI.supports(
 )
     return true
 end
+
 function MOI.set(
     ::GeometricConicForm,
     ::MOI.ConstraintDualStart,
     ::MOI.ConstraintIndex,
     ::Nothing,
-) end
+)
+    return
+end
+
 function MOI.set(
     model::GeometricConicForm,
     ::MOI.ConstraintDualStart,
     ci::MOI.ConstraintIndex,
     value,
 )
+    # TODO(odow): why is offset not used?
     offset = constroffset(model, ci)
-    return model.dual[rows(model, ci)] .= value
+    model.dual[rows(model, ci)] .= value
+    return
 end
+
 function MOI.set(
     model::GeometricConicForm,
     ::MOI.ObjectiveSense,
     sense::MOI.OptimizationSense,
 )
-    return model.sense = sense
+    model.sense = sense
+    return
 end
+
 variable_index_value(t::MOI.ScalarAffineTerm) = t.variable_index.value
+
 function variable_index_value(t::MOI.VectorAffineTerm)
     return variable_index_value(t.scalar_term)
 end
+
 function MOI.set(
     model::GeometricConicForm,
     ::MOI.ObjectiveFunction,
@@ -152,7 +178,7 @@ function MOI.set(
     )
     model.objective_constant = f.constant
     model.c = c
-    return nothing
+    return
 end
 
 function _allocate_constraint(
@@ -164,7 +190,8 @@ function _allocate_constraint(
 )
     # TODO use `CanonicalConstraintFunction`
     func = MOI.get(src, MOI.ConstraintFunction(), ci)
-    func = MOIU.is_canonical(func) ? func : MOI.Utilities.canonical(func)
+    func =
+        MOI.Utilities.is_canonical(func) ? func : MOI.Utilities.canonical(func)
     allocate_terms(model.A, indexmap, func)
     offset = model.num_rows[cone_id]
     model.num_rows[cone_id] = offset + MOI.output_dimension(func)
@@ -204,6 +231,7 @@ function _load_variables(model::GeometricConicForm, nvars::Integer)
         model.dual = zeros(m)
         model.slack = zeros(m)
     end
+    return
 end
 
 function _load_constraints(
@@ -237,7 +265,7 @@ function MOI.copy_to(
     MOI.empty!(dest)
 
     vis_src = MOI.get(src, MOI.ListOfVariableIndices())
-    idxmap = MOIU.IndexMap()
+    idxmap = MOI.Utilities.IndexMap()
 
     has_constraints = BitSet()
     for (F, S) in MOI.get(src, MOI.ListOfConstraints())
@@ -259,10 +287,10 @@ function MOI.copy_to(
     _load_variables(dest, length(vis_src))
 
     # Set variable attributes
-    MOIU.pass_attributes(dest, src, copy_names, idxmap, vis_src)
+    MOI.Utilities.pass_attributes(dest, src, copy_names, idxmap, vis_src)
 
     # Set model attributes
-    MOIU.pass_attributes(dest, src, copy_names, idxmap)
+    MOI.Utilities.pass_attributes(dest, src, copy_names, idxmap)
 
     # Load constraints
     offset = 0

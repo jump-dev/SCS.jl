@@ -3,11 +3,9 @@ using Test
 using MathOptInterface
 const MOI = MathOptInterface
 const MOIT = MOI.Test
-const MOIU = MOI.Utilities
-const MOIB = MOI.Bridges
 
 # UniversalFallback is needed for starting values
-const CACHE = MOIU.UniversalFallback(MOIU.Model{Float64}())
+const CACHE = MOI.Utilities.UniversalFallback(MOI.Utilities.Model{Float64}())
 
 import SCS
 
@@ -20,8 +18,8 @@ function moi_tests(T)
     end
 
     MOI.empty!(CACHE)
-    cached = MOIU.CachingOptimizer(CACHE, optimizer)
-    bridged = MOIB.full_bridge_optimizer(cached, Float64)
+    cached = MOI.Utilities.CachingOptimizer(CACHE, optimizer)
+    bridged = MOI.Bridges.full_bridge_optimizer(cached, Float64)
     config = MOIT.TestConfig(atol = 1e-5)
 
     @testset "Unit" begin
