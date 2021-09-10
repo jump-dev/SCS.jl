@@ -1,15 +1,19 @@
-if haskey(ENV,"JULIA_SCS_LIBRARY_PATH")
+if haskey(ENV, "JULIA_SCS_LIBRARY_PATH")
     @isdefined(libscsgpuindir) && push!(available_solvers, GpuIndirectSolver)
 else
     import SCS_GPU_jll
     const gpuindirect = SCS_GPU_jll.libscsgpuindir
     push!(available_solvers, GpuIndirectSolver)
 end
+
 for linear_solver in (GpuIndirectSolver,)
     # lib = gpuindirect # clib(linear_solver)
     T = scsint_t(linear_solver)
     @eval begin
-        function SCS_set_default_settings(::Type{$linear_solver}, data::SCSData{$T})
+        function SCS_set_default_settings(
+            ::Type{$linear_solver},
+            data::SCSData{$T},
+        )
             return ccall(
                 (:scs_set_default_settings, $(clib(linear_solver))),
                 Cvoid,
@@ -25,7 +29,6 @@ for linear_solver in (GpuIndirectSolver,)
             cone::SCSCone{$T},
             info_ref::Ref{SCSInfo{$T}},
         )
-
             p_work = ccall(
                 (:scs_init, $(clib(linear_solver))),
                 Ptr{Cvoid},
@@ -48,7 +51,6 @@ for linear_solver in (GpuIndirectSolver,)
             solution::SCSSolution,
             info_ref::Ref{SCSInfo{$T}},
         )
-
             status = ccall(
                 (:scs_solve, $(clib(linear_solver))),
                 $T,

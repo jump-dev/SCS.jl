@@ -2,12 +2,16 @@ using SparseArrays
 
 export SCSMatrix, SCSData, SCSSettings, SCSSolution, SCSInfo, SCSCone
 
-VecOrMatOrSparse = Union{VecOrMat, SparseMatrixCSC{Float64,Int}}
+const VecOrMatOrSparse = Union{VecOrMat,SparseMatrixCSC{Float64,Int}}
 
-SCSInt = Union{Int32, Int64}
+const SCSInt = Union{Int32,Int64}
+
 abstract type LinearSolver end
+
 struct DirectSolver <: LinearSolver end
+
 struct IndirectSolver <: LinearSolver end
+
 struct GpuIndirectSolver <: LinearSolver end
 
 scsint_t(::Type{<:LinearSolver}) = Int
@@ -16,7 +20,6 @@ scsint_t(::Type{GpuIndirectSolver}) = Int32
 clib(::Type{DirectSolver}) = direct
 clib(::Type{IndirectSolver}) = indirect
 clib(::Type{GpuIndirectSolver}) = gpuindirect
-
 
 struct SCSMatrix{T<:SCSInt}
     values::Ptr{Cdouble}
@@ -33,9 +36,15 @@ struct ManagedSCSMatrix{T<:SCSInt}
     colptr::Vector{T}
     scsmatref::Base.RefValue{SCSMatrix{T}}
 
-    function ManagedSCSMatrix{T}(m::Integer, n::Integer, values::Vector{Cdouble},
-                                 rowval::Vector{T}, colptr::Vector{T}) where T
-        # scsmatref holds the reference to SCSMatrix created out of data in ManagedSCSMatrix.
+    function ManagedSCSMatrix{T}(
+        m::Integer,
+        n::Integer,
+        values::Vector{Cdouble},
+        rowval::Vector{T},
+        colptr::Vector{T},
+    ) where {T}
+        # scsmatref holds the reference to SCSMatrix created out of data in
+        # ManagedSCSMatrix.
         # this way the reference to SCSMatrix always points to valid data
         # as long as the ManagedSCSMatrix is not GC collected.
         # One MUST
@@ -43,15 +52,27 @@ struct ManagedSCSMatrix{T<:SCSInt}
         # when assigning to a field of type `Ptr{SCSMatrix}`, or specify
         #   `Ref{SCSMatrix}`
         # in the type tuple when ccalling with `scsmatref`
-
         scsmat = SCSMatrix{T}(
-            pointer(values), pointer(rowval), pointer(colptr), m, n)
-
-        return new{T}(values, rowval, colptr, Base.cconvert(Ref{SCSMatrix{T}}, scsmat))
+            pointer(values),
+            pointer(rowval),
+            pointer(colptr),
+            m,
+            n,
+        )
+        return new{T}(
+            values,
+            rowval,
+            colptr,
+            Base.cconvert(Ref{SCSMatrix{T}}, scsmat),
+        )
     end
 end
 
-function ManagedSCSMatrix{T}(m::Integer, n::Integer, A::SparseMatrixCSC) where T
+function ManagedSCSMatrix{T}(
+    m::Integer,
+    n::Integer,
+    A::SparseMatrixCSC,
+) where {T}
     # we convert everything to make sure that no conversion will
     # accidentally happen when ccalling `new`, so that `scsmatref`
     # holds pointers to actual data stored in the fields.
@@ -64,7 +85,11 @@ function ManagedSCSMatrix{T}(m::Integer, n::Integer, A::SparseMatrixCSC) where T
     return ManagedSCSMatrix{T}(m, n, values, rowval, colptr)
 end
 
-function ManagedSCSMatrix{T}(m::Integer, n::Integer, A::AbstractMatrix) where T
+function ManagedSCSMatrix{T}(
+    m::Integer,
+    n::Integer,
+    A::AbstractMatrix,
+) where {T}
     return ManagedSCSMatrix{T}(m, n, sparse(A))
 end
 
@@ -81,39 +106,72 @@ struct SCSSettings{T<:SCSInt}
     acceleration_lookback::T # acceleration memory parameter
     write_data_filename::Cstring
 
-    SCSSettings{T}() where T = new{T}()
-    SCSSettings{T}(normalize, scale, rho_x, max_iters, eps, alpha, cg_rate, verbose, warm_start, acceleration_lookback, write_data_filename) where T =
-        new{T}(normalize, scale, rho_x, max_iters, eps, alpha, cg_rate, verbose, warm_start, acceleration_lookback, write_data_filename)
+    SCSSettings{T}() where {T} = new{T}()
+    function SCSSettings{T}(
+        normalize,
+        scale,
+        rho_x,
+        max_iters,
+        eps,
+        alpha,
+        cg_rate,
+        verbose,
+        warm_start,
+        acceleration_lookback,
+        write_data_filename,
+    ) where {T}
+        return new{T}(
+            normalize,
+            scale,
+            rho_x,
+            max_iters,
+            eps,
+            alpha,
+            cg_rate,
+            verbose,
+            warm_start,
+            acceleration_lookback,
+            write_data_filename,
+        )
+    end
 end
 
-function _SCS_user_settings(default_settings::SCSSettings{T};
-        normalize=default_settings.normalize,
-        scale=default_settings.scale,
-        rho_x=default_settings.rho_x,
-        max_iters=default_settings.max_iters,
-        eps=default_settings.eps,
-        alpha=default_settings.alpha,
-        cg_rate=default_settings.cg_rate,
-        verbose=default_settings.verbose,
-        warm_start=default_settings.warm_start,
-        acceleration_lookback=default_settings.acceleration_lookback,
-        write_data_filename=default_settings.write_data_filename
-        ) where T
-    return SCSSettings{T}(normalize, scale, rho_x, max_iters, eps, alpha, cg_rate, verbose,warm_start, acceleration_lookback, write_data_filename)
+function _SCS_user_settings(
+    default_settings::SCSSettings{T};
+    normalize = default_settings.normalize,
+    scale = default_settings.scale,
+    rho_x = default_settings.rho_x,
+    max_iters = default_settings.max_iters,
+    eps = default_settings.eps,
+    alpha = default_settings.alpha,
+    cg_rate = default_settings.cg_rate,
+    verbose = default_settings.verbose,
+    warm_start = default_settings.warm_start,
+    acceleration_lookback = default_settings.acceleration_lookback,
+    write_data_filename = default_settings.write_data_filename,
+) where {T}
+    return SCSSettings{T}(
+        normalize,
+        scale,
+        rho_x,
+        max_iters,
+        eps,
+        alpha,
+        cg_rate,
+        verbose,
+        warm_start,
+        acceleration_lookback,
+        write_data_filename,
+    )
 end
 
 function SCSSettings(linear_solver::Type{<:LinearSolver}; options...)
-
     T = scsint_t(linear_solver)
 
-    managed_matrix = ManagedSCSMatrix{T}(0,0,spzeros(0,0))
+    managed_matrix = ManagedSCSMatrix{T}(0, 0, spzeros(0, 0))
     default_settings = Base.cconvert(Ref{SCSSettings{T}}, SCSSettings{T}())
     a = [0.0]
-    dummy_data = SCSData(0,0,
-        managed_matrix,
-        a,
-        a,
-        default_settings)
+    dummy_data = SCSData(0, 0, managed_matrix, a, a, default_settings)
 
     Base.GC.@preserve managed_matrix default_settings a begin
         SCS_set_default_settings(linear_solver, dummy_data)
@@ -133,16 +191,21 @@ struct SCSData{T<:SCSInt}
     stgs::Ptr{SCSSettings{T}}
 end
 
-function SCSData(m::Integer, n::Integer,
+function SCSData(
+    m::Integer,
+    n::Integer,
     mat::ManagedSCSMatrix{T},
     b::Vector{Float64},
     c::Vector{Float64},
-    stgs::Ref{SCSSettings{T}}) where T
-    return SCSData{T}(m, n,
+    stgs::Ref{SCSSettings{T}},
+) where {T}
+    return SCSData{T}(
+        m,
+        n,
         Base.unsafe_convert(Ref{SCSMatrix{T}}, mat.scsmatref), # Ptr{SCSMatrix{T}}
         pointer(b),
         pointer(c),
-        Base.unsafe_convert(Ref{SCSSettings{T}}, stgs) # Ptr{SCSSettings{T}}
+        Base.unsafe_convert(Ref{SCSSettings{T}}, stgs), # Ptr{SCSSettings{T}}
     )
 end
 
@@ -154,7 +217,7 @@ end
 
 struct SCSInfo{T<:SCSInt}
     iter::T
-    status::NTuple{32, Cchar} # char status[32]
+    status::NTuple{32,Cchar} # char status[32]
     statusVal::T
     pobj::Cdouble
     dobj::Cdouble
@@ -167,7 +230,22 @@ struct SCSInfo{T<:SCSInt}
     solveTime::Cdouble
 end
 
-SCSInfo{T}() where T = SCSInfo{T}(0, ntuple(_ -> zero(Cchar), 32), 0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
+function SCSInfo{T}() where {T}
+    return SCSInfo{T}(
+        0,
+        ntuple(_ -> zero(Cchar), 32),
+        0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+    )
+end
 
 function raw_status(info::SCSInfo)
     s = collect(info.status)
@@ -204,16 +282,33 @@ end
 
 # Returns an SCSCone. The q, s, and p arrays are *not* GC tracked in the
 # struct. Use this only when you know that q, s, and p will outlive the struct.
-function SCSCone{T}(f::Integer, l::Integer, q::Vector{T}, s::Vector{T},
-                 ep::Integer, ed::Integer, p::Vector{Cdouble}) where T
-    return SCSCone{T}(f, l, pointer(q), length(q), pointer(s), length(s), ep, ed, pointer(p), length(p))
+function SCSCone{T}(
+    f::Integer,
+    l::Integer,
+    q::Vector{T},
+    s::Vector{T},
+    ep::Integer,
+    ed::Integer,
+    p::Vector{Cdouble},
+) where {T}
+    return SCSCone{T}(
+        f,
+        l,
+        pointer(q),
+        length(q),
+        pointer(s),
+        length(s),
+        ep,
+        ed,
+        pointer(p),
+        length(p),
+    )
 end
 
-
 mutable struct Solution{T<:SCSInt}
-    x::Array{Float64, 1}
-    y::Array{Float64, 1}
-    s::Array{Float64, 1}
+    x::Array{Float64,1}
+    y::Array{Float64,1}
+    s::Array{Float64,1}
     info::SCSInfo{T}
     ret_val::T
 end
@@ -223,7 +318,11 @@ function sanitize_SCS_options(options)
     if haskey(options, :linear_solver)
         linear_solver = options[:linear_solver]
         if !(linear_solver in available_solvers)
-            throw(ArgumentError("Unrecognized linear_solver passed to SCS: $linear_solver;\nRecognized options are: $(join(available_solvers, ", ", " and "))."))
+            throw(
+                ArgumentError(
+                    "Unrecognized linear_solver passed to SCS: $linear_solver;\nRecognized options are: $(join(available_solvers, ", ", " and ")).",
+                ),
+            )
         end
         delete!(options, :linear_solver)
     else
@@ -234,7 +333,11 @@ function sanitize_SCS_options(options)
     unrecognized = setdiff(keys(options), SCS_options)
     if length(unrecognized) > 0
         plur = length(unrecognized) > 1 ? "s" : ""
-        throw(ArgumentError("Unrecognized option$plur passed to SCS: $(join(unrecognized, ", "));\nRecognized options are: $(join(SCS_options, ", ", " and "))."))
+        throw(
+            ArgumentError(
+                "Unrecognized option$plur passed to SCS: $(join(unrecognized, ", "));\nRecognized options are: $(join(SCS_options, ", ", " and ")).",
+            ),
+        )
     end
     return linear_solver, options
 end

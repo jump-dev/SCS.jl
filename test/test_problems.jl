@@ -1,3 +1,6 @@
+# We don't want this file formatted because it contains lots of data.
+#! format: off
+
 using SparseArrays
 
 # Random, feasible conic problem (no exponential or SDP cones)
@@ -696,4 +699,3 @@ function feasible_basic_problems(solver)
     feasible_sdp_conic(solver)
     feasible_pow_conic(solver)
 end
-
