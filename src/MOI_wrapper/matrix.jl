@@ -1,15 +1,19 @@
-mutable struct SparseMatrixCSRtoCSC{T}
+mutable struct SparseMatrixCSRtoCSC{T} <: AbstractMatrix{Cdouble}
     m::Int # Number of rows
     n::Int # Number of columns
     colptr::Vector{T}
     rowval::Vector{T}
-    nzval::Vector{Float64}
+    nzval::Vector{Cdouble}
     function SparseMatrixCSRtoCSC{T}(n) where {T}
         A = new()
         A.n = n
         A.colptr = zeros(T, n + 1)
         return A
     end
+end
+
+function _to_sparse(::Type{T}, A::SparseMatrixCSRtoCSC{T}) where {T}
+    return A.nzval, A.rowval, A.colptr
 end
 
 function allocate_nonzeros(A::SparseMatrixCSRtoCSC{T}) where {T}
@@ -48,6 +52,7 @@ function _load_terms(colptr, rowval, nzval, indexmap, terms, offset)
     end
     return
 end
+
 function load_terms(A::SparseMatrixCSRtoCSC, indexmap, func, offset)
     _load_terms(A.colptr, A.rowval, A.nzval, indexmap, func.terms, offset)
     return

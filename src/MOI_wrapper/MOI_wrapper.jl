@@ -1,4 +1,4 @@
-using MathOptInterface
+import MathOptInterface
 const MOI = MathOptInterface
 
 include("matrix.jl")
@@ -35,10 +35,6 @@ function MOISolution()
     )
 end
 
-function _managed_matrix(A::SparseMatrixCSRtoCSC{T}) where {T}
-    return ManagedSCSMatrix{T}(A.m, A.n, A.nzval, A.rowval, A.colptr)
-end
-
 # This is tied to SCS's internal representation
 struct ConeData
     qa::Vector{Int} # array of second-order cone constraints
@@ -57,6 +53,7 @@ const CONE_TYPES = (
     MOI.PowerCone{Float64},
     MOI.DualPowerCone{Float64},
 )
+
 const Form{T} =
     GeometricConicForm{Float64,SparseMatrixCSRtoCSC{T},typeof(CONE_TYPES)}
 
@@ -160,7 +157,7 @@ function MOI.supports_constraint(
 end
 
 function MOI.copy_to(dest::Optimizer, src::MOI.ModelLike; kws...)
-    linear_solver, _ = sanitize_SCS_options(dest.options)
+    linear_solver = get(dest.options, :linear_solver, DirectSolver)
     T = scsint_t(linear_solver)
     if !(dest.data isa Form{T})
         dest.data =
@@ -317,15 +314,13 @@ function MOI.optimize!(optimizer::Optimizer)
         options = copy(options)
         options[:verbose] = 0
     end
-
-    linear_solver, options = sanitize_SCS_options(options)
-
+    linear_solver = get(optimizer.options, :linear_solver, DirectSolver)
     cone = optimizer.cone
     sol = SCS_solve(
         linear_solver,
         m,
         n,
-        _managed_matrix(data.A),
+        data.A,
         b,
         c,
         data.num_rows[1],
