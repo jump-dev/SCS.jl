@@ -170,7 +170,7 @@ function MOI.set(
     f::MOI.ScalarAffineFunction{Float64},
 )
     c = Vector(
-        sparsevec(
+        SparseArrays.sparsevec(
             variable_index_value.(f.terms),
             MOI.coefficient.(f.terms),
             model.A.n,

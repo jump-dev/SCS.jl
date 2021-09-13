@@ -1,46 +1,47 @@
 module SCS
 
 using Libdl
-using Requires
+import Requires
+import SparseArrays
 
 if haskey(ENV, "JULIA_SCS_LIBRARY_PATH") || VERSION < v"1.3"
-    if isfile(joinpath(dirname(@__FILE__), "..", "deps", "deps.jl"))
-        include(joinpath(dirname(@__FILE__), "..", "deps", "deps.jl"))
-    else
+    if !isfile(joinpath(dirname(@__FILE__), "..", "deps", "deps.jl"))
         error(
             "SCS not properly installed. Please run `Pkg.build(\"SCS\")` and " *
             "restart julia",
         )
     end
-
+    include(joinpath(dirname(@__FILE__), "..", "deps", "deps.jl"))
     function __init__()
-        vnum = VersionNumber(SCS_version())
-        depsdir = realpath(joinpath(dirname(@__FILE__), "..", "deps"))
-        if vnum < v"2.1.0"
+        version = VersionNumber(SCS_version())
+        if version < v"2.1.0"
             error(
-                "Current SCS version installed is $vnum, but we require " *
+                "Current SCS version installed is $version, but we require " *
                 "version 2.1.*",
             )
         end
+        return
     end
 else
     import SCS_jll
     const indirect = SCS_jll.libscsindir
     const direct = SCS_jll.libscsdir
-
     function __init__()
-        @require(
+        Requires.@require(
             CUDA_jll = "e9e359dc-d701-5aa8-82ae-09bbf812ea83",
-            include("c_wrapper_gpu.jl"),
+            include("linear_solvers/gpu_indirect.jl"),
         )
+        return
     end
 end
 
-include("types.jl")
+include("c_wrapper.jl")
+include("linear_solvers/direct.jl")
+include("linear_solvers/indirect.jl")
+include("MOI_wrapper/MOI_wrapper.jl")
 
 const available_solvers = [DirectSolver, IndirectSolver]
 
-include("c_wrapper.jl")
-include("MOI_wrapper.jl")
+export SCS_solve
 
-end # module
+end
