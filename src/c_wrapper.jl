@@ -135,11 +135,13 @@ function raw_status(info::SCSInfo)
 end
 
 function _to_sparse(::Type{T}, A::AbstractMatrix) where {T}
-    sparse_A = SparseArrays.sparse(A)
-    values = sparse_A.nzval
-    rowval = convert(Vector{T}, sparse_A.rowval .- 1)
-    colptr = convert(Vector{T}, sparse_A.colptr .- 1)
-    return values, rowval, colptr
+    return _to_sparse(T, SparseArrays.sparse(A))
+end
+
+function _to_sparse(::Type{T}, A::SparseArrays.SparseMatrixCSC) where {T}
+    rowval = convert(Vector{T}, A.rowval .- 1)
+    colptr = convert(Vector{T}, A.colptr .- 1)
+    return A.nzval, rowval, colptr
 end
 
 """
