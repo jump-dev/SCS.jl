@@ -280,7 +280,11 @@ function _unsafe_scs_solve(model::_SCSDataWrapper{S,T}) where {S,T}
     )
     SCS_set_default_settings(model.linear_solver, scs_data)
     for (key, value) in model.options
-        setfield!(model.settings, key, value)
+        setfield!(
+            model.settings,
+            key,
+            convert(fieldtype(SCSSettings{T}, key), value),
+        )
     end
     p = SCS_init(model.linear_solver, scs_data, scs_cone, scs_info)
     status = SCS_solve(
