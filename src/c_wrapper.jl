@@ -217,6 +217,7 @@ function SCS_solve(
         primal_sol, dual_sol, slack = zeros(n), zeros(m), zeros(m)
     end
     T = scsint_t(linear_solver)
+    m, n, ep, ed = T(m), T(n), T(ep), T(ed)
     values, rowval, colptr = _to_sparse(T, A)
     option_dict = _sanitize_options(options)
     if warm_start
