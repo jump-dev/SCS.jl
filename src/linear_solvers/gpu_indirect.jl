@@ -8,11 +8,11 @@ else
     push!(available_solvers, GpuIndirectSolver)
 end
 
-scsint_t(::Type{GpuIndirectSolver}) = Cint
+scsint_t(::Type{GpuIndirectSolver}) = Int32
 
 function SCS_set_default_settings(
     ::Type{GpuIndirectSolver},
-    data::SCSData{Cint},
+    data::SCSData{Int32},
 )
     return ccall(
         (:scs_set_default_settings, gpuindirect),
@@ -24,9 +24,9 @@ end
 
 function SCS_init(
     ::Type{GpuIndirectSolver},
-    data::SCSData{Cint},
-    cone::SCSCone{Cint},
-    info::SCSInfo{Cint},
+    data::SCSData{Int32},
+    cone::SCSCone{Int32},
+    info::SCSInfo{Int32},
 )
     return ccall(
         (:scs_init, gpuindirect),
@@ -41,14 +41,14 @@ end
 function SCS_solve(
     ::Type{GpuIndirectSolver},
     p_work::Ptr{Cvoid},
-    data::SCSData{Cint},
-    cone::SCSCone{Cint},
+    data::SCSData{Int32},
+    cone::SCSCone{Int32},
     solution::SCSSolution,
-    info::SCSInfo{Cint},
+    info::SCSInfo{Int32},
 )
     return ccall(
         (:scs_solve, gpuindirect),
-        Cint,
+        Int32,
         (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}),
         p_work,
         data,
