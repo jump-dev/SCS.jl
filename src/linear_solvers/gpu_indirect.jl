@@ -10,7 +10,7 @@ end
 
 scsint_t(::Type{GpuIndirectSolver}) = Int32
 
-function SCS_set_default_settings(
+function scs_set_default_settings(
     ::Type{GpuIndirectSolver},
     data::SCSData{Int32},
 )
@@ -22,7 +22,7 @@ function SCS_set_default_settings(
     )
 end
 
-function SCS_init(
+function scs_init(
     ::Type{GpuIndirectSolver},
     data::SCSData{Int32},
     cone::SCSCone{Int32},
@@ -38,7 +38,7 @@ function SCS_init(
     )
 end
 
-function SCS_solve(
+function scs_solve(
     ::Type{GpuIndirectSolver},
     p_work::Ptr{Cvoid},
     data::SCSData{Int32},
@@ -58,6 +58,6 @@ function SCS_solve(
     )
 end
 
-function SCS_finish(::Type{GpuIndirectSolver}, p_work::Ptr{Cvoid})
+function scs_finish(::Type{GpuIndirectSolver}, p_work::Ptr{Cvoid})
     return ccall((:scs_finish, gpuindirect), Cvoid, (Ptr{Cvoid},), p_work)
 end

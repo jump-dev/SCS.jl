@@ -2,7 +2,7 @@ struct DirectSolver <: LinearSolver end
 
 scsint_t(::Type{DirectSolver}) = Int
 
-function SCS_set_default_settings(::Type{DirectSolver}, data::SCSData{Int})
+function scs_set_default_settings(::Type{DirectSolver}, data::SCSData{Int})
     return ccall(
         (:scs_set_default_settings, direct),
         Cvoid,
@@ -11,7 +11,7 @@ function SCS_set_default_settings(::Type{DirectSolver}, data::SCSData{Int})
     )
 end
 
-function SCS_init(
+function scs_init(
     ::Type{DirectSolver},
     data::SCSData{Int},
     cone::SCSCone{Int},
@@ -27,7 +27,7 @@ function SCS_init(
     )
 end
 
-function SCS_solve(
+function scs_solve(
     ::Type{DirectSolver},
     p_work::Ptr{Cvoid},
     data::SCSData{Int},
@@ -47,10 +47,10 @@ function SCS_solve(
     )
 end
 
-function SCS_finish(::Type{DirectSolver}, p_work::Ptr{Cvoid})
+function scs_finish(::Type{DirectSolver}, p_work::Ptr{Cvoid})
     return ccall((:scs_finish, direct), Cvoid, (Ptr{Cvoid},), p_work)
 end
 
-function SCS_version()
+function scs_version()
     return unsafe_string(ccall((:scs_version, direct), Cstring, ()))
 end

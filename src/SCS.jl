@@ -13,7 +13,7 @@ if haskey(ENV, "JULIA_SCS_LIBRARY_PATH") || VERSION < v"1.3"
     end
     include(joinpath(dirname(@__FILE__), "..", "deps", "deps.jl"))
     function __init__()
-        version = VersionNumber(SCS_version())
+        version = VersionNumber(scs_version())
         if version < v"2.1.0"
             error(
                 "Current SCS version installed is $version, but we require " *

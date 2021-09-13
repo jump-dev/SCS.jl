@@ -280,7 +280,7 @@ function _unsafe_scs_solve(model::_SCSDataWrapper{S,T}) where {S,T}
         pointer(model.c),
         pointer_from_objref(model.settings),
     )
-    SCS_set_default_settings(model.linear_solver, scs_data)
+    scs_set_default_settings(model.linear_solver, scs_data)
     for (key, value) in model.options
         setfield!(
             model.settings,
@@ -288,8 +288,8 @@ function _unsafe_scs_solve(model::_SCSDataWrapper{S,T}) where {S,T}
             convert(fieldtype(SCSSettings{T}, key), value),
         )
     end
-    p = SCS_init(model.linear_solver, scs_data, scs_cone, scs_info)
-    status = SCS_solve(
+    p = scs_init(model.linear_solver, scs_data, scs_cone, scs_info)
+    status = scs_solve(
         model.linear_solver,
         p,
         scs_data,
@@ -297,6 +297,6 @@ function _unsafe_scs_solve(model::_SCSDataWrapper{S,T}) where {S,T}
         scs_solution,
         scs_info,
     )
-    SCS_finish(model.linear_solver, p)
+    scs_finish(model.linear_solver, p)
     return Solution(model.primal, model.dual, model.slack, scs_info, status)
 end
