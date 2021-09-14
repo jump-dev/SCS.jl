@@ -277,6 +277,7 @@ function MOI.copy_to_and_optimize!(
         dest.sol.primal,
         dest.sol.dual,
         dest.sol.slack;
+        off_diagonal_sdc_needs_scaling = true,
         options...,
     )
     dest.sol = MOISolution(
