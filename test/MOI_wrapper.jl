@@ -51,15 +51,13 @@ function _test_runtests(linear_solver)
         ),
         exclude = String[
             # Unexpected test failures:
-            #   Failures getting ConstraintFunction
+            #   Numerical rounding issues in returned function
             "test_basic_ScalarQuadraticFunction_LessThan",
             "test_basic_VectorOfVariables_GeometricMeanCone",
-            "test_conic_SecondOrderCone_negative_initial_bound",
-            "test_model_ModelFilter_AbstractConstraintAttribute",
+            #   UnsupportedAttribute not thrown
             "test_model_copy_to_UnsupportedAttribute",
-            "test_modification_set_function_single_variable",
-            "test_objective_incorrect_modifications",
-            "test_solve_optimize_twice",
+            #   ConstraintDualStart not supported correctly
+            "test_model_ModelFilter_AbstractConstraintAttribute",
             #   cone dimensions 241 not equal to num rows in A = m = 31
             "test_conic_LogDetConeTriangle",
             "test_conic_NormNuclearCone",
@@ -70,8 +68,6 @@ function _test_runtests(linear_solver)
             "test_conic_PositiveSemidefiniteConeTriangle",
             "test_conic_RootDetConeTriangle",
             # Expected test failures:
-            "test_model_LowerBoundAlreadySet",
-            "test_model_UpperBoundAlreadySet",
             #   ArgumentError: The number of constraints must be greater than 0
             "test_attribute_RawStatusString",
             "test_attribute_SolveTimeSec",
@@ -84,19 +80,29 @@ function _test_runtests(linear_solver)
             "test_basic_VectorQuadraticFunction_",
             "test_quadratic_SecondOrderCone_basic",
             "test_quadratic_nonconvex_",
-            #   ConstraintSet not implemented
-            "test_basic_VectorAffineFunction_LogDetConeTriangle",
-            "test_basic_VectorAffineFunction_RootDetConeTriangle",
-            "test_basic_VectorOfVariables_LogDetConeTriangle",
-            "test_basic_VectorOfVariables_RootDetConeTriangle",
             #   power cone error, values must be in [-1,1]
             "test_conic_DualPowerCone_VectorOfVariables",
             "test_conic_DualPowerCone_VectorAffineFunction",
             "test_conic_PowerCone_VectorAffineFunction",
             "test_conic_PowerCone_VectorOfVariables",
-            # TODO(odow): fix upstream
+            # Upstream failures
+            #   #1431
+            "test_model_LowerBoundAlreadySet",
+            "test_model_UpperBoundAlreadySet",
+            #   #1602
             "test_model_ListOfConstraintAttributesSet",
             "test_objective_FEASIBILITY_SENSE_clears_objective",
+            "test_conic_SecondOrderCone_negative_initial_bound",
+            #   #1603
+            "test_modification_set_function_single_variable",
+            "test_objective_incorrect_modifications",
+            #   #1604
+            "test_solve_optimize_twice",
+            #   #1605
+            "test_basic_VectorAffineFunction_LogDetConeTriangle",
+            "test_basic_VectorAffineFunction_RootDetConeTriangle",
+            "test_basic_VectorOfVariables_LogDetConeTriangle",
+            "test_basic_VectorOfVariables_RootDetConeTriangle",
         ],
     )
     return
