@@ -15,5 +15,6 @@ using Test
 include("test_problems.jl")
 feasible_basic_problems(SCS.GpuIndirectSolver)
 
-include("MOI_wrapper.jl")
-moi_tests(SCS.GpuIndirectSolver)
+# TODO(odow): consider re-enabling these
+# include("MOI_wrapper.jl")
+# moi_tests(SCS.GpuIndirectSolver)

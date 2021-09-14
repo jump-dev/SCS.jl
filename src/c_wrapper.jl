@@ -185,7 +185,7 @@ function SCS_solve(
     linear_solver::Type{<:LinearSolver},
     m::Integer,
     n::Integer,
-    A::AbstractMatrix,
+    A,
     b::Vector{Float64},
     c::Vector{Float64},
     f::Integer,

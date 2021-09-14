@@ -9,12 +9,8 @@ using Test
 using SCS
 
 include("test_problems.jl")
-include("MOI_wrapper.jl")
-
 for s in SCS.available_solvers
     feasible_basic_problems(s)
 end
 
-for s in SCS.available_solvers
-    moi_tests(s)
-end
+include("MOI_wrapper.jl")
