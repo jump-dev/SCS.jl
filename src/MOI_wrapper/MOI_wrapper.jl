@@ -242,8 +242,8 @@ function MOI.copy_to_and_optimize!(
         cis_src = MOI.get(src, MOI.ListOfConstraintIndices{F,S}())
         MOI.Utilities.pass_attributes(dest, src, index_map, cis_src)
     end
+    options = copy(dest.options)
     if dest.silent
-        options = copy(dest.options)
         options[:verbose] = 0
     end
     dest.cones = deepcopy(Ab.sets)
