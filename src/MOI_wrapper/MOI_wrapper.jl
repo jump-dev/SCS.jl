@@ -1,12 +1,14 @@
 using MathOptInterface
 const MOI = MathOptInterface
 
+include("scs_psd_cone_bridge.jl")
+
 MOI.Utilities.@product_of_sets(
     Cones,
     MOI.Zeros,
     MOI.Nonnegatives,
     MOI.SecondOrderCone,
-    MOI.PositiveSemidefiniteConeTriangle,
+    SCSPSDCone,
     MOI.ExponentialCone,
     MOI.DualExponentialCone,
     MOI.PowerCone{T},
@@ -80,6 +82,10 @@ mutable struct Optimizer <: MOI.AbstractOptimizer
         end
         return optimizer
     end
+end
+
+function MOI.get(::Optimizer, ::MOI.Bridges.ListOfNonstandardBridges)
+    return [SCSPSDConeBridge{Cdouble}]
 end
 
 MOI.get(::Optimizer, ::MOI.SolverName) = "SCS"
@@ -163,7 +169,7 @@ function MOI.supports_constraint(
             MOI.Zeros,
             MOI.Nonnegatives,
             MOI.SecondOrderCone,
-            MOI.PositiveSemidefiniteConeTriangle,
+            SCSPSDCone,
             MOI.ExponentialCone,
             MOI.DualExponentialCone,
             MOI.PowerCone{Cdouble},
@@ -257,12 +263,7 @@ function MOI.copy_to_and_optimize!(
         Ab.sets.num_rows[1],
         Ab.sets.num_rows[2] - Ab.sets.num_rows[1],
         _map_sets(MOI.dimension, T, Ab, MOI.SecondOrderCone),
-        _map_sets(
-            MOI.side_dimension,
-            T,
-            Ab,
-            MOI.PositiveSemidefiniteConeTriangle,
-        ),
+        _map_sets(MOI.side_dimension, T, Ab, SCSPSDCone),
         div(Ab.sets.num_rows[5] - Ab.sets.num_rows[4], 3),
         div(Ab.sets.num_rows[6] - Ab.sets.num_rows[5], 3),
         vcat(

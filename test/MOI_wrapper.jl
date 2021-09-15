@@ -58,6 +58,11 @@ function _test_runtests(linear_solver)
             "test_model_copy_to_UnsupportedAttribute",
             #   ConstraintDualStart not supported correctly
             "test_model_ModelFilter_AbstractConstraintAttribute",
+            #   #1606
+            "test_conic_LogDetConeTriangle",
+            "test_conic_NormNuclearCone",
+            "test_conic_NormSpectralCone",
+            "test_conic_RootDetConeTriangle",
             # Expected test failures:
             #   ArgumentError: The number of constraints must be greater than 0
             "test_attribute_RawStatusString",
@@ -80,29 +85,18 @@ function _test_runtests(linear_solver)
             #   #1431
             "test_model_LowerBoundAlreadySet",
             "test_model_UpperBoundAlreadySet",
-            #   #1602
+            #   Fixed upstream
             "test_model_ListOfConstraintAttributesSet",
             "test_objective_FEASIBILITY_SENSE_clears_objective",
             "test_conic_SecondOrderCone_negative_initial_bound",
-            #   #1603
             "test_modification_set_function_single_variable",
             "test_objective_incorrect_modifications",
-            #   #1604
-            "test_solve_optimize_twice",
-            #   #1605
             "test_basic_VectorAffineFunction_LogDetConeTriangle",
             "test_basic_VectorAffineFunction_RootDetConeTriangle",
             "test_basic_VectorOfVariables_LogDetConeTriangle",
             "test_basic_VectorOfVariables_RootDetConeTriangle",
-            #   #1606
-            "test_conic_LogDetConeTriangle",
-            "test_conic_NormNuclearCone",
-            "test_conic_NormSpectralCone",
-            "test_conic_PositiveSemidefiniteConeSquare_3",
-            "test_conic_PositiveSemidefiniteConeSquare_VectorAffineFunction",
-            "test_conic_PositiveSemidefiniteConeSquare_VectorOfVariables",
-            "test_conic_PositiveSemidefiniteConeTriangle",
-            "test_conic_RootDetConeTriangle",
+            #   #1604
+            "test_solve_optimize_twice",
         ],
     )
     return

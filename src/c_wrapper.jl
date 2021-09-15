@@ -323,9 +323,9 @@ function SCS_solve(
             1 / sqrt(2),
         )
         for row in rows_to_scale
-            b[row+1] /= sqrt(2)
             solution.s[row+1] /= sqrt(2)
             solution.y[row+1] /= sqrt(2)
+            b[row+1] /= sqrt(2)
         end
     end
     return solution
