@@ -74,7 +74,7 @@ function _transform_function(
     # function by.
     scale_factor = fill(scale, d)
     for i in 1:d
-        if isinteger((-1 + sqrt(1 + 8 * i)) / 2)
+        if MOI.Utilities.is_diagonal_vectorized_index(i)
             scale_factor[i] = 1.0
         end
     end
@@ -107,7 +107,7 @@ function _transform_function(func::Vector{T}, scale, moi_to_scs::Bool) where {T}
     upper_to_lower, lower_to_upper = _upper_to_lower_triangular_permutation(d)
     scale_factor = fill(scale, d)
     for i in 1:d
-        if isinteger((-1 + sqrt(1 + 8 * i)) / 2)
+        if MOI.Utilities.is_diagonal_vectorized_index(i)
             scale_factor[i] = 1.0
         end
     end
