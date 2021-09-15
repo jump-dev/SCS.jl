@@ -50,14 +50,6 @@ function _test_runtests(linear_solver)
             ],
         ),
         exclude = String[
-            # Unexpected test failures:
-            #   Numerical rounding issues in returned function
-            "test_basic_ScalarQuadraticFunction_LessThan",
-            "test_basic_VectorOfVariables_GeometricMeanCone",
-            #   UnsupportedAttribute not thrown
-            "test_model_copy_to_UnsupportedAttribute",
-            #   ConstraintDualStart not supported correctly
-            "test_model_ModelFilter_AbstractConstraintAttribute",
             # Expected test failures:
             #   ArgumentError: The number of constraints must be greater than 0
             "test_attribute_RawStatusString",
@@ -81,17 +73,8 @@ function _test_runtests(linear_solver)
             "test_model_LowerBoundAlreadySet",
             "test_model_UpperBoundAlreadySet",
             #   Fixed upstream
-            "test_model_ListOfConstraintAttributesSet",
-            "test_objective_FEASIBILITY_SENSE_clears_objective",
-            "test_conic_SecondOrderCone_negative_initial_bound",
             "test_modification_set_function_single_variable",
             "test_objective_incorrect_modifications",
-            "test_basic_VectorAffineFunction_LogDetConeTriangle",
-            "test_basic_VectorAffineFunction_RootDetConeTriangle",
-            "test_basic_VectorOfVariables_LogDetConeTriangle",
-            "test_basic_VectorOfVariables_RootDetConeTriangle",
-            #   #1604
-            "test_solve_optimize_twice",
         ],
     )
     return

@@ -186,7 +186,7 @@ function _map_sets(f, ::Type{T}, sets, ::Type{S}) where {T,S}
     return T[f(MOI.get(sets, MOI.ConstraintSet(), ci)) for ci in cis]
 end
 
-function MOI.copy_to_and_optimize!(
+function MOI.optimize!(
     dest::Optimizer,
     src::MOI.Utilities.UniversalFallback{OptimizerCache{T}},
 ) where {T}
@@ -196,7 +196,7 @@ function MOI.copy_to_and_optimize!(
             OptimizerCache{scsint_t(linear_solver)}(),
         )
         MOI.copy_to(cache, src)
-        return MOI.copy_to_and_optimize!(dest, cache)
+        return MOI.optimize!(dest, cache)
     end
     # The real stuff starts here.
     MOI.empty!(dest)
@@ -293,16 +293,16 @@ function MOI.copy_to_and_optimize!(
         (sol.info.setupTime + sol.info.solveTime) / 1000,
         sol.info.iter,
     )
-    return index_map
+    return index_map, false
 end
 
-function MOI.copy_to_and_optimize!(dest::Optimizer, src::MOI.ModelLike)
+function MOI.optimize!(dest::Optimizer, src::MOI.ModelLike)
     linear_solver = get(dest.options, :linear_solver, DirectSolver)
     T = scsint_t(linear_solver)
     cache = MOI.Utilities.UniversalFallback(OptimizerCache{T}())
     index_map = MOI.copy_to(cache, src)
-    MOI.copy_to_and_optimize!(dest, cache)
-    return index_map
+    MOI.optimize!(dest, cache)
+    return index_map, false
 end
 
 function MOI.get(optimizer::Optimizer, ::MOI.SolveTimeSec)
