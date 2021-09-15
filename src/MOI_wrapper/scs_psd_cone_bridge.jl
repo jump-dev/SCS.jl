@@ -12,22 +12,22 @@ MOI.side_dimension(x::SCSPSDCone) = x.side_dimension
 
 MOI.dimension(x::SCSPSDCone) = div(x.side_dimension * (x.side_dimension + 1), 2)
 
-struct SCSPSDConeBridge{T,F} <: MOI.Bridges.Constraint.SetMapBridge{
+struct SCSPSDConeBridge{T} <: MOI.Bridges.Constraint.SetMapBridge{
     T,
     SCSPSDCone,
     MOI.PositiveSemidefiniteConeTriangle,
-    F,
-    F,
+    MOI.VectorAffineFunction{T},
+    MOI.VectorAffineFunction{T},
 }
-    constraint::MOI.ConstraintIndex{F,SCSPSDCone}
+    constraint::MOI.ConstraintIndex{MOI.VectorAffineFunction{T},SCSPSDCone}
 end
 
 function MOI.Bridges.Constraint.concrete_bridge_type(
-    ::Type{<:SCSPSDConeBridge{T}},
+    ::Type{SCSPSDConeBridge{T}},
     F::Type{<:MOI.AbstractVectorFunction},
     ::Type{MOI.PositiveSemidefiniteConeTriangle},
 ) where {T}
-    return SCSPSDConeBridge{T,F}
+    return SCSPSDConeBridge{T}
 end
 
 function MOI.Bridges.map_set(
@@ -56,28 +56,84 @@ function _upper_to_lower_triangular_permutation(dim::Int)
             start += col
         end
     end
-    return permutation
+    return sortperm(permutation), permutation
 end
-function MOI.Bridges.map_function(
-    ::Type{<:SCSPSDConeBridge{T}},
-    func,
+
+function _transform_function(
+    func::MOI.VectorAffineFunction{T},
+    scale,
+    moi_to_scs::Bool,
 ) where {T}
-    scalars = MOI.Utilities.eachscalar(func)
-    p = _upper_to_lower_triangular_permutation(length(scalars))
-    return scalars[p]
+    d = MOI.output_dimension(func)
+    # upper_to_lower[i] maps the i'th element of the upper matrix to the linear
+    #   index of the lower
+    # lower_to_upper[i] maps the i'th element of the lower matrix to the linear
+    #   index of the upper
+    upper_to_lower, lower_to_upper = _upper_to_lower_triangular_permutation(d)
+    # scale_factor[i] is the amount to scale the i'th linear index in the MOI
+    # function by.
+    scale_factor = fill(scale, d)
+    for i in 1:d
+        if isinteger((-1 + sqrt(1 + 8 * i)) / 2)
+            scale_factor[i] = 1.0
+        end
+    end
+    scaled_constants = if moi_to_scs
+        (func.constants.*scale_factor)[lower_to_upper]
+    else
+        func.constants[upper_to_lower] .* scale_factor
+    end
+    scaled_terms = MOI.VectorAffineTerm{T}[]
+    for term in func.terms
+        row = term.output_index
+        i = moi_to_scs ? upper_to_lower[row] : lower_to_upper[row]
+        scale_i = moi_to_scs ? scale_factor[row] : scale_factor[i]
+        push!(
+            scaled_terms,
+            MOI.VectorAffineTerm(
+                i,
+                MOI.ScalarAffineTerm(
+                    term.scalar_term.coefficient * scale_i,
+                    term.scalar_term.variable,
+                ),
+            ),
+        )
+    end
+    return MOI.VectorAffineFunction(scaled_terms, scaled_constants)
 end
 
-function MOI.Bridges.inverse_map_function(B::Type{<:SCSPSDConeBridge}, f)
-    return MOI.Bridges.map_function(B, f)
+function _transform_function(func::Vector{T}, scale, moi_to_scs::Bool) where {T}
+    d = length(func)
+    upper_to_lower, lower_to_upper = _upper_to_lower_triangular_permutation(d)
+    scale_factor = fill(scale, d)
+    for i in 1:d
+        if isinteger((-1 + sqrt(1 + 8 * i)) / 2)
+            scale_factor[i] = 1.0
+        end
+    end
+    if moi_to_scs
+        return (func.*scale_factor)[lower_to_upper]
+    else
+        return func[upper_to_lower] .* scale_factor
+    end
 end
 
-function MOI.Bridges.adjoint_map_function(B::Type{<:SCSPSDConeBridge}, f)
-    return MOI.Bridges.map_function(B, f)
+# Map ConstraintFunction from MOI -> SCS
+function MOI.Bridges.map_function(::Type{<:SCSPSDConeBridge}, f)
+    return _transform_function(f, √2, true)
 end
 
-function MOI.Bridges.inverse_adjoint_map_function(
-    B::Type{<:SCSPSDConeBridge},
-    f,
-)
-    return MOI.Bridges.map_function(B, f)
+# Used to map the ConstraintPrimal from SCS -> MOI
+function MOI.Bridges.inverse_map_function(::Type{<:SCSPSDConeBridge}, f)
+    return _transform_function(f, 1 / √2, false)
+end
+
+# Used to map the ConstraintDual from SCS -> MOI
+function MOI.Bridges.adjoint_map_function(::Type{<:SCSPSDConeBridge}, f)
+    return _transform_function(f, 1 / √2, false)
+end
+
+# Used to set ConstraintDualStart
+function MOI.Bridges.inverse_adjoint_map_function(::Type{<:SCSPSDConeBridge}, f)
+    return _transform_function(f, √2, true)
 end

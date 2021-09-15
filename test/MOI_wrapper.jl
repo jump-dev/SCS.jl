@@ -58,11 +58,6 @@ function _test_runtests(linear_solver)
             "test_model_copy_to_UnsupportedAttribute",
             #   ConstraintDualStart not supported correctly
             "test_model_ModelFilter_AbstractConstraintAttribute",
-            #   #1606
-            "test_conic_LogDetConeTriangle",
-            "test_conic_NormNuclearCone",
-            "test_conic_NormSpectralCone",
-            "test_conic_RootDetConeTriangle",
             # Expected test failures:
             #   ArgumentError: The number of constraints must be greater than 0
             "test_attribute_RawStatusString",

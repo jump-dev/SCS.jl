@@ -145,48 +145,6 @@ function _to_sparse(::Type{T}, A::SparseArrays.SparseMatrixCSC) where {T}
 end
 
 """
-    _offdiag_rows(offset::T, psd_rows::Vector{T})
-
-Return the 0-indexed rows to the A matrix corresponding to off-diagonal elements
-in the PSD matrices.
-"""
-function _offdiag_rows(offset::T, psd_rows::Vector{T}) where {T}
-    rows_to_scale = T[]
-    for side_dimension in psd_rows
-        for col in 1:side_dimension
-            for row in col:side_dimension
-                if row != col
-                    push!(rows_to_scale, offset)
-                end
-                offset += 1
-            end
-        end
-    end
-    return rows_to_scale
-end
-
-function _scale_off_diag_psd_elements(
-    rows_to_scale::Vector{T},
-    values::Vector{Cdouble},
-    rowval::Vector{T},
-    colptr::Vector{T},
-    scale::Cdouble,
-) where {T}
-    for col in 1:length(colptr)-1
-        for i in colptr[col]:(colptr[col+1]-1)
-            if rowval[i+1] < rows_to_scale[1]
-                continue
-            elseif rowval[i+1] > rows_to_scale[end]
-                continue
-            elseif rowval[i+1] in rows_to_scale
-                values[i+1] *= scale
-            end
-        end
-    end
-    return
-end
-
-"""
     SCS_solve(args...)
 
 SCS solves a problem of the form
@@ -225,10 +183,9 @@ Returns a Solution object.
 
 !!! warning
     SCS expects the semi-definite cones to be scaled by a factor of √2. That is,
-    the off-diagonal elements in the A matrix should be multiplied by √2, and
-    then the corresponding rows in the dual and slack solution vectors should be
-    multiplied by 1/√2. Pass `off_diagonal_sdc_needs_scaling = true` if you do
-    not want to do this scaling manually.
+    the off-diagonal elements in the A matrix and b vector should be multiplied
+    by √2, and then the corresponding rows in the dual and slack solution
+    vectors should be multiplied by 1/√2.
 """
 function SCS_solve(
     linear_solver::Type{<:LinearSolver},
@@ -248,7 +205,6 @@ function SCS_solve(
     dual_sol::Vector{Float64} = zeros(m),
     slack::Vector{Float64} = zeros(m);
     warm_start::Bool = false,
-    off_diagonal_sdc_needs_scaling::Bool = false,
     options...,
 )
     if n <= 0
@@ -271,19 +227,6 @@ function SCS_solve(
     T = scsint_t(linear_solver)
     m, n, f, l, ep, ed = T(m), T(n), T(f), T(l), T(ep), T(ed)
     values, rowval, colptr = _to_sparse(T, A)
-    rows_to_scale = _offdiag_rows(T(f + l + sum(q)), s)
-    if off_diagonal_sdc_needs_scaling && length(rows_to_scale) > 0
-        _scale_off_diag_psd_elements(
-            rows_to_scale,
-            values,
-            rowval,
-            colptr,
-            sqrt(2),
-        )
-        for row in rows_to_scale
-            b[row+1] *= sqrt(2)
-        end
-    end
     option_dict = _sanitize_options(options)
     if warm_start
         option_dict[:warm_start] = 1
@@ -312,23 +255,8 @@ function SCS_solve(
         option_dict,
     )
     Base.GC.@preserve model begin
-        solution = _unsafe_scs_solve(model)
+        return _unsafe_scs_solve(model)
     end
-    if off_diagonal_sdc_needs_scaling && length(rows_to_scale) > 0
-        _scale_off_diag_psd_elements(
-            rows_to_scale,
-            values,
-            rowval,
-            colptr,
-            1 / sqrt(2),
-        )
-        for row in rows_to_scale
-            solution.s[row+1] /= sqrt(2)
-            solution.y[row+1] /= sqrt(2)
-            b[row+1] /= sqrt(2)
-        end
-    end
-    return solution
 end
 
 function _unsafe_scs_solve(model::_SCSDataWrapper{S,T}) where {S,T}
