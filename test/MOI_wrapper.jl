@@ -68,13 +68,9 @@ function _test_runtests(linear_solver)
             "test_conic_DualPowerCone_VectorAffineFunction",
             "test_conic_PowerCone_VectorAffineFunction",
             "test_conic_PowerCone_VectorOfVariables",
-            # Upstream failures
-            #   #1431
+            #   MathOptInterface.jl issue #1431
             "test_model_LowerBoundAlreadySet",
             "test_model_UpperBoundAlreadySet",
-            #   Fixed upstream
-            "test_modification_set_function_single_variable",
-            "test_objective_incorrect_modifications",
         ],
     )
     return

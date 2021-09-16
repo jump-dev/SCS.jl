@@ -141,25 +141,27 @@ end
 ### MOI.AbstractVariableAttribute
 ###
 
-function MOI.supports(
-    ::Optimizer,
-    ::MOI.VariablePrimalStart,
-    ::Type{MOI.VariableIndex},
-)
-    return true
-end
+# TODO(odow): support variable primal starts
+# function MOI.supports(
+#     ::Optimizer,
+#     ::MOI.VariablePrimalStart,
+#     ::Type{MOI.VariableIndex},
+# )
+#     return true
+# end
 
 ###
 ### MOI.AbstractConstraintAttribute
 ###
 
-function MOI.supports(
-    ::Optimizer,
-    ::Union{MOI.ConstraintPrimalStart,MOI.ConstraintDualStart},
-    ::Type{<:MOI.ConstraintIndex},
-)
-    return true
-end
+# TODO(odow): support constraint primal and dual starts
+# function MOI.supports(
+#     ::Optimizer,
+#     ::Union{MOI.ConstraintPrimalStart,MOI.ConstraintDualStart},
+#     ::Type{<:MOI.ConstraintIndex},
+# )
+#     return true
+# end
 
 function MOI.supports_constraint(
     ::Optimizer,
@@ -278,7 +280,6 @@ function MOI.optimize!(
         dest.sol.primal,
         dest.sol.dual,
         dest.sol.slack;
-        # off_diagonal_sdc_needs_scaling = true,
         options...,
     )
     dest.sol = MOISolution(
