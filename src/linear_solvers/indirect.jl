@@ -2,7 +2,7 @@ struct IndirectSolver <: LinearSolver end
 
 scsint_t(::Type{IndirectSolver}) = Int
 
-function scs_set_default_settings(::Type{IndirectSolver}, data::SCSData{Int})
+function scs_set_default_settings(::Type{IndirectSolver}, data::ScsData{Int})
     return ccall(
         (:scs_set_default_settings, indirect),
         Cvoid,
@@ -13,9 +13,9 @@ end
 
 function scs_init(
     ::Type{IndirectSolver},
-    data::SCSData{Int},
-    cone::SCSCone{Int},
-    info::SCSInfo{Int},
+    data::ScsData{Int},
+    cone::ScsCone{Int},
+    info::ScsInfo{Int},
 )
     return ccall(
         (:scs_init, indirect),
@@ -30,10 +30,10 @@ end
 function scs_solve(
     ::Type{IndirectSolver},
     p_work::Ptr{Cvoid},
-    data::SCSData{Int},
-    cone::SCSCone{Int},
-    solution::SCSSolution,
-    info::SCSInfo{Int},
+    data::ScsData{Int},
+    cone::ScsCone{Int},
+    solution::ScsSolution,
+    info::ScsInfo{Int},
 )
     return ccall(
         (:scs_solve, indirect),

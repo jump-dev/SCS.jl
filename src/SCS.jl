@@ -42,6 +42,6 @@ include("MOI_wrapper/MOI_wrapper.jl")
 
 const available_solvers = [DirectSolver, IndirectSolver]
 
-export SCS_solve
+export scs_solve
 
 end

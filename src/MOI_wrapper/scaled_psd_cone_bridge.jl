@@ -1,45 +1,47 @@
-struct SCSPSDCone <: MOI.AbstractVectorSet
+struct ScaledPSDCone <: MOI.AbstractVectorSet
     side_dimension::Int
 end
 
-function MOI.Utilities.set_with_dimension(::Type{SCSPSDCone}, dim)
-    return SCSPSDCone(div(-1 + isqrt(1 + 8 * dim), 2))
+function MOI.Utilities.set_with_dimension(::Type{ScaledPSDCone}, dim)
+    return ScaledPSDCone(div(-1 + isqrt(1 + 8 * dim), 2))
 end
 
-Base.copy(x::SCSPSDCone) = SCSPSDCone(x.side_dimension)
+Base.copy(x::ScaledPSDCone) = ScaledPSDCone(x.side_dimension)
 
-MOI.side_dimension(x::SCSPSDCone) = x.side_dimension
+MOI.side_dimension(x::ScaledPSDCone) = x.side_dimension
 
-MOI.dimension(x::SCSPSDCone) = div(x.side_dimension * (x.side_dimension + 1), 2)
+function MOI.dimension(x::ScaledPSDCone)
+    return div(x.side_dimension * (x.side_dimension + 1), 2)
+end
 
-struct SCSPSDConeBridge{T} <: MOI.Bridges.Constraint.SetMapBridge{
+struct ScaledPSDConeBridge{T} <: MOI.Bridges.Constraint.SetMapBridge{
     T,
-    SCSPSDCone,
+    ScaledPSDCone,
     MOI.PositiveSemidefiniteConeTriangle,
     MOI.VectorAffineFunction{T},
     MOI.VectorAffineFunction{T},
 }
-    constraint::MOI.ConstraintIndex{MOI.VectorAffineFunction{T},SCSPSDCone}
+    constraint::MOI.ConstraintIndex{MOI.VectorAffineFunction{T},ScaledPSDCone}
 end
 
 function MOI.Bridges.Constraint.concrete_bridge_type(
-    ::Type{SCSPSDConeBridge{T}},
+    ::Type{ScaledPSDConeBridge{T}},
     F::Type{<:MOI.AbstractVectorFunction},
     ::Type{MOI.PositiveSemidefiniteConeTriangle},
 ) where {T}
-    return SCSPSDConeBridge{T}
+    return ScaledPSDConeBridge{T}
 end
 
 function MOI.Bridges.map_set(
-    ::Type{<:SCSPSDConeBridge},
+    ::Type{<:ScaledPSDConeBridge},
     set::MOI.PositiveSemidefiniteConeTriangle,
 )
-    return SCSPSDCone(set.side_dimension)
+    return ScaledPSDCone(set.side_dimension)
 end
 
 function MOI.Bridges.inverse_map_set(
-    ::Type{<:SCSPSDConeBridge},
-    set::SCSPSDCone,
+    ::Type{<:ScaledPSDConeBridge},
+    set::ScaledPSDCone,
 )
     return MOI.PositiveSemidefiniteConeTriangle(set.side_dimension)
 end
@@ -119,21 +121,24 @@ function _transform_function(func::Vector{T}, scale, moi_to_scs::Bool) where {T}
 end
 
 # Map ConstraintFunction from MOI -> SCS
-function MOI.Bridges.map_function(::Type{<:SCSPSDConeBridge}, f)
+function MOI.Bridges.map_function(::Type{<:ScaledPSDConeBridge}, f)
     return _transform_function(f, √2, true)
 end
 
 # Used to map the ConstraintPrimal from SCS -> MOI
-function MOI.Bridges.inverse_map_function(::Type{<:SCSPSDConeBridge}, f)
+function MOI.Bridges.inverse_map_function(::Type{<:ScaledPSDConeBridge}, f)
     return _transform_function(f, 1 / √2, false)
 end
 
 # Used to map the ConstraintDual from SCS -> MOI
-function MOI.Bridges.adjoint_map_function(::Type{<:SCSPSDConeBridge}, f)
+function MOI.Bridges.adjoint_map_function(::Type{<:ScaledPSDConeBridge}, f)
     return _transform_function(f, 1 / √2, false)
 end
 
 # Used to set ConstraintDualStart
-function MOI.Bridges.inverse_adjoint_map_function(::Type{<:SCSPSDConeBridge}, f)
+function MOI.Bridges.inverse_adjoint_map_function(
+    ::Type{<:ScaledPSDConeBridge},
+    f,
+)
     return _transform_function(f, √2, true)
 end

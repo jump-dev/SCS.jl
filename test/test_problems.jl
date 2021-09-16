@@ -432,7 +432,7 @@ function feasible_basic_conic(T)
 
     A = SparseMatrixCSC(m, n, colptr .+ 1, rowval .+ 1, vec(values))
 
-    sol = SCS_solve(T, m, n, A, b, c, f, l, q, s, ep, ed, Float64[])
+    sol = scs_solve(T, m, n, A, b, c, f, l, q, s, ep, ed, Float64[])
     @test sol.ret_val == 1
     @test SCS.raw_status(sol.info) == "Solved"
 end
@@ -556,7 +556,7 @@ function feasible_exponential_conic(T)
 
     A = SparseMatrixCSC(m, n, colptr .+ 1, rowval .+ 1, vec(values))
 
-    sol = SCS_solve(T, m, n, A, b, c, f, l, q, s, ep, ed, Float64[])
+    sol = scs_solve(T, m, n, A, b, c, f, l, q, s, ep, ed, Float64[])
     @assert sol.ret_val == 1
     @test SCS.raw_status(sol.info) == "Solved"
 end
@@ -633,7 +633,7 @@ function feasible_sdp_conic(T)
 
     A = SparseMatrixCSC(m, n, colptr .+ 1, rowval .+ 1, vec(values))
 
-    sol = SCS_solve(T, m, n, A, b, c, f, l, q, s, ep, ed, Float64[])
+    sol = scs_solve(T, m, n, A, b, c, f, l, q, s, ep, ed, Float64[])
     @test sol.ret_val == 1
     @test SCS.raw_status(sol.info) == "Solved"
 end
@@ -684,14 +684,14 @@ function feasible_pow_conic(T)
 
     A = SparseMatrixCSC(m, n, colptr .+ 1, rowval .+ 1, vec(values))
 
-    sol = SCS_solve(T, m, n, A, b, c, f, l, q, s, ep, ed, p)
+    sol = scs_solve(T, m, n, A, b, c, f, l, q, s, ep, ed, p)
     @test sol.ret_val == 1
     @test SCS.raw_status(sol.info) == "Solved"
 end
 
 function feasible_basic_problems(solver)
     A = reshape([1.0],(1,1))
-    solution = SCS_solve(solver, 1, 1, A, [1.0], [1.0], 1, 0, Int[], Int[], 0, 0, Float64[]);
+    solution = scs_solve(solver, 1, 1, A, [1.0], [1.0], 1, 0, Int[], Int[], 0, 0, Float64[]);
     @test solution.ret_val == 1
 
     feasible_basic_conic(solver)

@@ -185,7 +185,7 @@ mutable struct Solution{T}
     x::Vector{Float64}
     y::Vector{Float64}
     s::Vector{Float64}
-    info::SCSInfo{T}
+    info::ScsInfo{T}
     ret_val::T
 end
 ```
@@ -193,7 +193,7 @@ where `x` stores the optimal value of the primal variable, `y` stores the
 optimal value of the dual variable, `s` is the slack variable, and `info`
 contains various information about the solve step.
 
-`SCS.raw_status(::SCSInfo)::String` describes the status, e.g. 'Solved',
+`SCS.raw_status(::ScsInfo)::String` describes the status, e.g. 'Solved',
 'Indeterminate', 'Infeasible/Inaccurate', etc.
 
 ## Custom Installation
