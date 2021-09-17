@@ -156,10 +156,10 @@ The problem data are:
   dual cone)
 - `options` is a dictionary of options (see above).
 
-To solve this problem with SCS, call `SCS.SCS_Solve`. It has the following
+To solve this problem with SCS, call `SCS.scs_solve`. It has the following
 signature:
 ```julia
-function SCS_solve(
+function scs_solve(
     linear_solver::Type{<:LinearSolver},
     m::Integer,
     n::Integer,
