@@ -8,6 +8,7 @@ end
 using Test
 using SCS
 
+include("options.jl")
 include("test_problems.jl")
 for s in SCS.available_solvers
     feasible_basic_problems(s)

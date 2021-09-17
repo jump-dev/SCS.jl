@@ -12,13 +12,13 @@ scsint_t(::Type{GpuIndirectSolver}) = Int32
 
 function scs_set_default_settings(
     ::Type{GpuIndirectSolver},
-    data::ScsData{Int32},
+    stgs::ScsSettings{Int32},
 )
     return ccall(
         (:scs_set_default_settings, gpuindirect),
         Cvoid,
-        (Ptr{Cvoid},),
-        data,
+        (Ref{ScsSettings{Int32}},),
+        stgs,
     )
 end
 
@@ -26,38 +26,34 @@ function scs_init(
     ::Type{GpuIndirectSolver},
     data::ScsData{Int32},
     cone::ScsCone{Int32},
-    info::ScsInfo{Int32},
+    stgs::ScsSettings{Int32},
 )
     return ccall(
         (:scs_init, gpuindirect),
-        Ptr{Cvoid},
-        (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}),
+        Ptr{Cvoid}, # returns ptr to unwrapped ScsWork
+        (Ref{ScsData{Int32}}, Ref{ScsCone{Int32}}, Ref{ScsSettings{Int32}}),
         data,
         cone,
-        info,
+        stgs,
     )
 end
 
 function scs_solve(
     ::Type{GpuIndirectSolver},
-    p_work::Ptr{Cvoid},
-    data::ScsData{Int32},
-    cone::ScsCone{Int32},
+    work::Ptr{Cvoid},  # ScsWork, unwrapped
     solution::ScsSolution,
     info::ScsInfo{Int32},
 )
     return ccall(
         (:scs_solve, gpuindirect),
         Int32,
-        (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}),
-        p_work,
-        data,
-        cone,
+        (Ptr{Cvoid}, Ref{ScsSolution}, Ref{ScsInfo{Int32}}),
+        work,
         solution,
         info,
     )
 end
 
-function scs_finish(::Type{GpuIndirectSolver}, p_work::Ptr{Cvoid})
-    return ccall((:scs_finish, gpuindirect), Cvoid, (Ptr{Cvoid},), p_work)
+function scs_finish(::Type{GpuIndirectSolver}, work::Ptr{Cvoid})
+    return ccall((:scs_finish, gpuindirect), Cvoid, (Ptr{Cvoid},), work)
 end

@@ -82,7 +82,7 @@ MOI.set(optimizer, MOI.RawParameter("verbose"), 0)
 Common options are:
  * `max_iters`: the maximum number of iterations to take
  * `verbose`: turn printing on (`1`) or off (`0`)
-See the [`glbopts.h` header](https://github.com/cvxgrp/scs/blob/0fd7ea85e8b0d878cacf5b1dbce557b330422ff7/include/glbopts.h#L30)
+See the [`glbopts.h` header](https://github.com/cvxgrp/scs/blob/3aaa93c7aa04c7001df5e51b81f21b126dfa99b3/include/glbopts.h#L35)
 for other options.
 
 Select one of the linear solvers using the `linear_solver` option. The values
@@ -93,8 +93,8 @@ option for using a GPU is experimental, see the section below.
 
 An experimental `SCS.GpuIndirectSolver` can be used by either providing the
 appropriate libraries in a custom installation, or via the default binaries.
-`SCS_jll-2.1.3` depends on `CUDA_jll` version `10.1`, while prior versions
-require `CUDA_jll` in version`9.0`. In both cases `CUDA_jll` must be installed
+Since version `SCS_jll-2.1.3` has depended on `CUDA_jll` version `10.1`, while prior versions
+had required `CUDA_jll` in version `9.0`. In both cases `CUDA_jll` must be installed
 and loaded **before* `SCS`.
 
 ```julia
@@ -128,33 +128,43 @@ interfacing through MathOptInterface.
 
 We assume we are solving a problem of the form
 ```
-minimize        c' * x
+minimize        1/2 * x' * P * x + c' * x
 subject to      A * x + s = b
                 s in K
 ```
 where `K` is a product cone of:
-- zero cones,
-- positive orthant `{ x | x >= 0 }`,
-- second-order cones (SOC) `{ (t,x) | ||x||_2 <= t }`,
-- semi-definite cones (SDC) `{ X | X is psd }`,
-- exponential cones `{ (x,y,z) | y e^(x/y) <= z, y>0 }`,
-- power cone `{ (x,y,z) | x^a * y^(1-a) >= |z|, x>=0, y>=0 }`, and
-- dual power cone `{ (u,v,w) | (u/a)^a * (v/(1-a))^(1-a) >= |w|, u>=0, v>=0 }`.
+- zero cone,
+- positive orthant `{ x | x ≥ 0 }`,
+- box cone `{ (t,x) | t*l ≤ x ≤ t*u}`,
+- second-order cone (SOC) `{ (t,x) | ||x||_2 ≤ t }`,
+- semi-definite cone (SDC) `{ X | X is psd }`,
+- exponential cone `{ (x,y,z) | y e^(x/y) ≤ z, y>0 }`,
+- power cone `{ (x,y,z) | x^a * y^(1-a) ≥ |z|, x ≥ 0, y ≥ 0 }`, and
+- dual power cone `{ (u,v,w) | (u/a)^a * (v/(1-a))^(1-a) ≥ |w|, u ≥ 0, v ≥ 0 }`.
 
 The problem data are:
-- `A` is the matrix with m rows and n cols
-- `b` is of length m x 1
-- `c` is of length n x 1
-- `f` is the number of primal zero / dual free cones, i.e. primal equality
+- `A` is a matrix with `m` rows and `n` cols
+- `P` is a positive semidefinite symmetric `n × n` matrix
+- `b` is a vector of length `m`
+- `c` is a vector of length `n`
+- `z` is the number of primal zero / dual free cones, i.e. primal equality
   constraints
 - `l` is the number of linear cones
+- `bu` is the vector of upper bounds for the box cone
+- `bl` is the vector of lower bounds for the box cone
 - `q` is the array of SOCs sizes
 - `s` is the array of SDCs sizes
 - `ep` is the number of primal exponential cones
 - `ed` is the number of dual exponential cones
 - `p` is the array of power cone parameters (±1, with negative values for the
   dual cone)
+- `primal_sol = zeros(n)` is a vector to warmstart the primal variables
+- `dual_sol = zeros(m)` is a vector to warmstart the dual variables
+- `slack = zeros(m)` is a vector to warmstart the slack variables
 - `options` is a dictionary of options (see above).
+
+Note: to successfully warmstart the solver all `primal_sol`, `dual_sol` and
+`slack` must be provided **and** `warms_start` option must be set to `true`.
 
 To solve this problem with SCS, call `SCS.scs_solve`. It has the following
 signature:
@@ -166,7 +176,7 @@ function scs_solve(
     A::AbstractMatrix,
     b::Vector{Float64},
     c::Vector{Float64},
-    f::Integer,
+    z::Integer,
     l::Integer,
     q::Vector{<:Integer},
     s::Vector{<:Integer},
@@ -193,8 +203,8 @@ where `x` stores the optimal value of the primal variable, `y` stores the
 optimal value of the dual variable, `s` is the slack variable, and `info`
 contains various information about the solve step.
 
-`SCS.raw_status(::ScsInfo)::String` describes the status, e.g. 'Solved',
-'Indeterminate', 'Infeasible/Inaccurate', etc.
+`SCS.raw_status(::ScsInfo)::String` describes the status, e.g. `"solved"`,
+`"infeasible"`, `"unbounded"`, etc. For the precise return status the value of `ret_val` field should be compared with `https://github.com/cvxgrp/scs/blob/3aaa93c7aa04c7001df5e51b81f21b126dfa99b3/include/glbopts.h#L18`.
 
 ## Custom Installation
 
@@ -206,9 +216,7 @@ of the `scs` libraries to ensure proper options and linking:
   * (optional) `libscsgpuindir` needs to be compiled with `DLONG=0`
 
 All of these libraries should be linked against the OpenBLAS library which julia
-uses. For the official julia binaries this can be achieved (starting from
-[this commit](https://github.com/cvxgrp/scs/commit/e6ab81db115bb37502de0a9917041a0bc2ded313))
-by e.g.
+uses. For the official julia binaries this can be achieved by e.g.
 ```bash
 cd SCS_SOURCE_DIR
 make purge
@@ -231,5 +239,5 @@ ENV["JULIA_SCS_LIBRARY_PATH"]="SCS_SOURCE_DIR/out"
 using Pkg; Pkg.build("SCS")
 ```
 
-To switch back to the default binaries delete `JULIA_SCS_LIBRARY_PATH` from
+To switch back to the default binaries remove `JULIA_SCS_LIBRARY_PATH` from
 `ENV` and call `Pkg.build("SCS")` again.
