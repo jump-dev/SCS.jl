@@ -1,73 +1,91 @@
+module TestSCS
+
 using Test
-
 using MathOptInterface
-const MOI = MathOptInterface
-const MOIT = MOI.Test
-
-# UniversalFallback is needed for starting values
-const CACHE = MOI.Utilities.UniversalFallback(MOI.Utilities.Model{Float64}())
-
 import SCS
 
-function moi_tests(T)
-    optimizer = SCS.Optimizer(linear_solver = T, eps = 1e-6)
+const MOI = MathOptInterface
+
+function runtests()
+    for name in names(@__MODULE__; all = true)
+        if startswith("$(name)", "test_")
+            @testset "$(name)" begin
+                getfield(@__MODULE__, name)()
+            end
+        end
+    end
+    return
+end
+
+test_DirectSolver() = _test_runtests(SCS.DirectSolver)
+
+test_IndirectSolver() = _test_runtests(SCS.IndirectSolver)
+
+function _test_runtests(linear_solver)
+    optimizer = SCS.Optimizer()
+    MOI.set(
+        optimizer,
+        MOI.RawOptimizerAttribute("linear_solver"),
+        linear_solver,
+    )
+    MOI.set(optimizer, MOI.RawOptimizerAttribute("eps"), 1e-6)
     MOI.set(optimizer, MOI.Silent(), true)
-
-    @testset "SolverName" begin
-        @test MOI.get(optimizer, MOI.SolverName()) == "SCS"
-    end
-
-    MOI.empty!(CACHE)
-    cached = MOI.Utilities.CachingOptimizer(CACHE, optimizer)
-    bridged = MOI.Bridges.full_bridge_optimizer(cached, Float64)
-    config = MOIT.TestConfig(atol = 1e-5)
-
-    @testset "Unit" begin
-        MOIT.unittest(
-            bridged,
-            config,
-            [
-                # FIXME `NumberOfThreads` not supported.
-                "number_threads",
-                # `TimeLimitSec` not supported.
-                "time_limit_sec",
-                # ArgumentError: The number of constraints in SCSModel must be greater than 0
-                "solve_unbounded_model",
-                # Integer and ZeroOne sets are not supported
-                "solve_integer_edge_cases",
-                "solve_objbound_edge_cases",
-                "solve_zero_one_with_bounds_1",
-                "solve_zero_one_with_bounds_2",
-                "solve_zero_one_with_bounds_3",
+    model = MOI.Bridges.full_bridge_optimizer(
+        MOI.Utilities.CachingOptimizer(
+            MOI.Utilities.UniversalFallback(MOI.Utilities.Model{Float64}()),
+            optimizer,
+        ),
+        Float64,
+    )
+    MOI.Test.runtests(
+        model,
+        MOI.Test.Config(
+            atol = 1e-4,
+            exclude = Any[
+                MOI.ConstraintBasisStatus,
+                MOI.VariableBasisStatus,
+                MOI.ConstraintName,
+                MOI.VariableName,
+                MOI.ObjectiveBound,
             ],
-        )
-    end
-
-    @testset "Continuous linear problems with $T" begin
-        MOIT.contlineartest(bridged, config)
-    end
-
-    @testset "ADMMIterations attribute with $T" begin
-        MOIT.linear1test(bridged, config)
-        @test MOI.get(bridged, SCS.ADMMIterations()) > 0
-    end
-
-    @testset "Continuous quadratic problems with $T" begin
-        MOIT.qcptest(bridged, config)
-    end
-
-    @testset "Continuous conic problems with $T" begin
-        MOIT.contconictest(bridged, config, ["rootdets", "logdets"])
-    end
+        ),
+        exclude = String[
+            # Expected test failures:
+            #   ArgumentError: The number of constraints must be greater than 0
+            "test_attribute_RawStatusString",
+            "test_attribute_SolveTimeSec",
+            "test_objective_ObjectiveFunction_blank",
+            "test_solve_TerminationStatus_DUAL_INFEASIBLE",
+            #   Problem is a nonconvex QP
+            "test_basic_ScalarQuadraticFunction_EqualTo",
+            "test_basic_ScalarQuadraticFunction_GreaterThan",
+            "test_basic_ScalarQuadraticFunction_Interval",
+            "test_basic_VectorQuadraticFunction_",
+            "test_quadratic_SecondOrderCone_basic",
+            "test_quadratic_nonconvex_",
+            #   power cone error, values must be in [-1,1]
+            "test_conic_DualPowerCone_VectorOfVariables",
+            "test_conic_DualPowerCone_VectorAffineFunction",
+            "test_conic_PowerCone_VectorAffineFunction",
+            "test_conic_PowerCone_VectorOfVariables",
+            #   MathOptInterface.jl issue #1431
+            "test_model_LowerBoundAlreadySet",
+            "test_model_UpperBoundAlreadySet",
+        ],
+    )
+    return
 end
 
-@testset "MOI.RawParameter" begin
+function test_RawOptimizerAttribute()
     model = SCS.Optimizer()
-    # TODO(odow): remove symbol cases when deprecation is removed.
-    MOI.set(model, MOI.RawParameter(:eps), 1.0)
-    @test MOI.get(model, MOI.RawParameter(:eps)) == 1.0
-    @test MOI.get(model, MOI.RawParameter("eps")) == 1.0
-    MOI.set(model, MOI.RawParameter("eps"), 2.0)
-    @test MOI.get(model, MOI.RawParameter(:eps)) == 2.0
-    @test MOI.get(model, MOI.RawParameter("eps")) == 2.0
+    MOI.set(model, MOI.RawOptimizerAttribute("eps"), 1.0)
+    @test MOI.get(model, MOI.RawOptimizerAttribute("eps")) == 1.0
+    @test MOI.get(model, MOI.RawOptimizerAttribute("eps")) == 1.0
+    MOI.set(model, MOI.RawOptimizerAttribute("eps"), 2.0)
+    @test MOI.get(model, MOI.RawOptimizerAttribute("eps")) == 2.0
+    @test MOI.get(model, MOI.RawOptimizerAttribute("eps")) == 2.0
 end
+
+end  # module
+
+TestSCS.runtests()

@@ -8,7 +8,7 @@ function Base.unsafe_convert(::Type{Ptr{Cvoid}}, x::AbstractSCSType)
     return pointer_from_objref(x)
 end
 
-mutable struct SCSMatrix{T} <: AbstractSCSType
+mutable struct ScsMatrix{T} <: AbstractSCSType
     values::Ptr{Cdouble}
     rowval::Ptr{T}
     colptr::Ptr{T}
@@ -16,7 +16,7 @@ mutable struct SCSMatrix{T} <: AbstractSCSType
     n::T
 end
 
-mutable struct SCSSettings{T} <: AbstractSCSType
+mutable struct ScsSettings{T} <: AbstractSCSType
     normalize::T # boolean, heuristic data rescaling
     scale::Cdouble # if normalized, rescales by this factor
     rho_x::Cdouble # x equality constraint scaling
@@ -28,10 +28,10 @@ mutable struct SCSSettings{T} <: AbstractSCSType
     warm_start::T # boolean, warm start (put initial guess in Sol struct)
     acceleration_lookback::T # acceleration memory parameter
     write_data_filename::Cstring
-    SCSSettings{T}() where {T} = new{T}()
+    ScsSettings{T}() where {T} = new{T}()
 end
 
-mutable struct SCSData{T} <: AbstractSCSType
+mutable struct ScsData{T} <: AbstractSCSType
     m::T
     n::T
     A::Ptr{Cvoid}
@@ -40,13 +40,13 @@ mutable struct SCSData{T} <: AbstractSCSType
     stgs::Ptr{Cvoid}
 end
 
-mutable struct SCSSolution <: AbstractSCSType
+mutable struct ScsSolution <: AbstractSCSType
     x::Ptr{Cdouble}
     y::Ptr{Cdouble}
     s::Ptr{Cdouble}
 end
 
-mutable struct SCSInfo{T} <: AbstractSCSType
+mutable struct ScsInfo{T} <: AbstractSCSType
     iter::T
     status::NTuple{32,Cchar}
     statusVal::T
@@ -59,10 +59,10 @@ mutable struct SCSInfo{T} <: AbstractSCSType
     relGap::Cdouble
     setupTime::Cdouble
     solveTime::Cdouble
-    SCSInfo{T}() where {T} = new{T}()
+    ScsInfo{T}() where {T} = new{T}()
 end
 
-mutable struct SCSCone{T} <: AbstractSCSType
+mutable struct ScsCone{T} <: AbstractSCSType
     f::T
     l::T
     q::Ptr{T}
@@ -79,23 +79,23 @@ mutable struct Solution{T}
     x::Array{Float64,1}
     y::Array{Float64,1}
     s::Array{Float64,1}
-    info::SCSInfo{T}
+    info::ScsInfo{T}
     ret_val::T
 end
 
 """
-    _SCSDataWrapper
+    _ScsDataWrapper
 
 A type for wrapping all data inputs to SCS to prevent them from being freed by
 the garbage collector during a solve.
 
-You should not construct this manually. Call `SCS_solve` instead.
+You should not construct this manually. Call `scs_solve` instead.
 """
-struct _SCSDataWrapper{S,T}
+struct _ScsDataWrapper{S,T}
     linear_solver::S
     m::T
     n::T
-    A::SCSMatrix{T}
+    A::ScsMatrix{T}
     values::Vector{Cdouble}
     rowval::Vector{T}
     colptr::Vector{T}
@@ -111,13 +111,13 @@ struct _SCSDataWrapper{S,T}
     primal::Vector{Cdouble}
     dual::Vector{Cdouble}
     slack::Vector{Cdouble}
-    settings::SCSSettings
+    settings::ScsSettings
     options::Any
 end
 
 function _sanitize_options(options)
     option_dict = Dict{Symbol,Any}()
-    fields = fieldnames(SCSSettings)
+    fields = fieldnames(ScsSettings)
     for (key, value) in options
         if key == :linear_solver
             continue
@@ -129,7 +129,7 @@ function _sanitize_options(options)
     return option_dict
 end
 
-function raw_status(info::SCSInfo)
+function raw_status(info::ScsInfo)
     data = UInt8[info.status[i] for i in 1:findfirst(iszero, info.status)-1]
     return String(data)
 end
@@ -145,7 +145,7 @@ function _to_sparse(::Type{T}, A::SparseArrays.SparseMatrixCSC) where {T}
 end
 
 """
-    SCS_solve(args...)
+    scs_solve(args...)
 
 SCS solves a problem of the form
 ```
@@ -180,12 +180,18 @@ above.
    the dual cone)
 
 Returns a Solution object.
+
+!!! warning
+    SCS expects the semi-definite cones to be scaled by a factor of √2. That is,
+    the off-diagonal elements in the A matrix and b vector should be multiplied
+    by √2, and then the corresponding rows in the dual and slack solution
+    vectors should be multiplied by 1/√2.
 """
-function SCS_solve(
+function scs_solve(
     linear_solver::Type{<:LinearSolver},
     m::Integer,
     n::Integer,
-    A::AbstractMatrix,
+    A,
     b::Vector{Float64},
     c::Vector{Float64},
     f::Integer,
@@ -225,11 +231,11 @@ function SCS_solve(
     if warm_start
         option_dict[:warm_start] = 1
     end
-    model = _SCSDataWrapper(
+    model = _ScsDataWrapper(
         linear_solver,
         m,
         n,
-        SCSMatrix(pointer(values), pointer(rowval), pointer(colptr), m, n),
+        ScsMatrix(pointer(values), pointer(rowval), pointer(colptr), m, n),
         values,
         rowval,
         colptr,
@@ -245,7 +251,7 @@ function SCS_solve(
         primal_sol,
         dual_sol,
         slack,
-        SCSSettings{T}(),
+        ScsSettings{T}(),
         option_dict,
     )
     Base.GC.@preserve model begin
@@ -253,13 +259,13 @@ function SCS_solve(
     end
 end
 
-function _unsafe_scs_solve(model::_SCSDataWrapper{S,T}) where {S,T}
-    scs_solution = SCSSolution(
+function _unsafe_scs_solve(model::_ScsDataWrapper{S,T}) where {S,T}
+    scs_solution = ScsSolution(
         pointer(model.primal),
         pointer(model.dual),
         pointer(model.slack),
     )
-    scs_cone = SCSCone{T}(
+    scs_cone = ScsCone{T}(
         model.f,
         model.l,
         pointer(model.q),
@@ -271,8 +277,8 @@ function _unsafe_scs_solve(model::_SCSDataWrapper{S,T}) where {S,T}
         pointer(model.p),
         length(model.p),
     )
-    scs_info = SCSInfo{T}()
-    scs_data = SCSData{T}(
+    scs_info = ScsInfo{T}()
+    scs_data = ScsData{T}(
         model.m,
         model.n,
         pointer_from_objref(model.A),
@@ -285,7 +291,7 @@ function _unsafe_scs_solve(model::_SCSDataWrapper{S,T}) where {S,T}
         setfield!(
             model.settings,
             key,
-            convert(fieldtype(SCSSettings{T}, key), value),
+            convert(fieldtype(ScsSettings{T}, key), value),
         )
     end
     p = scs_init(model.linear_solver, scs_data, scs_cone, scs_info)
