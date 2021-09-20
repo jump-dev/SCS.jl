@@ -1,6 +1,7 @@
 using MathOptInterface
 const MOI = MathOptInterface
 
+include("utilities.jl")
 include("scaled_psd_cone_bridge.jl")
 
 MOI.Utilities.@product_of_sets(

@@ -14,22 +14,25 @@ function MOI.dimension(x::ScaledPSDCone)
     return div(x.side_dimension * (x.side_dimension + 1), 2)
 end
 
-struct ScaledPSDConeBridge{T} <: MOI.Bridges.Constraint.SetMapBridge{
+struct ScaledPSDConeBridge{T,F,G} <: MOI.Bridges.Constraint.SetMapBridge{
     T,
     ScaledPSDCone,
     MOI.PositiveSemidefiniteConeTriangle,
-    MOI.VectorAffineFunction{T},
-    MOI.VectorAffineFunction{T},
+    F,
+    G,
 }
-    constraint::MOI.ConstraintIndex{MOI.VectorAffineFunction{T},ScaledPSDCone}
+    constraint::MOI.ConstraintIndex{F,ScaledPSDCone}
 end
 
 function MOI.Bridges.Constraint.concrete_bridge_type(
     ::Type{ScaledPSDConeBridge{T}},
-    F::Type{<:MOI.AbstractVectorFunction},
+    G::Type{<:MOI.AbstractVectorFunction},
     ::Type{MOI.PositiveSemidefiniteConeTriangle},
 ) where {T}
-    return ScaledPSDConeBridge{T}
+    S = MOI.Utilities.scalar_type(G)
+    A = MOI.Utilities.promote_operation(*, T, S, T)
+    F = MOI.Utilities.promote_operation(vcat, T, A, S)
+    return ScaledPSDConeBridge{T,F,G}
 end
 
 function MOI.Bridges.map_set(
@@ -62,11 +65,11 @@ function _upper_to_lower_triangular_permutation(dim::Int)
 end
 
 function _transform_function(
-    func::MOI.VectorAffineFunction{T},
+    func,
     scale,
     moi_to_scs::Bool,
-) where {T}
-    d = MOI.output_dimension(func)
+)
+    d = _output_dimension(func)
     # upper_to_lower[i] maps the i'th element of the upper matrix to the linear
     #   index of the lower
     # lower_to_upper[i] maps the i'th element of the lower matrix to the linear
@@ -77,47 +80,21 @@ function _transform_function(
     scale_factor = fill(scale, d)
     for i in 1:d
         if MOI.Utilities.is_diagonal_vectorized_index(i)
-            scale_factor[i] = 1.0
-        end
-    end
-    scaled_constants = if moi_to_scs
-        (func.constants.*scale_factor)[lower_to_upper]
-    else
-        func.constants[upper_to_lower] .* scale_factor
-    end
-    scaled_terms = MOI.VectorAffineTerm{T}[]
-    for term in func.terms
-        row = term.output_index
-        i = moi_to_scs ? upper_to_lower[row] : lower_to_upper[row]
-        scale_i = moi_to_scs ? scale_factor[row] : scale_factor[i]
-        push!(
-            scaled_terms,
-            MOI.VectorAffineTerm(
-                i,
-                MOI.ScalarAffineTerm(
-                    term.scalar_term.coefficient * scale_i,
-                    term.scalar_term.variable,
-                ),
-            ),
-        )
-    end
-    return MOI.VectorAffineFunction(scaled_terms, scaled_constants)
-end
-
-function _transform_function(func::Vector{T}, scale, moi_to_scs::Bool) where {T}
-    d = length(func)
-    upper_to_lower, lower_to_upper = _upper_to_lower_triangular_permutation(d)
-    scale_factor = fill(scale, d)
-    for i in 1:d
-        if MOI.Utilities.is_diagonal_vectorized_index(i)
-            scale_factor[i] = 1.0
+            scale_factor[i] = one(scale)
         end
     end
     if moi_to_scs
-        return (func.*scale_factor)[lower_to_upper]
+        permutation, inverse_permutation = lower_to_upper, upper_to_lower
     else
-        return func[upper_to_lower] .* scale_factor
+        permutation, inverse_permutation = upper_to_lower, lower_to_upper
     end
+    return _scaled_permutation(
+        func,
+        scale_factor,
+        permutation,
+        inverse_permutation,
+        moi_to_scs,
+    )
 end
 
 # Map ConstraintFunction from MOI -> SCS
