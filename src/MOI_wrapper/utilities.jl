@@ -12,7 +12,7 @@ function _scaled_permutation(
     scale_before::Bool,
 ) where {T}
     return if scale_before
-        (func .* scale_factor)[permutation]
+        (func.*scale_factor)[permutation]
     else
         func[permutation] .* scale_factor
     end
@@ -27,13 +27,18 @@ function _scaled_permutation(
 ) where {T}
     n = length(func.variables)
     return MOI.VectorAffineFunction{T}(
-        [MOI.VectorAffineTerm(
-            i,
-            MOI.ScalarAffineTerm(
-                (scale_before ? scale_factor[permutation[i]] : scale_factor[i]),
-                func.variables[permutation[i]],
-            ),
-        ) for i in 1:n],
+        [
+            MOI.VectorAffineTerm(
+                i,
+                MOI.ScalarAffineTerm(
+                    (
+                        scale_before ? scale_factor[permutation[i]] :
+                        scale_factor[i]
+                    ),
+                    func.variables[permutation[i]],
+                ),
+            ) for i in 1:n
+        ],
         zeros(T, n),
     )
 end

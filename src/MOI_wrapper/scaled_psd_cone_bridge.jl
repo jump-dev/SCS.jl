@@ -64,11 +64,7 @@ function _upper_to_lower_triangular_permutation(dim::Int)
     return sortperm(permutation), permutation
 end
 
-function _transform_function(
-    func,
-    scale,
-    moi_to_scs::Bool,
-)
+function _transform_function(func, scale, moi_to_scs::Bool)
     d = _output_dimension(func)
     # upper_to_lower[i] maps the i'th element of the upper matrix to the linear
     #   index of the lower
