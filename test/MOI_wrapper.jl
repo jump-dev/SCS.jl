@@ -86,6 +86,29 @@ function test_RawOptimizerAttribute()
     @test MOI.get(model, MOI.RawOptimizerAttribute("eps")) == 2.0
 end
 
+function test_constrained_variables()
+    model = MOI.Bridges.full_bridge_optimizer(
+        MOI.Utilities.CachingOptimizer(
+            MOI.Utilities.UniversalFallback(MOI.Utilities.Model{Float64}()),
+            SCS.Optimizer(),
+        ),
+        Float64,
+    )
+    @test MOI.supports_constraint(
+        model,
+        MOI.VectorOfVariables,
+        MOI.PositiveSemidefiniteConeTriangle,
+    )
+    x = MOI.add_variables(model, 6)
+    f = MOI.VectorOfVariables(x)
+    s = MOI.PositiveSemidefiniteConeTriangle(3)
+    @test isa(
+        MOI.add_constraint(model, f, s),
+        MOI.ConstraintIndex{typeof(f),typeof(s)},
+    )
+    return
+end
+
 end  # module
 
 TestSCS.runtests()

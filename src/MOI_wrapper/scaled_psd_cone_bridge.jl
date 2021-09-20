@@ -14,22 +14,22 @@ function MOI.dimension(x::ScaledPSDCone)
     return div(x.side_dimension * (x.side_dimension + 1), 2)
 end
 
-struct ScaledPSDConeBridge{T} <: MOI.Bridges.Constraint.SetMapBridge{
+struct ScaledPSDConeBridge{T,G} <: MOI.Bridges.Constraint.SetMapBridge{
     T,
     ScaledPSDCone,
     MOI.PositiveSemidefiniteConeTriangle,
     MOI.VectorAffineFunction{T},
-    MOI.VectorAffineFunction{T},
+    G,
 }
     constraint::MOI.ConstraintIndex{MOI.VectorAffineFunction{T},ScaledPSDCone}
 end
 
 function MOI.Bridges.Constraint.concrete_bridge_type(
     ::Type{ScaledPSDConeBridge{T}},
-    F::Type{<:MOI.AbstractVectorFunction},
+    ::Type{G},
     ::Type{MOI.PositiveSemidefiniteConeTriangle},
-) where {T}
-    return ScaledPSDConeBridge{T}
+) where {T,G<:Union{MOI.VectorOfVariables,MOI.VectorAffineFunction{T}}}
+    return ScaledPSDConeBridge{T,G}
 end
 
 function MOI.Bridges.map_set(
@@ -102,6 +102,11 @@ function _transform_function(
         )
     end
     return MOI.VectorAffineFunction(scaled_terms, scaled_constants)
+end
+
+function _transform_function(func::MOI.VectorOfVariables, scale, moi_to_scs)
+    new_f = MOI.Utilities.operate(*, Float64, 1.0, func)
+    return _transform_function(new_f, scale, moi_to_scs)
 end
 
 function _transform_function(func::Vector{T}, scale, moi_to_scs::Bool) where {T}
