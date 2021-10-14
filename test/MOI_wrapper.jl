@@ -109,6 +109,26 @@ function test_constrained_variables()
     return
 end
 
+function test_unsupported()
+    model = MOI.Utilities.UniversalFallback(MOI.Utilities.Model{Float64}())
+    optimizer = SCS.Optimizer()
+    x = MOI.add_variable(model)
+    MOI.add_constraint(model, 1.0x, MOI.EqualTo(1.0))
+    err = MOI.UnsupportedConstraint{MOI.ScalarAffineFunction{Float64},MOI.EqualTo{Float64}}()
+    @test_throws err MOI.optimize!(optimizer, model)
+    MOI.empty!(model)
+    x = MOI.add_variable(model)
+    MOI.set(model, MOI.Test.UnknownVariableAttribute(), x, 1.0)
+    err = MOI.UnsupportedAttribute{MOI.Test.UnknownVariableAttribute}
+    @test_throws err MOI.optimize!(optimizer, model)
+    MOI.empty!(model)
+    x = MOI.add_variable(model)
+    c = MOI.add_constraint(model, MOI.Utilities.vectorize([1.0x]), MOI.Zeros(1))
+    MOI.set(model, MOI.Test.UnknownConstraintAttribute(), c, 1.0)
+    err = MOI.UnsupportedAttribute{MOI.Test.UnknownConstraintAttribute}
+    @test_throws err MOI.optimize!(optimizer, model)
+end
+
 end  # module
 
 TestSCS.runtests()

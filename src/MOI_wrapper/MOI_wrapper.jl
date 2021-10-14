@@ -206,6 +206,10 @@ function MOI.optimize!(
     Ab = src.model.constraints
     A = Ab.coefficients
 
+    for (F, S) in keys(src.constraints)
+        throw(MOI.UnsupportedConstraint{F,S}())
+    end
+
     model_attributes = MOI.get(src, MOI.ListOfModelAttributesSet())
     objective_function_attr =
         MOI.ObjectiveFunction{MOI.ScalarAffineFunction{Cdouble}}()
