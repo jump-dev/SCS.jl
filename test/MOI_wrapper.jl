@@ -114,7 +114,10 @@ function test_unsupported()
     optimizer = SCS.Optimizer()
     x = MOI.add_variable(model)
     MOI.add_constraint(model, 1.0x, MOI.EqualTo(1.0))
-    err = MOI.UnsupportedConstraint{MOI.ScalarAffineFunction{Float64},MOI.EqualTo{Float64}}()
+    err = MOI.UnsupportedConstraint{
+        MOI.ScalarAffineFunction{Float64},
+        MOI.EqualTo{Float64},
+    }()
     @test_throws err MOI.optimize!(optimizer, model)
     MOI.empty!(model)
     x = MOI.add_variable(model)
