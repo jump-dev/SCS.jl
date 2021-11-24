@@ -286,6 +286,14 @@ function MOI.optimize!(
         dest.sol.slack;
         options...,
     )
+    # If the solution is an infeasibility certificate, the objective values are
+    # left as infinite, not the value corresponding to the ray.
+    if !isfinite(sol.info.dobj)
+        sol.info.dobj = -Ab.constants' * sol.y
+    end
+    if !isfinite(sol.info.pobj)
+        sol.info.pobj = c' * sol.x
+    end
     dest.sol = MOISolution(
         sol.x,
         sol.y,
