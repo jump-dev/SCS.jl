@@ -52,6 +52,7 @@ function _test_runtests(linear_solver)
         exclude = String[
             # TODO(odow): unimplemented features
             "test_attribute_SolverVersion",
+            "test_linear_add_constraints",
             # Expected test failures:
             #   MOI PR#1696
             "test_linear_integration_Interval",

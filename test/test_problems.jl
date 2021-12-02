@@ -605,16 +605,13 @@ function feasible_sdp_conic(T)
     -0.144003787891437030,  0.031108987439201756, -6.024128094309364911,
     -6.684198760055235056, -2.875770597510225901, -1.958442177032014397,
     -3.231061172173861795, -0.047201649069278366, -1.907845683517030544,
-     0.605113199091042553,  2.360164164701050726, -0.367619298880400125]
-
+     0.605113199091042553,  2.360164164701050726, -0.367619298880400125
     colptr = [0, 3, 11, 18, 24, 25, 30, 36, 39, 44, 47, 48, 51, 56, 61, 66]
-
     rowval = [
      7, 26, 27,  3,  5,  9, 15, 26, 28, 31, 34,  7, 12, 21, 25, 32, 38, 44, 10,
     11, 16, 35, 36, 40, 10, 11, 14, 24, 26, 34, 11, 12, 16, 20, 38, 42, 13, 34,
     42,  3,  6, 11, 15, 29, 30, 34, 37, 31,  2,  5, 42, 11, 20, 22, 24, 34,  6,
     17, 23, 25, 44,  0, 21, 30, 32, 42];
-
     values = [
     -0.067865553542687335,  1.530072514424096086,  1.603457298120044117,
     -0.334886938964047698,  1.039090653504955997, -0.217606350143191934,
@@ -638,10 +635,8 @@ function feasible_sdp_conic(T)
     -0.941485770955433732, -0.483815050110121103, -0.274070229932602216,
     -0.084539479817724195,  0.455029556444334349,  1.682103594663178825,
     -0.444627816446985402,  0.443421912904091331,  0.182452167505983420]
-
     A = SparseMatrixCSC(m, n, colptr .+ 1, rowval .+ 1, vec(values))
     P = spzeros(n, n)
-
     sol = scs_solve(T, m, n, A, P, b, c, z, l, bu, bl, q, s, ep, ed, Float64[])
     @test sol.ret_val == 1
     @test SCS.raw_status(sol.info) == "solved"
@@ -660,7 +655,6 @@ function feasible_pow_conic(T)
     q = Int[]
     s = Int[]
     p = [-3.0e-01, 2.5e-01, 7.5e-01, -4.0e-01, 8.7e-01, -1.2e-01]
-
     b = [
     -0.887386390749058451,  1.868842541924223610, -0.755288651776904296,
      0.000000000000000000,  0.000000000000000000,  0.000000000000000000,
@@ -672,16 +666,12 @@ function feasible_pow_conic(T)
      0.322926943542406031,  0.765172439731569787,  1.673745381540497679,
      0.056224953164704453,  0.024308325296160227, -0.492458408194795028,
     -0.193643481641372683]
-
     c = [
      0.581324380640174887,  0.000000000000000000, -1.274914899429569370,
      1.437959547820705897,  0.178499636115030086, -2.834480531039399676,
     -0.465471220509626749,  0.440187271984058437,  1.655006387767208542];
-
     colptr = [0, 2, 2, 8, 11, 12, 15, 21, 22, 25]
-
     rowval = [11, 19, 10, 11, 14, 18, 19, 26, 1, 19, 23, 2, 1, 14, 19, 0, 1, 10, 14, 23, 26, 16, 0, 6, 18]
-
     values = [
     -0.511172207780700494, -0.557093642241281661, -0.322939921204497105,
     -0.002041345349432955,  1.606510961119237413, -0.070499387778693703,
@@ -692,13 +682,12 @@ function feasible_pow_conic(T)
      0.268100811901575309, -1.098195387799324019,  0.581667258045274083,
     -0.923489085784077401, -1.341380722378574086, -0.273782415743900387,
      0.147891351014747152]
-
     A = SparseMatrixCSC(m, n, colptr .+ 1, rowval .+ 1, vec(values))
     P = spzeros(n, n)
-
     sol = scs_solve(T, m, n, A, P, b, c, z, l, bu, bl, q, s, ep, ed, p)
     @test sol.ret_val == 1
     @test SCS.raw_status(sol.info) == "solved"
+    return
 end
 
 function feasible_basic_problems(solver)
@@ -723,9 +712,65 @@ function feasible_basic_problems(solver)
         Float64[],
     );
     @test solution.ret_val == 1
-
     feasible_basic_conic(solver)
     feasible_exponential_conic(solver)
     feasible_sdp_conic(solver)
     feasible_pow_conic(solver)
+    return
+end
+
+function test_options(T)
+    A = [
+        1.0 1.0 0.0 0.0 0.0
+        0.0 1.0 0.0 0.0 1.0
+        0.0 0.0 1.0 1.0 1.0
+        -1.0 0.0 0.0 0.0 0.0
+        0.0 -1.0 0.0 0.0 0.0
+        0.0 0.0 -1.0 0.0 0.0
+        0.0 0.0 0.0 -1.0 0.0
+        0.0 0.0 0.0 0.0 -1.0
+    ]
+    m, n = size(A)
+    args = (
+        m = m,
+        n = n,
+        A = A,
+        P = zeros(n, n),
+        b = [5.0, 3.0, 9.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+        c = -[3.0, 4.0, 4.0, 9.0, 5.0],
+        z = 0,
+        l = 8,
+        bu = Float64[],
+        bl = Float64[],
+        q = Int64[],
+        s = Int64[],
+        ep = 0,
+        ed = 0,
+        p = Float64[],
+    )
+    solution = SCS.scs_solve(T, args...)
+    @test isapprox(solution.x' * args.c, -99.0; rtol = 1e-6)
+    @test !isapprox(solution.x' * args.c, -99.0; rtol = 1e-7)
+    solution = SCS.scs_solve(T, args...; eps_abs = 1e-12, eps_rel = 1e-10)
+    @test isapprox(solution.x' * args.c, -99.0; rtol = 1e-12)
+    solution = SCS.scs_solve(
+        T,
+        args...,
+        solution.x,
+        solution.y,
+        solution.s;
+        max_iters = 2,
+        warm_start = true,
+        eps_abs = 1e-12,
+        eps_rel = 1e-12,
+    )
+    @test isapprox(solution.x' * args.c, -99.0; rtol = 1e-12)
+    @test_throws(ArgumentError, SCS.scs_solve(T, args...; eps = 1e-12))
+    err = try
+        SCS.scs_solve(T, args...; eps_abs = 1e-12, eps = 1e-12)
+    catch ex
+        ex
+    end
+    @test err.msg == "Unrecognized option passed to SCS solver: eps"
+    return
 end
