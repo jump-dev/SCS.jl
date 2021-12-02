@@ -33,11 +33,10 @@ mutable struct ScsSettings{T} <: AbstractSCSType
     acceleration_interval::T # interval to apply acceleration
     write_data_filename::Cstring # if set dump raw problem data to the file
     log_csv_filename::Cstring # if set log solve data to the file
-
     function ScsSettings(linear_solver::Type{<:LinearSolver})
-        stgs = new{scsint_t(linear_solver)}()
-        scs_set_default_settings(linear_solver, stgs)
-        return stgs
+        settings = new{scsint_t(linear_solver)}()
+        scs_set_default_settings(linear_solver, settings)
+        return settings
     end
 end
 
@@ -117,13 +116,13 @@ struct _ScsDataWrapper{S,T}
     linear_solver::S
     m::T
     n::T
-    values_A::Vector{Float64}
-    rowval_A::Vector{T}
-    colptr_A::Vector{T}
+    Avalues::Vector{Float64}
+    Arowval::Vector{T}
+    Acolptr::Vector{T}
     A::ScsMatrix{T}
-    values_P::Vector{Float64}
-    rowval_P::Vector{T}
-    colptr_P::Vector{T}
+    Pvalues::Vector{Float64}
+    Prowval::Vector{T}
+    Pcolptr::Vector{T}
     P::ScsMatrix{T}
     b::Vector{Cdouble}
     c::Vector{Cdouble}
@@ -145,11 +144,10 @@ end
 
 function _sanitize_options(options)
     option_dict = Dict{Symbol,Any}()
-    fields = fieldnames(ScsSettings)
     for (key, value) in options
         if key == :linear_solver
             continue
-        elseif !(key in fields)
+        elseif !hasfield(ScsSettings, key)
             throw(
                 ArgumentError(
                     "Unrecognized option passed to SCS solver: $(key)",
@@ -265,28 +263,6 @@ function scs_solve(
     elseif m <= 0
         throw(ArgumentError("The number of constraints must be greater than 0"))
     end
-
-    # m == size(A, 1) || throw(
-    #     ArgumentError(
-    #         "The number of rows in A inconsistent with input dimension",
-    #     ),
-    # )
-    # n == size(A, 2) || throw(
-    #     ArgumentError(
-    #         "The number of cols in A inconsistent with input dimension",
-    #     ),
-    # )
-    # size(P, 1) == size(P, 2) || throw(ArgumentError("P is not square"))
-    # size(P, 1) == n || throw(
-    #     ArgumentError("P dimension $(size(P, 1)) inconsistent with n = $n"),
-    # )
-
-    length(bu) == length(bl) || throw(
-        ArgumentError(
-            "The upper and lower bounds of the box cone differ in dimension",
-        ),
-    )
-
     if length(primal_sol) == n && length(dual_sol) == length(slack) == m
         if !warm_start
             fill!(primal_sol, 0.0)
@@ -301,8 +277,8 @@ function scs_solve(
     end
     T = scsint_t(linear_solver)
     m, n, z, l, ep, ed = T(m), T(n), T(z), T(l), T(ep), T(ed)
-    values_A, rowval_A, colptr_A = _to_sparse(T, A)
-    values_P, rowval_P, colptr_P = _to_sparse(T, P)
+    Avalues, Arowval, Acolptr = _to_sparse(T, A)
+    Pvalues, Prowval, Pcolptr = _to_sparse(T, P)
     option_dict = _sanitize_options(options)
     if warm_start
         option_dict[:warm_start] = 1
@@ -311,26 +287,14 @@ function scs_solve(
         linear_solver,
         m,
         n,
-        values_A,
-        rowval_A,
-        colptr_A,
-        ScsMatrix(
-            pointer(values_A),
-            pointer(rowval_A),
-            pointer(colptr_A),
-            m,
-            n,
-        ),
-        values_P,
-        rowval_P,
-        colptr_P,
-        ScsMatrix(
-            pointer(values_P),
-            pointer(rowval_P),
-            pointer(colptr_P),
-            n,
-            n,
-        ),
+        Avalues,
+        Arowval,
+        Acolptr,
+        ScsMatrix(pointer(Avalues), pointer(Arowval), pointer(Acolptr), m, n),
+        Pvalues,
+        Prowval,
+        Pcolptr,
+        ScsMatrix(pointer(Pvalues), pointer(Prowval), pointer(Pcolptr), n, n),
         b,
         c,
         z,
@@ -354,11 +318,6 @@ function scs_solve(
 end
 
 function _unsafe_scs_solve(model::_ScsDataWrapper{S,T}) where {S,T}
-    scs_solution = ScsSolution(
-        pointer(model.primal),
-        pointer(model.dual),
-        pointer(model.slack),
-    )
     scs_cone = ScsCone{T}(
         model.z,
         model.l,
@@ -374,24 +333,24 @@ function _unsafe_scs_solve(model::_ScsDataWrapper{S,T}) where {S,T}
         pointer(model.p),
         length(model.p),
     )
-    scs_info = ScsInfo{T}()
     scs_data = ScsData{T}(
         model.m,
         model.n,
         pointer_from_objref(model.A),
-        iszero(model.values_P) ? convert(Ptr{Float64}, C_NULL) :
-        pointer_from_objref(model.P),
+        iszero(model.Pvalues) ? C_NULL : pointer_from_objref(model.P),
         pointer(model.b),
         pointer(model.c),
     )
     for (key, value) in model.options
         setproperty!(model.settings, key, value)
     end
-
-    @assert scs_data.m == model.A.m
-    @assert scs_data.n == model.A.n
-
     scs_work = scs_init(model.linear_solver, scs_data, scs_cone, model.settings)
+    scs_solution = ScsSolution(
+        pointer(model.primal),
+        pointer(model.dual),
+        pointer(model.slack),
+    )
+    scs_info = ScsInfo{T}()
     status = scs_solve(model.linear_solver, scs_work, scs_solution, scs_info)
     scs_finish(model.linear_solver, scs_work)
     return Solution(model.primal, model.dual, model.slack, scs_info, status)

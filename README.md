@@ -9,15 +9,15 @@ programs, exponential cone programs, and power cone programs.
 
 ## Installation
 
-You can install SCS.jl through the Julia package manager:
+Install SCS.jl using the Julia package manager:
 ```julia
-julia> Pkg.add("SCS")
+import Pkg; Pkg.add("SCS")
 ```
 
-SCS.jl will use `SCS_jll` and binaries built by the [Yggdrasil](https://github.com/JuliaPackaging/Yggdrasil)
-infrastructure. Note that if you are not using the official Julia binaries from
-`https://julialang.org/downloads/` you may need a custom install of the SCS
-binaries (see below for more information).
+In addition to installing the SCS.jl pacakge, this will also download and
+install the SCS binaries. (You do not need to install SCS separately.) If you
+require a custom build of SCS, see the **Custom installation** instructions
+below.
 
 ## Usage
 
@@ -93,10 +93,7 @@ option for using a GPU is experimental, see the section below.
 
 An experimental `SCS.GpuIndirectSolver` can be used by either providing the
 appropriate libraries in a custom installation, or via the default binaries.
-Since version `SCS_jll-2.1.3` has depended on `CUDA_jll` version `10.1`, while prior versions
-had required `CUDA_jll` in version `9.0`. In both cases `CUDA_jll` must be installed
-and loaded **before* `SCS`.
-
+Not that `CUDA_jll` must be installed and loaded **before* `SCS`.
 ```julia
 julia> import Pkg
 
@@ -117,13 +114,13 @@ julia> optimizer = SCS.Optimizer();
 julia> MOI.set(
            optimizer,
            MOI.RawParameter("linear_solver"),
-           SCS.GpuIndirectSolver
+           SCS.GpuIndirectSolver,
        )
 ```
 
 ### Low-level wrapper
 
-SCS provides a low-level interface to solve a problem directly without
+SCS provides a low-level interface to solve a problem directly, without
 interfacing through MathOptInterface.
 
 We assume we are solving a problem of the form
@@ -142,32 +139,7 @@ where `K` is a product cone of:
 - power cone `{ (x,y,z) | x^a * y^(1-a) ≥ |z|, x ≥ 0, y ≥ 0 }`, and
 - dual power cone `{ (u,v,w) | (u/a)^a * (v/(1-a))^(1-a) ≥ |w|, u ≥ 0, v ≥ 0 }`.
 
-The problem data are:
-- `A` is a matrix with `m` rows and `n` cols
-- `P` is a positive semidefinite symmetric `n × n` matrix
-- `b` is a vector of length `m`
-- `c` is a vector of length `n`
-- `z` is the number of primal zero / dual free cones, i.e. primal equality
-  constraints
-- `l` is the number of linear cones
-- `bu` is the vector of upper bounds for the box cone
-- `bl` is the vector of lower bounds for the box cone
-- `q` is the array of SOCs sizes
-- `s` is the array of SDCs sizes
-- `ep` is the number of primal exponential cones
-- `ed` is the number of dual exponential cones
-- `p` is the array of power cone parameters (±1, with negative values for the
-  dual cone)
-- `primal_sol = zeros(n)` is a vector to warmstart the primal variables
-- `dual_sol = zeros(m)` is a vector to warmstart the dual variables
-- `slack = zeros(m)` is a vector to warmstart the slack variables
-- `options` is a dictionary of options (see above).
-
-Note: to successfully warmstart the solver all `primal_sol`, `dual_sol` and
-`slack` must be provided **and** `warms_start` option must be set to `true`.
-
-To solve this problem with SCS, call `SCS.scs_solve`. It has the following
-signature:
+To solve this problem with SCS, call `SCS.scs_solve`:
 ```julia
 function scs_solve(
     linear_solver::Type{<:LinearSolver},
@@ -189,7 +161,32 @@ function scs_solve(
     options...,
 )
 ```
-and it returns an object of type `Solution`, which contains the following fields
+where:
+- `A` is a matrix with `m` rows and `n` cols
+- `P` is a positive semidefinite symmetric `n × n` matrix
+- `b` is a vector of length `m`
+- `c` is a vector of length `n`
+- `z` is the number of primal zero / dual free cones, i.e., primal equality
+  constraints
+- `l` is the number of linear cones
+- `bu` is the vector of upper bounds for the box cone
+- `bl` is the vector of lower bounds for the box cone
+- `q` is the array of SOCs sizes
+- `s` is the array of SDCs sizes
+- `ep` is the number of primal exponential cones
+- `ed` is the number of dual exponential cones
+- `p` is the array of power cone parameters (±1, with negative values for the
+  dual cone)
+- `primal_sol = zeros(n)` is a vector to warmstart the primal variables
+- `dual_sol = zeros(m)` is a vector to warmstart the dual variables
+- `slack = zeros(m)` is a vector to warmstart the slack variables
+- `options` is a dictionary of options (see above).
+
+Note: to successfully warmstart the solver all `primal_sol`, `dual_sol` and
+`slack` must be provided **and** you must pass the `warm_start = true` option.
+
+`scs_solve` returns an object of type `Solution`, which contains the following
+fields:
 ```julia
 mutable struct Solution{T}
     x::Vector{Float64}
@@ -204,7 +201,8 @@ optimal value of the dual variable, `s` is the slack variable, and `info`
 contains various information about the solve step.
 
 `SCS.raw_status(::ScsInfo)::String` describes the status, e.g. `"solved"`,
-`"infeasible"`, `"unbounded"`, etc. For the precise return status the value of `ret_val` field should be compared with `https://github.com/cvxgrp/scs/blob/3aaa93c7aa04c7001df5e51b81f21b126dfa99b3/include/glbopts.h#L18`.
+`"infeasible"`, `"unbounded"`, etc. For the precise return status, the value of
+`ret_val` field should be compared with `https://github.com/cvxgrp/scs/blob/3aaa93c7aa04c7001df5e51b81f21b126dfa99b3/include/glbopts.h#L18`.
 
 ## Custom Installation
 
