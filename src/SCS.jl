@@ -4,7 +4,7 @@ using Libdl
 import Requires
 import SparseArrays
 
-if haskey(ENV, "JULIA_SCS_LIBRARY_PATH") || VERSION < v"1.3"
+if haskey(ENV, "JULIA_SCS_LIBRARY_PATH")
     if !isfile(joinpath(dirname(@__FILE__), "..", "deps", "deps.jl"))
         error(
             "SCS not properly installed. Please run `Pkg.build(\"SCS\")` and " *

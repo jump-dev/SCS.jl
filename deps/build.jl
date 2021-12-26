@@ -1,4 +1,4 @@
-if !(haskey(ENV, "JULIA_SCS_LIBRARY_PATH") || VERSION < v"1.3")
+if !haskey(ENV, "JULIA_SCS_LIBRARY_PATH")
     @info("Installing default SCS binaries")
     exit(0)
 end
