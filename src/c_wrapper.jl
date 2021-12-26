@@ -138,7 +138,7 @@ struct _ScsDataWrapper{S,T}
     primal::Vector{Cdouble}
     dual::Vector{Cdouble}
     slack::Vector{Cdouble}
-    settings::ScsSettings
+    settings::ScsSettings{T}
     options::Any
 end
 
