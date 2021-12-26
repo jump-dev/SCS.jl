@@ -749,22 +749,22 @@ function test_options(T)
         p = Float64[],
     )
     solution = SCS.scs_solve(T, args...)
-    @test isapprox(solution.x' * args.c, -99.0; rtol = 1e-6)
+    @test isapprox(solution.x' * args.c, -99.0; rtol = 1e-4)
     @test !isapprox(solution.x' * args.c, -99.0; rtol = 1e-7)
-    solution = SCS.scs_solve(T, args...; eps_abs = 1e-12, eps_rel = 1e-10)
-    @test isapprox(solution.x' * args.c, -99.0; rtol = 1e-12)
+    solution = SCS.scs_solve(T, args...; eps_abs = 1e-10, eps_rel = 1e-10)
+    @test isapprox(solution.x' * args.c, -99.0; rtol = 1e-10)
     solution = SCS.scs_solve(
         T,
         args...,
         solution.x,
         solution.y,
         solution.s;
-        max_iters = 2,
+        max_iters = 1,
         warm_start = true,
-        eps_abs = 1e-12,
-        eps_rel = 1e-12,
+        eps_abs = 1e-10,
+        eps_rel = 1e-10,
     )
-    @test isapprox(solution.x' * args.c, -99.0; rtol = 1e-12)
+    @test isapprox(solution.x' * args.c, -99.0; rtol = 1e-10)
     @test_throws(ArgumentError, SCS.scs_solve(T, args...; eps = 1e-12))
     err = try
         SCS.scs_solve(T, args...; eps_abs = 1e-12, eps = 1e-12)

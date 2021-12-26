@@ -13,6 +13,7 @@ for s in SCS.available_solvers
     @test @ccall(SCS.direct.scs_sizeof_int()::Csize_t) ==
           sizeof(SCS.scsint_t(s))
     feasible_basic_problems(s)
+    test_options(s)
 end
 
 include("MOI_wrapper.jl")
