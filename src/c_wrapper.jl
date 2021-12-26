@@ -43,8 +43,8 @@ end
 mutable struct ScsData{T} <: AbstractSCSType
     m::T
     n::T
-    A::Ptr{Cvoid}
-    P::Ptr{Cvoid}
+    A::Ptr{ScsMatrix{T}}
+    P::Ptr{Cvoid} # Ptr{ScsMatrix{T}} or C_NULL
     b::Ptr{Cdouble}
     c::Ptr{Cdouble}
 end
@@ -345,6 +345,10 @@ function _unsafe_scs_solve(model::_ScsDataWrapper{S,T}) where {S,T}
         setproperty!(model.settings, key, value)
     end
     scs_work = scs_init(model.linear_solver, scs_data, scs_cone, model.settings)
+    @info (model.A.m, model.A.n) (scs_data.m, scs_data.n) unsafe_load(
+        scs_data.A,
+    ) model.settings
+
     scs_solution = ScsSolution(
         pointer(model.primal),
         pointer(model.dual),
