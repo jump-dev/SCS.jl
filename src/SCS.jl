@@ -29,7 +29,14 @@ else
     function __init__()
         Requires.@require(
             CUDA_jll = "e9e359dc-d701-5aa8-82ae-09bbf812ea83",
-            include("linear_solvers/gpu_indirect.jl"),
+            if haskey(ENV, "JULIA_SCS_LIBRARY_PATH")
+                @isdefined(libscsgpuindir) &&
+                    push!(available_solvers, GpuIndirectSolver)
+            else
+                import SCS_GPU_jll
+                const gpuindirect = SCS_GPU_jll.libscsgpuindir
+                push!(available_solvers, GpuIndirectSolver)
+            end
         )
         return
     end
@@ -38,6 +45,7 @@ end
 include("c_wrapper.jl")
 include("linear_solvers/direct.jl")
 include("linear_solvers/indirect.jl")
+include("linear_solvers/gpu_indirect.jl")
 include("MOI_wrapper/MOI_wrapper.jl")
 
 const available_solvers = [DirectSolver, IndirectSolver]
