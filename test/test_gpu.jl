@@ -12,6 +12,9 @@ using Test
 
 @test SCS.GpuIndirectSolver in SCS.available_solvers
 
+@test @ccall(SCS.gpuindirect.scs_sizeof_int()::Csize_t) ==
+      sizeof(SCS.scsint_t(SCS.GpuIndirectSolver))
+
 include("test_problems.jl")
 feasible_basic_problems(SCS.GpuIndirectSolver)
 

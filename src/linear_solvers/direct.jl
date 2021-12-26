@@ -1,52 +1,49 @@
 struct DirectSolver <: LinearSolver end
 
-scsint_t(::Type{DirectSolver}) = Int
+scsint_t(::Type{DirectSolver}) = Clonglong
 
-function scs_set_default_settings(::Type{DirectSolver}, stgs::ScsSettings{Int})
-    return ccall(
-        (:scs_set_default_settings, direct),
-        Cvoid,
-        (Ref{ScsSettings{Int}},),
-        stgs,
-    )
+function scs_set_default_settings(
+    solver_t::Type{DirectSolver},
+    stgs::ScsSettings{I},
+) where {I}
+    @assert I == scsint_t(solver_t)
+    return @ccall direct.scs_set_default_settings(
+        stgs::Ref{ScsSettings{I}},
+    )::Cvoid
 end
 
 function scs_init(
-    ::Type{DirectSolver},
-    data::ScsData{Int},
-    cone::ScsCone{Int},
-    stgs::ScsSettings{Int},
-)
-    return ccall(
-        (:scs_init, direct),
-        Ptr{Cvoid}, # returns ptr to unwrapped ScsWork
-        (Ref{ScsData{Int}}, Ref{ScsCone{Int}}, Ref{ScsSettings{Int}}),
-        data,
-        cone,
-        stgs,
-    )
+    solver_t::Type{DirectSolver},
+    data::ScsData{I},
+    cone::ScsCone{I},
+    stgs::ScsSettings{I},
+) where {I}
+    @assert I == scsint_t(solver_t)
+    return @ccall direct.scs_init(
+        data::Ref{ScsData{I}},
+        cone::Ref{ScsCone{I}},
+        stgs::Ref{ScsSettings{I}},
+    )::Ptr{Cvoid}
 end
 
 function scs_solve(
-    ::Type{DirectSolver},
+    solver_t::Type{DirectSolver},
     work::Ptr{Cvoid}, # ScsWork, unwrapped
     solution::ScsSolution,
-    info::ScsInfo{Int},
-)
-    return ccall(
-        (:scs_solve, direct),
-        Int,
-        (Ptr{Cvoid}, Ref{ScsSolution}, Ref{ScsInfo{Int}}),
-        work,
-        solution,
-        info,
-    )
+    info::ScsInfo{I},
+) where {I}
+    @assert I == scsint_t(solver_t)
+    return @ccall direct.scs_solve(
+        work::Ptr{Cvoid},
+        solution::Ref{ScsSolution},
+        info::Ref{ScsInfo{I}},
+    )::Clonglong
 end
 
 function scs_finish(::Type{DirectSolver}, work::Ptr{Cvoid})
-    return ccall((:scs_finish, direct), Cvoid, (Ptr{Cvoid},), work)
+    return @ccall direct.scs_finish(work::Ptr{Cvoid})::Cvoid
 end
 
 function scs_version()
-    return unsafe_string(ccall((:scs_version, direct), Cstring, ()))
+    return unsafe_string(@ccall direct.scs_version()::Cstring)
 end
