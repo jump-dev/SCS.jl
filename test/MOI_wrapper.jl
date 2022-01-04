@@ -52,6 +52,8 @@ function _test_runtests(linear_solver)
         exclude = String[
             # TODO(odow): unimplemented features
             "test_attribute_SolverVersion",
+            # TODO(odow): get not supported for primal/dual starts
+            "test_model_ModelFilter_AbstractConstraintAttribute",
             # Expected test failures:
             #   ArgumentError: The number of constraints must be greater than 0
             "test_attribute_RawStatusString",

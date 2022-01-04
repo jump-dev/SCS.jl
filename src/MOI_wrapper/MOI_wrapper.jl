@@ -141,27 +141,25 @@ end
 ### MOI.AbstractVariableAttribute
 ###
 
-# TODO(odow): support variable primal starts
-# function MOI.supports(
-#     ::Optimizer,
-#     ::MOI.VariablePrimalStart,
-#     ::Type{MOI.VariableIndex},
-# )
-#     return true
-# end
+function MOI.supports(
+    ::Optimizer,
+    ::MOI.VariablePrimalStart,
+    ::Type{MOI.VariableIndex},
+)
+    return true
+end
 
 ###
 ### MOI.AbstractConstraintAttribute
 ###
 
-# TODO(odow): support constraint primal and dual starts
-# function MOI.supports(
-#     ::Optimizer,
-#     ::Union{MOI.ConstraintPrimalStart,MOI.ConstraintDualStart},
-#     ::Type{<:MOI.ConstraintIndex},
-# )
-#     return true
-# end
+function MOI.supports(
+    ::Optimizer,
+    ::Union{MOI.ConstraintPrimalStart,MOI.ConstraintDualStart},
+    ::Type{<:MOI.ConstraintIndex},
+)
+    return true
+end
 
 function MOI.supports_constraint(
     ::Optimizer,
@@ -248,11 +246,43 @@ function MOI.optimize!(
     end
     # Set starting values and throw error for other variable attributes
     vis_src = MOI.get(src, MOI.ListOfVariableIndices())
-    MOI.Utilities.pass_attributes(dest, src, index_map, vis_src)
+    for attr in MOI.get(src, MOI.ListOfVariableAttributesSet())
+        if attr == MOI.VariableName()
+            # Skip
+        elseif attr == MOI.VariablePrimalStart()
+            for (i, x) in enumerate(vis_src)
+                dest.sol.primal[i] = something(MOI.get(src, attr, x), 0.0)
+            end
+        else
+            throw(MOI.UnsupportedAttribute(attr))
+        end
+    end
     # Set starting values and throw error for other constraint attributes
     for (F, S) in MOI.get(src, MOI.ListOfConstraintTypesPresent())
         cis_src = MOI.get(src, MOI.ListOfConstraintIndices{F,S}())
-        MOI.Utilities.pass_attributes(dest, src, index_map, cis_src)
+        for attr in MOI.get(src, MOI.ListOfConstraintAttributesSet{F,S}())
+            if attr == MOI.ConstraintName()
+                # Skip
+            elseif attr == MOI.ConstraintPrimalStart()
+                for ci in cis_src
+                    start = MOI.get(src, attr, ci)
+                    if start !== nothing
+                        rows = MOI.Utilities.rows(Ab, ci)
+                        dest.sol.slack[rows] .= start
+                    end
+                end
+            elseif attr == MOI.ConstraintDualStart()
+                for ci in cis_src
+                    start = MOI.get(src, attr, ci)
+                    if start !== nothing
+                        rows = MOI.Utilities.rows(Ab, ci)
+                        dest.sol.dual[rows] .= start
+                    end
+                end
+            else
+                throw(MOI.UnsupportedAttribute(attr))
+            end
+        end
     end
     options = copy(dest.options)
     if dest.silent
@@ -284,6 +314,7 @@ function MOI.optimize!(
         dest.sol.primal,
         dest.sol.dual,
         dest.sol.slack;
+        warm_start = true,
         options...,
     )
     # If the solution is an infeasibility certificate, the objective values are
