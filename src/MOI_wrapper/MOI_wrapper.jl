@@ -270,7 +270,6 @@ function MOI.optimize!(
                         rows = MOI.Utilities.rows(Ab, ci)
                         dest.sol.slack[rows] .= start
                     end
-
                 end
             elseif attr == MOI.ConstraintDualStart()
                 for ci in cis_src
