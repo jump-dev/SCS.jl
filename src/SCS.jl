@@ -1,45 +1,22 @@
 module SCS
 
-using Libdl
 import Requires
+import SCS_jll
 import SparseArrays
 
-if haskey(ENV, "JULIA_SCS_LIBRARY_PATH")
-    if !isfile(joinpath(dirname(@__FILE__), "..", "deps", "deps.jl"))
-        error(
-            "SCS not properly installed. Please run `Pkg.build(\"SCS\")` and " *
-            "restart julia",
-        )
-    end
-    include(joinpath(dirname(@__FILE__), "..", "deps", "deps.jl"))
-    function __init__()
-        version = VersionNumber(scs_version())
-        if version < v"3.0.0"
-            error(
-                "Current SCS version installed is $version, but we require " *
-                "version 3.0.*",
-            )
+const indirect = SCS_jll.libscsindir
+const direct = SCS_jll.libscsdir
+
+function __init__()
+    Requires.@require(
+        CUDA_jll = "e9e359dc-d701-5aa8-82ae-09bbf812ea83",
+        begin
+            import SCS_GPU_jll
+            const gpuindirect = SCS_GPU_jll.libscsgpuindir
+            push!(available_solvers, GpuIndirectSolver)
         end
-        return
-    end
-else
-    import SCS_jll
-    const indirect = SCS_jll.libscsindir
-    const direct = SCS_jll.libscsdir
-    function __init__()
-        Requires.@require(
-            CUDA_jll = "e9e359dc-d701-5aa8-82ae-09bbf812ea83",
-            if haskey(ENV, "JULIA_SCS_LIBRARY_PATH")
-                @isdefined(libscsgpuindir) &&
-                    push!(available_solvers, GpuIndirectSolver)
-            else
-                import SCS_GPU_jll
-                const gpuindirect = SCS_GPU_jll.libscsgpuindir
-                push!(available_solvers, GpuIndirectSolver)
-            end
-        )
-        return
-    end
+    )
+    return
 end
 
 include("c_wrapper.jl")

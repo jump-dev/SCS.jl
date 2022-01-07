@@ -13,11 +13,8 @@ Install SCS.jl using the Julia package manager:
 ```julia
 import Pkg; Pkg.add("SCS")
 ```
-
-In addition to installing the SCS.jl pacakge, this will also download and
-install the SCS binaries. (You do not need to install SCS separately.) If you
-require a custom build of SCS, see the **Custom installation** instructions
-below.
+In addition to installing the SCS.jl package, this will also download and
+install the SCS binaries. (You do not need to install SCS separately.)
 
 ## Usage
 
@@ -91,9 +88,8 @@ option for using a GPU is experimental, see the section below.
 
 #### SCS on GPU
 
-An experimental `SCS.GpuIndirectSolver` can be used by either providing the
-appropriate libraries in a custom installation, or via the default binaries.
-Not that `CUDA_jll` must be installed and loaded **before* `SCS`.
+An experimental `SCS.GpuIndirectSolver` can be used on Linux. Note that
+`CUDA_jll` must be installed and loaded **before* `SCS`.
 ```julia
 julia> import Pkg
 
@@ -203,39 +199,3 @@ contains various information about the solve step.
 `SCS.raw_status(::ScsInfo)::String` describes the status, e.g. `"solved"`,
 `"infeasible"`, `"unbounded"`, etc. For the precise return status, the value of
 `ret_val` field should be compared with `https://github.com/cvxgrp/scs/blob/3aaa93c7aa04c7001df5e51b81f21b126dfa99b3/include/glbopts.h#L18`.
-
-## Custom Installation
-
-Custom build binaries are needed when using non-standard compile options, or
-non-official julia binaries. Special caution is required during the compilation
-of the `scs` libraries to ensure proper options and linking:
-
-  * `libscsdir` and `libscsindir` need to be compiled with `DLONG=1`.
-  * (optional) `libscsgpuindir` needs to be compiled with `DLONG=0`
-
-All of these libraries should be linked against the OpenBLAS library which julia
-uses. For the official julia binaries this can be achieved by e.g.
-```bash
-cd SCS_SOURCE_DIR
-make purge
-make USE_OPENMP=1 BLAS64=1 BLASSUFFIX=_64_ DLONG=1 BLASLDFLAGS="-L$JULIA_BLAS_PATH -lopenblas64_" out/libscsdir.so out/libscsindir.so
-make clean
-make USE_OPENMP=1 BLAS64=1 BLASSUFFIX=_64_ DLONG=0 BLASLDFLAGS="-L$JULIA_BLAS_PATH -lopenblas64_" out/libscsgpuindir.so
-```
-where
- * `SCS_SOURCE_DIR` is the main directory of the source of `scs`, and
- * `JULIA_BLAS_PATH` is the path to the directory containing BLAS library used
-   by `julia`.
-   - Before `julia-1.3`: `abspath(joinpath(Sys.BINDIR, "..", "lib", "julia"))`),
-   - afterwards: the path to `BLAS` library artifact, e.g.
-     `joinpath(OpenBLAS_jll.artifact_dir, "lib", "julia")`
-
-To use custom built SCS binaries with `SCS.jl` set the environment variable
-`JULIA_SCS_LIBRARY_PATH` to `SCS_SOURCE_DIR/opt` and build `SCS.jl`:
-```julia
-ENV["JULIA_SCS_LIBRARY_PATH"]="SCS_SOURCE_DIR/out"
-using Pkg; Pkg.build("SCS")
-```
-
-To switch back to the default binaries remove `JULIA_SCS_LIBRARY_PATH` from
-`ENV` and call `Pkg.build("SCS")` again.
