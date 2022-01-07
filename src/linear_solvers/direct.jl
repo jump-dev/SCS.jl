@@ -3,22 +3,20 @@ struct DirectSolver <: LinearSolver end
 scsint_t(::Type{DirectSolver}) = Clonglong
 
 function scs_set_default_settings(
-    solver_t::Type{DirectSolver},
+    ::Type{DirectSolver},
     stgs::ScsSettings{I},
-) where {I}
-    @assert I == scsint_t(solver_t)
-    return @ccall direct.scs_set_default_settings(
-        stgs::Ref{ScsSettings{I}},
-    )::Cvoid
+) where {I<:Clonglong}
+    return @ccall(
+        direct.scs_set_default_settings(stgs::Ref{ScsSettings{I}})::Cvoid,
+    )
 end
 
 function scs_init(
-    solver_t::Type{DirectSolver},
+    ::Type{DirectSolver},
     data::ScsData{I},
     cone::ScsCone{I},
     stgs::ScsSettings{I},
-) where {I}
-    @assert I == scsint_t(solver_t)
+) where {I<:Clonglong}
     return @ccall direct.scs_init(
         data::Ref{ScsData{I}},
         cone::Ref{ScsCone{I}},
@@ -27,12 +25,11 @@ function scs_init(
 end
 
 function scs_solve(
-    solver_t::Type{DirectSolver},
-    work::Ptr{Cvoid}, # ScsWork, unwrapped
+    ::Type{DirectSolver},
+    work::Ptr{Cvoid},
     solution::ScsSolution,
     info::ScsInfo{I},
-) where {I}
-    @assert I == scsint_t(solver_t)
+) where {I<:Clonglong}
     return @ccall direct.scs_solve(
         work::Ptr{Cvoid},
         solution::Ref{ScsSolution},
