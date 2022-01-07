@@ -1,63 +1,42 @@
 struct GpuIndirectSolver <: LinearSolver end
 
-if haskey(ENV, "JULIA_SCS_LIBRARY_PATH")
-    @isdefined(libscsgpuindir) && push!(available_solvers, GpuIndirectSolver)
-else
-    import SCS_GPU_jll
-    const gpuindirect = SCS_GPU_jll.libscsgpuindir
-    push!(available_solvers, GpuIndirectSolver)
-end
-
-scsint_t(::Type{GpuIndirectSolver}) = Int32
+scsint_t(::Type{GpuIndirectSolver}) = Cint
 
 function scs_set_default_settings(
     ::Type{GpuIndirectSolver},
-    data::ScsData{Int32},
-)
-    return ccall(
-        (:scs_set_default_settings, gpuindirect),
-        Cvoid,
-        (Ptr{Cvoid},),
-        data,
+    stgs::ScsSettings{I},
+) where {I<:Cint}
+    return @ccall(
+        gpuindirect.scs_set_default_settings(stgs::Ref{ScsSettings{I}})::Cvoid,
     )
 end
 
 function scs_init(
     ::Type{GpuIndirectSolver},
-    data::ScsData{Int32},
-    cone::ScsCone{Int32},
-    info::ScsInfo{Int32},
-)
-    return ccall(
-        (:scs_init, gpuindirect),
-        Ptr{Cvoid},
-        (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}),
-        data,
-        cone,
-        info,
-    )
+    data::ScsData{I},
+    cone::ScsCone{I},
+    stgs::ScsSettings{I},
+) where {I<:Cint}
+    return @ccall gpuindirect.scs_init(
+        data::Ref{ScsData{I}},
+        cone::Ref{ScsCone{I}},
+        stgs::Ref{ScsSettings{I}},
+    )::Ptr{Cvoid}
 end
 
 function scs_solve(
     ::Type{GpuIndirectSolver},
-    p_work::Ptr{Cvoid},
-    data::ScsData{Int32},
-    cone::ScsCone{Int32},
+    work::Ptr{Cvoid},
     solution::ScsSolution,
-    info::ScsInfo{Int32},
-)
-    return ccall(
-        (:scs_solve, gpuindirect),
-        Int32,
-        (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}),
-        p_work,
-        data,
-        cone,
-        solution,
-        info,
-    )
+    info::ScsInfo{I},
+) where {I<:Cint}
+    return @ccall gpuindirect.scs_solve(
+        work::Ptr{Cvoid},
+        solution::Ref{ScsSolution},
+        info::Ref{ScsInfo{I}},
+    )::Cint
 end
 
-function scs_finish(::Type{GpuIndirectSolver}, p_work::Ptr{Cvoid})
-    return ccall((:scs_finish, gpuindirect), Cvoid, (Ptr{Cvoid},), p_work)
+function scs_finish(::Type{GpuIndirectSolver}, work::Ptr{Cvoid})
+    return @ccall gpuindirect.scs_finish(work::Ptr{Cvoid})::Cvoid
 end

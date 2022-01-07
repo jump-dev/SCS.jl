@@ -1,56 +1,46 @@
 struct DirectSolver <: LinearSolver end
 
-scsint_t(::Type{DirectSolver}) = Int
+scsint_t(::Type{DirectSolver}) = Clonglong
 
-function scs_set_default_settings(::Type{DirectSolver}, data::ScsData{Int})
-    return ccall(
-        (:scs_set_default_settings, direct),
-        Cvoid,
-        (Ptr{Cvoid},),
-        data,
+function scs_set_default_settings(
+    ::Type{DirectSolver},
+    stgs::ScsSettings{I},
+) where {I<:Clonglong}
+    return @ccall(
+        direct.scs_set_default_settings(stgs::Ref{ScsSettings{I}})::Cvoid,
     )
 end
 
 function scs_init(
     ::Type{DirectSolver},
-    data::ScsData{Int},
-    cone::ScsCone{Int},
-    info::ScsInfo{Int},
-)
-    return ccall(
-        (:scs_init, direct),
-        Ptr{Cvoid},
-        (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}),
-        data,
-        cone,
-        info,
-    )
+    data::ScsData{I},
+    cone::ScsCone{I},
+    stgs::ScsSettings{I},
+) where {I<:Clonglong}
+    return @ccall direct.scs_init(
+        data::Ref{ScsData{I}},
+        cone::Ref{ScsCone{I}},
+        stgs::Ref{ScsSettings{I}},
+    )::Ptr{Cvoid}
 end
 
 function scs_solve(
     ::Type{DirectSolver},
-    p_work::Ptr{Cvoid},
-    data::ScsData{Int},
-    cone::ScsCone{Int},
+    work::Ptr{Cvoid},
     solution::ScsSolution,
-    info::ScsInfo{Int},
-)
-    return ccall(
-        (:scs_solve, direct),
-        Int,
-        (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}),
-        p_work,
-        data,
-        cone,
-        solution,
-        info,
-    )
+    info::ScsInfo{I},
+) where {I<:Clonglong}
+    return @ccall direct.scs_solve(
+        work::Ptr{Cvoid},
+        solution::Ref{ScsSolution},
+        info::Ref{ScsInfo{I}},
+    )::Clonglong
 end
 
-function scs_finish(::Type{DirectSolver}, p_work::Ptr{Cvoid})
-    return ccall((:scs_finish, direct), Cvoid, (Ptr{Cvoid},), p_work)
+function scs_finish(::Type{DirectSolver}, work::Ptr{Cvoid})
+    return @ccall direct.scs_finish(work::Ptr{Cvoid})::Cvoid
 end
 
 function scs_version()
-    return unsafe_string(ccall((:scs_version, direct), Cstring, ()))
+    return unsafe_string(@ccall direct.scs_version()::Cstring)
 end

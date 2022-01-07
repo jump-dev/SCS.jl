@@ -294,10 +294,13 @@ function MOI.optimize!(
         A.m,
         A.n,
         A,
+        SparseArrays.spzeros(A.n, A.n), # placeholder: P
         Ab.constants,
         c,
         Ab.sets.num_rows[1],
         Ab.sets.num_rows[2] - Ab.sets.num_rows[1],
+        Float64[], # # placeholder: bu
+        Float64[], # # placeholder: bl
         _map_sets(MOI.dimension, T, Ab, MOI.SecondOrderCone),
         _map_sets(MOI.side_dimension, T, Ab, ScaledPSDCone),
         div(Ab.sets.num_rows[5] - Ab.sets.num_rows[4], 3),
@@ -334,7 +337,7 @@ function MOI.optimize!(
         (max_sense ? -1 : 1) * sol.info.pobj,
         (max_sense ? -1 : 1) * sol.info.dobj,
         objective_constant,
-        (sol.info.setupTime + sol.info.solveTime) / 1000,
+        (sol.info.setup_time + sol.info.solve_time) / 1000,
         sol.info.iter,
     )
     return index_map, false
