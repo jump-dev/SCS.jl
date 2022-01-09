@@ -116,86 +116,27 @@ julia> MOI.set(
 
 ### Low-level wrapper
 
-SCS provides a low-level interface to solve a problem directly, without
+SCS.jl provides a low-level interface to solve a problem directly, without
 interfacing through MathOptInterface.
 
-We assume we are solving a problem of the form
+**This is an advanced interface with a risk of incorrect usage. For new users,
+we recommend that you use the JuMP or Convex interfaces instead.**
+
+SCS solves a problem of the form:
 ```
 minimize        1/2 * x' * P * x + c' * x
 subject to      A * x + s = b
                 s in K
 ```
 where `K` is a product cone of:
-- zero cone,
-- positive orthant `{ x | x ≥ 0 }`,
-- box cone `{ (t,x) | t*l ≤ x ≤ t*u}`,
-- second-order cone (SOC) `{ (t,x) | ||x||_2 ≤ t }`,
-- semi-definite cone (SDC) `{ X | X is psd }`,
-- exponential cone `{ (x,y,z) | y e^(x/y) ≤ z, y>0 }`,
-- power cone `{ (x,y,z) | x^a * y^(1-a) ≥ |z|, x ≥ 0, y ≥ 0 }`, and
+- zero cone
+- positive orthant `{ x | x ≥ 0 }`
+- box cone `{ (t,x) | t*l ≤ x ≤ t*u}`
+- second-order cone (SOC) `{ (t,x) | ||x||_2 ≤ t }`
+- semi-definite cone (SDC) `{ X | X is psd }`
+- exponential cone `{ (x,y,z) | y e^(x/y) ≤ z, y>0 }`
+- power cone `{ (x,y,z) | x^a * y^(1-a) ≥ |z|, x ≥ 0, y ≥ 0 }`
 - dual power cone `{ (u,v,w) | (u/a)^a * (v/(1-a))^(1-a) ≥ |w|, u ≥ 0, v ≥ 0 }`.
 
-To solve this problem with SCS, call `SCS.scs_solve`:
-```julia
-function scs_solve(
-    linear_solver::Type{<:LinearSolver},
-    m::Integer,
-    n::Integer,
-    A::AbstractMatrix,
-    b::Vector{Float64},
-    c::Vector{Float64},
-    z::Integer,
-    l::Integer,
-    q::Vector{<:Integer},
-    s::Vector{<:Integer},
-    ep::Integer,
-    ed::Integer,
-    p::Vector{Float64},
-    primal_sol::Vector{Float64}=zeros(n),
-    dual_sol::Vector{Float64}=zeros(m),
-    slack::Vector{Float64}=zeros(m);
-    options...,
-)
-```
-where:
-- `A` is a matrix with `m` rows and `n` cols
-- `P` is a positive semidefinite symmetric `n × n` matrix
-- `b` is a vector of length `m`
-- `c` is a vector of length `n`
-- `z` is the number of primal zero / dual free cones, i.e., primal equality
-  constraints
-- `l` is the number of linear cones
-- `bu` is the vector of upper bounds for the box cone
-- `bl` is the vector of lower bounds for the box cone
-- `q` is the array of SOCs sizes
-- `s` is the array of SDCs sizes
-- `ep` is the number of primal exponential cones
-- `ed` is the number of dual exponential cones
-- `p` is the array of power cone parameters (±1, with negative values for the
-  dual cone)
-- `primal_sol = zeros(n)` is a vector to warmstart the primal variables
-- `dual_sol = zeros(m)` is a vector to warmstart the dual variables
-- `slack = zeros(m)` is a vector to warmstart the slack variables
-- `options` is a dictionary of options (see above).
-
-Note: to successfully warmstart the solver all `primal_sol`, `dual_sol` and
-`slack` must be provided **and** you must pass the `warm_start = true` option.
-
-`scs_solve` returns an object of type `Solution`, which contains the following
-fields:
-```julia
-mutable struct Solution{T}
-    x::Vector{Float64}
-    y::Vector{Float64}
-    s::Vector{Float64}
-    info::ScsInfo{T}
-    ret_val::T
-end
-```
-where `x` stores the optimal value of the primal variable, `y` stores the
-optimal value of the dual variable, `s` is the slack variable, and `info`
-contains various information about the solve step.
-
-`SCS.raw_status(::ScsInfo)::String` describes the status, e.g. `"solved"`,
-`"infeasible"`, `"unbounded"`, etc. For the precise return status, the value of
-`ret_val` field should be compared with `https://github.com/cvxgrp/scs/blob/3aaa93c7aa04c7001df5e51b81f21b126dfa99b3/include/glbopts.h#L18`.
+To solve this problem with SCS, call `SCS.scs_solve`; see the docstring for
+details.
