@@ -70,11 +70,6 @@ function _test_runtests(linear_solver)
             "test_basic_VectorQuadraticFunction_",
             "test_quadratic_SecondOrderCone_basic",
             "test_quadratic_nonconvex_",
-            #   power cone error, values must be in [-1,1]
-            "test_conic_DualPowerCone_VectorOfVariables",
-            "test_conic_DualPowerCone_VectorAffineFunction",
-            "test_conic_PowerCone_VectorAffineFunction",
-            "test_conic_PowerCone_VectorOfVariables",
             #   MathOptInterface.jl issue #1431
             "test_model_LowerBoundAlreadySet",
             "test_model_UpperBoundAlreadySet",

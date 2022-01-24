@@ -15,6 +15,51 @@ MOI.Utilities.@product_of_sets(
     MOI.DualPowerCone{T},
 )
 
+struct _SetConstants{T}
+    b::Vector{T}
+    power_coefficients::Dict{Int,T}
+    _SetConstants{T}() where {T} = new{T}(T[], Dict{Int,T}())
+end
+
+function Base.empty!(x::_SetConstants)
+    empty!(x.b)
+    empty!(x.power_coefficients)
+    return x
+end
+
+Base.resize!(x::_SetConstants, n) = resize!(x.b, n)
+
+function MOI.Utilities.load_constants(x::_SetConstants, offset, f)
+    MOI.Utilities.load_constants(x.b, offset, f)
+    return
+end
+
+function MOI.Utilities.load_constants(
+    x::_SetConstants{T},
+    offset,
+    set::Union{MOI.PowerCone{T},MOI.DualPowerCone{T}}
+) where {T}
+    x.power_coefficients[offset+1] = set.exponent
+    return
+end
+
+function MOI.Utilities.function_constants(x::_SetConstants, rows)
+    return MOI.Utilities.function_constants(x.b, rows)
+end
+
+function MOI.Utilities.set_from_constants(x::_SetConstants, S, rows)
+    return MOI.Utilities.set_from_constants(x.b, S, rows)
+end
+
+function MOI.Utilities.set_from_constants(
+    x::_SetConstants{T},
+    ::Type{S},
+    rows,
+) where {T,S<:Union{MOI.PowerCone{T},MOI.DualPowerCone{T}}}
+    @assert length(rows) == 3
+    return S(x.power_coefficients[first(rows)])
+end
+
 const OptimizerCache{T} = MOI.Utilities.GenericModel{
     Cdouble,
     MOI.Utilities.ObjectiveContainer{Cdouble},
@@ -26,7 +71,7 @@ const OptimizerCache{T} = MOI.Utilities.GenericModel{
             T,
             MOI.Utilities.ZeroBasedIndexing,
         },
-        Vector{Cdouble},
+        _SetConstants{Cdouble},
         Cones{Cdouble},
     },
 }
@@ -299,7 +344,7 @@ function MOI.optimize!(
         A.n,
         A,
         SparseArrays.spzeros(A.n, A.n), # placeholder: P
-        Ab.constants,
+        Ab.constants.b,
         c,
         Ab.sets.num_rows[1],
         Ab.sets.num_rows[2] - Ab.sets.num_rows[1],
@@ -327,7 +372,7 @@ function MOI.optimize!(
     # If the solution is an infeasibility certificate, the objective values are
     # left as infinite, not the value corresponding to the ray.
     if !isfinite(sol.info.dobj)
-        sol.info.dobj = -Ab.constants' * sol.y
+        sol.info.dobj = -Ab.constants.b' * sol.y
     end
     if !isfinite(sol.info.pobj)
         sol.info.pobj = c' * sol.x
