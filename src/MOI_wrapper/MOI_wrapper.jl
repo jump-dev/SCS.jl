@@ -245,11 +245,13 @@ function MOI.optimize!(
         fill!(dest.sol.slack, 0.0)
     end
     # Set starting values and throw error for other variable attributes
+    has_warm_start = false
     vis_src = MOI.get(src, MOI.ListOfVariableIndices())
     for attr in MOI.get(src, MOI.ListOfVariableAttributesSet())
         if attr == MOI.VariableName()
             # Skip
         elseif attr == MOI.VariablePrimalStart()
+            has_warm_start = true
             for (i, x) in enumerate(vis_src)
                 dest.sol.primal[i] = something(MOI.get(src, attr, x), 0.0)
             end
@@ -264,6 +266,7 @@ function MOI.optimize!(
             if attr == MOI.ConstraintName()
                 # Skip
             elseif attr == MOI.ConstraintPrimalStart()
+                has_warm_start = true
                 for ci in cis_src
                     start = MOI.get(src, attr, ci)
                     if start !== nothing
@@ -272,6 +275,7 @@ function MOI.optimize!(
                     end
                 end
             elseif attr == MOI.ConstraintDualStart()
+                has_warm_start = true
                 for ci in cis_src
                     start = MOI.get(src, attr, ci)
                     if start !== nothing
@@ -317,7 +321,7 @@ function MOI.optimize!(
         dest.sol.primal,
         dest.sol.dual,
         dest.sol.slack;
-        warm_start = true,
+        warm_start = has_warm_start,
         options...,
     )
     # If the solution is an infeasibility certificate, the objective values are
