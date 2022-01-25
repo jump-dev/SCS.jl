@@ -1,4 +1,4 @@
-import Pkg
+using Pkg
 pkg"add MathOptInterface#od/fix-power-cone"
 
 if get(ENV, "BUILDKITE", "false") == "true"
