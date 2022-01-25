@@ -1,3 +1,6 @@
+import Pkg
+pkg"add MathOptInterface#od/fix-power-cone"
+
 if get(ENV, "BUILDKITE", "false") == "true"
     # This file requires a GPU in order to run. It gets tested as part of the
     # JuliaGPU CI on Buildkite. Contact @odow for more details.

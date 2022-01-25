@@ -4,7 +4,7 @@ const MOI = MathOptInterface
 include("scaled_psd_cone_bridge.jl")
 
 MOI.Utilities.@product_of_sets(
-    Cones,
+    _Cones,
     MOI.Zeros,
     MOI.Nonnegatives,
     MOI.SecondOrderCone,
@@ -37,7 +37,7 @@ end
 function MOI.Utilities.load_constants(
     x::_SetConstants{T},
     offset,
-    set::Union{MOI.PowerCone{T},MOI.DualPowerCone{T}}
+    set::Union{MOI.PowerCone{T},MOI.DualPowerCone{T}},
 ) where {T}
     x.power_coefficients[offset+1] = set.exponent
     return
@@ -72,7 +72,7 @@ const OptimizerCache{T} = MOI.Utilities.GenericModel{
             MOI.Utilities.ZeroBasedIndexing,
         },
         _SetConstants{Cdouble},
-        Cones{Cdouble},
+        _Cones{Cdouble},
     },
 }
 
@@ -116,7 +116,7 @@ function MOISolution()
 end
 
 mutable struct Optimizer <: MOI.AbstractOptimizer
-    cones::Union{Nothing,Cones{Cdouble}}
+    cones::Union{Nothing,_Cones{Cdouble}}
     sol::MOISolution
     silent::Bool
     options::Dict{Symbol,Any}
