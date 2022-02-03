@@ -56,8 +56,6 @@ function _test_runtests(linear_solver)
             # TODO(odow): get not supported for primal/dual starts
             "test_model_ModelFilter_AbstractConstraintAttribute",
             # Expected test failures:
-            #   MOI PR#1696
-            "test_linear_integration_Interval",
             #   ArgumentError: The number of constraints must be greater than 0
             "test_attribute_RawStatusString",
             "test_attribute_SolveTimeSec",
