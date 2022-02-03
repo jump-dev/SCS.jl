@@ -50,14 +50,14 @@ function _test_runtests(linear_solver)
             ],
         ),
         exclude = String[
-            # TODO(odow): unimplemented features
-            "test_attribute_SolverVersion",
+            # Unexpected failures:
+            #   TODO(odow): looks like a tolerance issue?
             "test_linear_add_constraints",
-            # TODO(odow): get not supported for primal/dual starts
-            "test_model_ModelFilter_AbstractConstraintAttribute",
             # Expected test failures:
-            #   MOI PR#1696
-            "test_linear_integration_Interval",
+            #   TODO(odow): get not supported for primal/dual starts
+            "test_model_ModelFilter_AbstractConstraintAttribute",
+            #   Unimplemented feature
+            "test_attribute_SolverVersion",
             #   ArgumentError: The number of constraints must be greater than 0
             "test_attribute_RawStatusString",
             "test_attribute_SolveTimeSec",
@@ -70,11 +70,6 @@ function _test_runtests(linear_solver)
             "test_basic_VectorQuadraticFunction_",
             "test_quadratic_SecondOrderCone_basic",
             "test_quadratic_nonconvex_",
-            #   power cone error, values must be in [-1,1]
-            "test_conic_DualPowerCone_VectorOfVariables",
-            "test_conic_DualPowerCone_VectorAffineFunction",
-            "test_conic_PowerCone_VectorAffineFunction",
-            "test_conic_PowerCone_VectorOfVariables",
             #   MathOptInterface.jl issue #1431
             "test_model_LowerBoundAlreadySet",
             "test_model_UpperBoundAlreadySet",
