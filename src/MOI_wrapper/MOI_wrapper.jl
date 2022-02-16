@@ -446,7 +446,7 @@ function MOI.get(optimizer::Optimizer, ::MOI.TerminationStatus)
     elseif s == -5
         return MOI.INTERRUPTED
     elseif s == -4
-        return MOI.NUMERICAL_ERROR
+        return MOI.INVALID_MODEL
     elseif s == -3
         return MOI.SLOW_PROGRESS
     elseif s == -2
@@ -486,6 +486,8 @@ function MOI.get(optimizer::Optimizer, attr::MOI.PrimalStatus)
         return MOI.FEASIBLE_POINT
     elseif optimizer.sol.ret_val in (-6, -1)
         return MOI.INFEASIBILITY_CERTIFICATE
+    elseif optimizer.sol.ret_val == -4
+        return MOI.NO_SOLUTION
     end
     return MOI.INFEASIBLE_POINT
 end
@@ -515,6 +517,8 @@ function MOI.get(optimizer::Optimizer, attr::MOI.DualStatus)
         return MOI.FEASIBLE_POINT
     elseif optimizer.sol.ret_val in (-7, -2)
         return MOI.INFEASIBILITY_CERTIFICATE
+    elseif optimizer.sol.ret_val == -4
+        return MOI.NO_SOLUTION
     end
     return MOI.INFEASIBLE_POINT
 end

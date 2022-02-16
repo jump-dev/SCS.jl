@@ -134,6 +134,31 @@ function test_unsupported()
     @test_throws err MOI.optimize!(optimizer, model)
 end
 
+function test_empty_problem()
+    model = MOI.Utilities.Model{Float64}()
+    scs = SCS.Optimizer()
+    MOI.optimize!(scs, model)
+    @test MOI.get(scs, MOI.TerminationStatus()) == MOI.INVALID_MODEL
+    @test MOI.get(scs, MOI.PrimalStatus()) == MOI.NO_SOLUTION
+    @test MOI.get(scs, MOI.DualStatus()) == MOI.NO_SOLUTION
+    return
+end
+
+function test_conic_no_variables()
+    model = MOI.Utilities.Model{Float64}()
+    scs = SCS.Optimizer()
+    f = MOI.VectorAffineFunction(
+        MOI.VectorAffineTerm{Float64}[],
+        [1.0, 0.5, 0.5],
+    )
+    MOI.add_constraint(model, f, MOI.SecondOrderCone(3))
+    MOI.optimize!(scs, model)
+    @test MOI.get(scs, MOI.TerminationStatus()) == MOI.INVALID_MODEL
+    @test MOI.get(scs, MOI.PrimalStatus()) == MOI.NO_SOLUTION
+    @test MOI.get(scs, MOI.DualStatus()) == MOI.NO_SOLUTION
+    return
+end
+
 end  # module
 
 TestSCS.runtests()

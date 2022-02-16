@@ -292,11 +292,6 @@ function scs_solve(
     warm_start::Bool = false,
     options...,
 )
-    if n <= 0
-        throw(ArgumentError("The number of variables must be greater than 0"))
-    elseif m <= 0
-        throw(ArgumentError("The number of constraints must be greater than 0"))
-    end
     if length(primal_sol) == n && length(dual_sol) == length(slack) == m
         if !warm_start
             fill!(primal_sol, 0.0)
