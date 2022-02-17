@@ -1,4 +1,3 @@
-using MathOptInterface
 const MOI = MathOptInterface
 
 include("scaled_psd_cone_bridge.jl")
