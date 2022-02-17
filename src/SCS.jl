@@ -1,5 +1,6 @@
 module SCS
 
+import MathOptInterface
 import Requires
 import SCS_jll
 import SparseArrays
