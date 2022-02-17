@@ -1,7 +1,7 @@
 name = "SCS"
 uuid = "c946c3f1-0d1f-5ce8-9dea-7daa1f7e2d13"
 repo = "https://github.com/jump-dev/SCS.jl"
-version = "0.9.0"
+version = "1.0.0"
 
 [deps]
 MathOptInterface = "b8f27783-ece8-5eb3-8dc8-9495eed66fee"
@@ -11,7 +11,7 @@ SCS_jll = "f4f2fc5b-1d94-523c-97ea-2ab488bedf4b"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 
 [compat]
-MathOptInterface = "0.10.8"
+MathOptInterface = "1"
 Requires = "1"
 SCS_GPU_jll = "=3.0.0, =3.0.1"
 SCS_jll = "3.0.0"
