@@ -114,18 +114,18 @@ function MOISolution()
     )
 end
 
+"""
+    Optimizer()
+
+Create a new SCS optimizer.
+"""
 mutable struct Optimizer <: MOI.AbstractOptimizer
     cones::Union{Nothing,_Cones{Cdouble}}
     sol::MOISolution
     silent::Bool
     options::Dict{Symbol,Any}
-    function Optimizer(; kwargs...)
-        optimizer = new(nothing, MOISolution(), false, Dict{Symbol,Any}())
-        for (key, value) in kwargs
-            MOI.set(optimizer, MOI.RawOptimizerAttribute(String(key)), value)
-        end
-        return optimizer
-    end
+
+    Optimizer() = new(nothing, MOISolution(), false, Dict{Symbol,Any}())
 end
 
 function MOI.get(::Optimizer, ::MOI.Bridges.ListOfNonstandardBridges)
