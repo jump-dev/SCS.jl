@@ -377,18 +377,33 @@ function MOI.optimize!(
     if !isfinite(sol.info.pobj)
         sol.info.pobj = c' * sol.x
     end
-    dest.sol = MOISolution(
-        sol.x,
-        sol.y,
-        sol.s,
-        sol.ret_val,
-        raw_status(sol.info),
-        (max_sense ? -1 : 1) * sol.info.pobj,
-        (max_sense ? -1 : 1) * sol.info.dobj,
-        objective_constant,
-        (sol.info.setup_time + sol.info.solve_time) / 1000,
-        sol.info.iter,
-    )
+    if sol.ret_val == -4  # SCS_FAILED
+        dest.sol = MOISolution(
+            sol.x,
+            sol.y,
+            sol.s,
+            sol.ret_val,
+            "",
+            (max_sense ? -1 : 1) * sol.info.pobj,
+            (max_sense ? -1 : 1) * sol.info.dobj,
+            objective_constant,
+            NaN,
+            -1,
+        )
+    else
+        dest.sol = MOISolution(
+            sol.x,
+            sol.y,
+            sol.s,
+            sol.ret_val,
+            raw_status(sol.info),
+            (max_sense ? -1 : 1) * sol.info.pobj,
+            (max_sense ? -1 : 1) * sol.info.dobj,
+            objective_constant,
+            (sol.info.setup_time + sol.info.solve_time) / 1000,
+            sol.info.iter,
+        )
+    end
     return index_map, false
 end
 
@@ -446,7 +461,7 @@ function MOI.get(optimizer::Optimizer, ::MOI.TerminationStatus)
     elseif s == -5
         return MOI.INTERRUPTED
     elseif s == -4
-        return MOI.NUMERICAL_ERROR
+        return MOI.INVALID_MODEL
     elseif s == -3
         return MOI.SLOW_PROGRESS
     elseif s == -2
@@ -486,6 +501,8 @@ function MOI.get(optimizer::Optimizer, attr::MOI.PrimalStatus)
         return MOI.FEASIBLE_POINT
     elseif optimizer.sol.ret_val in (-6, -1)
         return MOI.INFEASIBILITY_CERTIFICATE
+    elseif optimizer.sol.ret_val == -4
+        return MOI.NO_SOLUTION
     end
     return MOI.INFEASIBLE_POINT
 end
@@ -515,6 +532,8 @@ function MOI.get(optimizer::Optimizer, attr::MOI.DualStatus)
         return MOI.FEASIBLE_POINT
     elseif optimizer.sol.ret_val in (-7, -2)
         return MOI.INFEASIBILITY_CERTIFICATE
+    elseif optimizer.sol.ret_val == -4
+        return MOI.NO_SOLUTION
     end
     return MOI.INFEASIBLE_POINT
 end
