@@ -74,6 +74,7 @@ end
 mutable struct ScsInfo{T} <: AbstractSCSType
     iter::T
     status::NTuple{128,Cchar}
+    lin_sys_solver::NTuple{128,Cchar}
     status_val::T
     scale_updates::T
     pobj::Cdouble

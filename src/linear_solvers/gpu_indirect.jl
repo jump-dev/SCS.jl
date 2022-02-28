@@ -24,16 +24,31 @@ function scs_init(
     )::Ptr{Cvoid}
 end
 
+function scs_update(
+    ::Type{GpuIndirectSolver},
+    work::Ptr{Cvoid},
+    b::Vector{Float64},
+    c::Vector{Float64},
+)
+    return @ccall direct.scs_update(
+        work::Ptr{Cvoid},
+        b::Ref{Float64},
+        c::Ref{Float64},
+    )::Cint
+end
+
 function scs_solve(
     ::Type{GpuIndirectSolver},
     work::Ptr{Cvoid},
     solution::ScsSolution,
     info::ScsInfo{I},
+    warm_start::Integer,
 ) where {I<:Cint}
     return @ccall gpuindirect.scs_solve(
         work::Ptr{Cvoid},
         solution::Ref{ScsSolution},
         info::Ref{ScsInfo{I}},
+        warm_start::Cint,
     )::Cint
 end
 
