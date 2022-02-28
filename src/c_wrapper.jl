@@ -310,9 +310,7 @@ function scs_solve(
     Avalues, Arowval, Acolptr = _to_sparse(T, A)
     Pvalues, Prowval, Pcolptr = _to_sparse(T, P)
     option_dict = _sanitize_options(options)
-    if warm_start
-        option_dict[:warm_start] = 1
-    end
+    option_dict[:warm_start] = convert(Int, warm_start)
     model = _ScsDataWrapper(
         linear_solver,
         m,
@@ -381,7 +379,13 @@ function _unsafe_scs_solve(model::_ScsDataWrapper{S,T}) where {S,T}
         pointer(model.slack),
     )
     scs_info = ScsInfo{T}()
-    status = scs_solve(model.linear_solver, scs_work, scs_solution, scs_info)
+    status = scs_solve(
+        model.linear_solver,
+        scs_work,
+        scs_solution,
+        scs_info,
+        model.options[:warm_start],
+    )
     scs_finish(model.linear_solver, scs_work)
     return Solution(model.primal, model.dual, model.slack, scs_info, status)
 end
