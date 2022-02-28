@@ -764,7 +764,7 @@ function test_options(T)
         eps_abs = 1e-10,
         eps_rel = 1e-10,
     )
-    @test isapprox(solution.x' * args.c, -99.0; rtol = 1e-10)
+    @test isapprox(solution.x' * args.c, -99.0; rtol = 1e-9)
     @test_throws(ArgumentError, SCS.scs_solve(T, args...; eps = 1e-12))
     err = try
         SCS.scs_solve(T, args...; eps_abs = 1e-12, eps = 1e-12)
