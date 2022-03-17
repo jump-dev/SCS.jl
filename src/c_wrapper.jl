@@ -370,12 +370,15 @@ function _unsafe_scs_solve(model::_ScsDataWrapper{S,T}) where {S,T}
         pointer(model.c),
     )
     for (key, value) in model.options
-        val = if value isa AbstractString
-            Base.unsafe_convert(Cstring, Base.cconvert(Cstring, value))
+        if value isa AbstractString
+            c_value = Base.cconvert(Cstring, value)
+            unsafe_value = Base.unsafe_convert(Cstring, c_value)
+            GC.@preserve c_value begin
+                setproperty!(model.settings, key, unsafe_value)
+            end
         else
-            value
+            setproperty!(model.settings, key, value)
         end
-        setproperty!(model.settings, key, val)
     end
     scs_work = scs_init(model.linear_solver, scs_data, scs_cone, model.settings)
     scs_solution = ScsSolution(
