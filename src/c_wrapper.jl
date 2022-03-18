@@ -149,11 +149,7 @@ function _sanitize_options(options)
         if key == :linear_solver
             continue
         elseif !hasfield(ScsSettings, key)
-            throw(
-                ArgumentError(
-                    "Unrecognized option passed to SCS solver: $(key)",
-                ),
-            )
+            throw(ArgumentError("Unrecognized option passed to SCS solver: $(key)"))
         end
         option_dict[key] = value
     end
@@ -161,7 +157,7 @@ function _sanitize_options(options)
 end
 
 function raw_status(info::ScsInfo)
-    data = UInt8[info.status[i] for i in 1:findfirst(iszero, info.status)-1]
+    data = UInt8[info.status[i] for i = 1:findfirst(iszero, info.status)-1]
     return String(data)
 end
 
@@ -371,21 +367,16 @@ function _unsafe_scs_solve(model::_ScsDataWrapper{S,T}) where {S,T}
     )
     for (key, value) in model.options
         if value isa AbstractString
-            c_value = Base.cconvert(Cstring, value)
-            unsafe_value = Base.unsafe_convert(Cstring, c_value)
-            GC.@preserve c_value begin
-                setproperty!(model.settings, key, unsafe_value)
-            end
+            value isa String || error("You must pass a `String` as the value for $(key)")
+            cstr = Base.unsafe_convert(Cstring, Base.cconvert(Cstring, value))
+            setproperty!(model.settings, key, cstr)
         else
             setproperty!(model.settings, key, value)
         end
     end
     scs_work = scs_init(model.linear_solver, scs_data, scs_cone, model.settings)
-    scs_solution = ScsSolution(
-        pointer(model.primal),
-        pointer(model.dual),
-        pointer(model.slack),
-    )
+    scs_solution =
+        ScsSolution(pointer(model.primal), pointer(model.dual), pointer(model.slack))
     scs_info = ScsInfo{T}()
     status = scs_solve(
         model.linear_solver,
