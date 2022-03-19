@@ -371,10 +371,13 @@ function _unsafe_scs_solve(model::_ScsDataWrapper{S,T}) where {S,T}
     )
     for (key, value) in model.options
         if value isa AbstractString
-            value isa String ||
+            if value isa String
+                cstr =
+                    Base.unsafe_convert(Cstring, Base.cconvert(Cstring, value))
+                setproperty!(model.settings, key, cstr)
+            else
                 error("You must pass a `String` as the value for $(key)")
-            cstr = Base.unsafe_convert(Cstring, Base.cconvert(Cstring, value))
-            setproperty!(model.settings, key, cstr)
+            end
         else
             setproperty!(model.settings, key, value)
         end
