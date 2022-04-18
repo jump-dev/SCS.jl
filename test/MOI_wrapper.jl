@@ -21,6 +21,8 @@ test_DirectSolver() = _test_runtests(SCS.DirectSolver)
 
 test_IndirectSolver() = _test_runtests(SCS.IndirectSolver)
 
+test_MKLDirectSolver() = _test_runtests(SCS.MKLDirectSolver)
+
 function _test_runtests(linear_solver)
     optimizer = SCS.Optimizer()
     MOI.set(
