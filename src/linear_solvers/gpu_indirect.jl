@@ -55,3 +55,7 @@ end
 function scs_finish(::Type{GpuIndirectSolver}, work::Ptr{Cvoid})
     return @ccall gpuindirect.scs_finish(work::Ptr{Cvoid})::Cvoid
 end
+
+function scs_version(::Type{GpuIndirectSolver})
+    return unsafe_string(@ccall gpuindirect.scs_version()::Cstring)
+end

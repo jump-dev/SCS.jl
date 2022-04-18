@@ -55,3 +55,7 @@ end
 function scs_finish(::Type{IndirectSolver}, work::Ptr{Cvoid})
     return @ccall indirect.scs_finish(work::Ptr{Cvoid})::Cvoid
 end
+
+function scs_version(::Type{IndirectSolver})
+    return unsafe_string(@ccall indirect.scs_version()::Cstring)
+end

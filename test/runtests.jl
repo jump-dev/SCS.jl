@@ -9,9 +9,14 @@ using Test
 using SCS
 
 include("test_problems.jl")
-for s in SCS.available_solvers
-    feasible_basic_problems(s)
-    test_options(s)
+@test SCS.scs_version() isa String
+@test VersionNumber() >= v"3.2.0"
+for solver in SCS.available_solvers
+    @test SCS.scs_version(solver) isa String
+    @test VersionNumber(SCS.scs_version(solver)) >= v"3.2.0"
+
+    feasible_basic_problems(solver)
+    test_options(solver)
 end
 
 include("MOI_wrapper.jl")
