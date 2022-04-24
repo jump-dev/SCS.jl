@@ -4,7 +4,6 @@ repo = "https://github.com/jump-dev/SCS.jl"
 version = "1.1.2"
 
 [deps]
-Libdl = "8f399da3-3557-5675-b5ff-fb832c97cbdb"
 MathOptInterface = "b8f27783-ece8-5eb3-8dc8-9495eed66fee"
 Requires = "ae029012-a4dd-5104-9daa-d747884805df"
 SCS_GPU_jll = "af6e375f-46ec-5fa0-b791-491b0dfa44a4"

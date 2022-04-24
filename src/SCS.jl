@@ -22,17 +22,7 @@ function __init__()
         begin
             import SCS_MKL_jll
             import SCS_MKL_jll.MKL_jll
-            import Libdl
             global mkldirect = SCS_MKL_jll.libscsmkl
-
-            MKLROOT = joinpath(MKL_jll.artifact_dir, "lib")
-            # dlopen with RTLD_GLOBAL to avoid undefined symbols when dlopening
-            # `lib_mkl_gnu_thread.so`
-            Libdl.dlopen(
-                joinpath(MKLROOT, "libmkl_core.so"),
-                Libdl.RTLD_LAZY | Libdl.RTLD_DEEPBIND | Libdl.RTLD_GLOBAL,
-            )
-            Libdl.dlopen(joinpath(MKLROOT, "libmkl_gnu_thread.so"))
 
             push!(available_solvers, MKLDirectSolver)
         end
