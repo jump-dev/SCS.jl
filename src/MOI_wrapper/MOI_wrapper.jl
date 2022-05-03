@@ -261,9 +261,12 @@ function MOI.optimize!(
     objective_function_attr =
         MOI.ObjectiveFunction{MOI.ScalarAffineFunction{Cdouble}}()
     for attr in model_attributes
-        if attr != MOI.ObjectiveSense() && attr != objective_function_attr
-            throw(MOI.UnsupportedAttribute(attr))
+        if attr == MOI.ObjectiveSense() || attr == objective_function_attr
+            continue  # These are handled later
+        elseif attr == MOI.Name()
+            continue  # This can be skipped without consequence
         end
+        throw(MOI.UnsupportedAttribute(attr))
     end
     max_sense = false
     if MOI.ObjectiveSense() in model_attributes

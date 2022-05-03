@@ -164,6 +164,17 @@ function test_conic_no_variables()
     return
 end
 
+function test_Name_skip()
+    model = MOI.Utilities.UniversalFallback(MOI.Utilities.Model{Float64}())
+    MOI.set(model, MOI.Name(), "My problem")
+    x = MOI.add_variables(model, 3)
+    MOI.add_constraint(model, MOI.VectorOfVariables(x), MOI.SecondOrderCone(3))
+    scs = SCS.Optimizer()
+    MOI.optimize!(scs, model)
+    @test MOI.get(scs, MOI.TerminationStatus()) == MOI.OPTIMAL
+    return
+end
+
 end  # module
 
 TestSCS.runtests()
