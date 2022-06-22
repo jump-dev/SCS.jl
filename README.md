@@ -72,8 +72,8 @@ model = Model(optimizer_with_attributes(SCS.Optimizer, "max_iters" => 10))
 
 # via MathOptInterface:
 optimizer = SCS.Optimizer()
-MOI.set(optimizer, MOI.RawParameter("max_iters"), 10)
-MOI.set(optimizer, MOI.RawParameter("verbose"), 0)
+MOI.set(optimizer, MOI.RawOptimizerAttribute("max_iters"), 10)
+MOI.set(optimizer, MOI.RawOptimizerAttribute("verbose"), 0)
 ```
 
 Common options are:
