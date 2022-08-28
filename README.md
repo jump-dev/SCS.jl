@@ -16,6 +16,9 @@ import Pkg; Pkg.add("SCS")
 In addition to installing the SCS.jl package, this will also download and
 install the SCS binaries. (You do not need to install SCS separately.)
 
+To use a custom binary, read the [Custom solver binaries](https://jump.dev/JuMP.jl/stable/developers/custom_solver_binaries/)
+section of the JuMP documentation.
+
 ## Usage
 
 ### Use with Convex.jl
