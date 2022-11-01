@@ -1,3 +1,8 @@
+# Copyright (c) 2014: SCS.jl contributors
+#
+# Use of this source code is governed by an MIT-style license that can be found
+# in the LICENSE.md file or at https://opensource.org/licenses/MIT.
+
 const MOI = MathOptInterface
 
 include("scaled_psd_cone_bridge.jl")
@@ -256,9 +261,12 @@ function MOI.optimize!(
     objective_function_attr =
         MOI.ObjectiveFunction{MOI.ScalarAffineFunction{Cdouble}}()
     for attr in model_attributes
-        if attr != MOI.ObjectiveSense() && attr != objective_function_attr
-            throw(MOI.UnsupportedAttribute(attr))
+        if attr == MOI.ObjectiveSense() || attr == objective_function_attr
+            continue  # These are handled later
+        elseif attr == MOI.Name()
+            continue  # This can be skipped without consequence
         end
+        throw(MOI.UnsupportedAttribute(attr))
     end
     max_sense = false
     if MOI.ObjectiveSense() in model_attributes

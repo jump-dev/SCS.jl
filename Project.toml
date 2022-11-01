@@ -14,7 +14,7 @@ SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 [compat]
 MathOptInterface = "1"
 Requires = "1"
-SCS_GPU_jll = "=3.2.0"
+SCS_GPU_jll = "=3.2.1"
 SCS_MKL_jll = "=3.2.2"
 SCS_jll = "=3.2.1"
 julia = "1.6"

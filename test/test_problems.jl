@@ -1,3 +1,8 @@
+# Copyright (c) 2014: SCS.jl contributors
+#
+# Use of this source code is governed by an MIT-style license that can be found
+# in the LICENSE.md file or at https://opensource.org/licenses/MIT.
+
 # We don't want this file formatted because it contains lots of data.
 #! format: off
 
