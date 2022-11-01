@@ -26,7 +26,7 @@ test_DirectSolver() = _test_runtests(SCS.DirectSolver)
 
 test_IndirectSolver() = _test_runtests(SCS.IndirectSolver)
 
-@static if Sys.islinux()
+@static if Sys.islinux() && Sys.ARCH == :x86_64
     test_MKLDirectSolver() = _test_runtests(SCS.MKLDirectSolver)
 end
 

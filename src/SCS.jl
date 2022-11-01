@@ -25,7 +25,7 @@ function __init__()
     Requires.@require(
         MKL_jll = "856f044c-d86e-5d09-b602-aeab76dc8ba7",
         begin
-            if Sys.islinux()
+            if Sys.islinux() && Sys.ARCH == :x86_64
                 import SCS_MKL_jll
                 import SCS_MKL_jll.MKL_jll
                 global mkldirect = SCS_MKL_jll.libscsmkl

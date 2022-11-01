@@ -17,7 +17,7 @@ Pkg.add(Pkg.PackageSpec(name = "MKL_jll", version = "2022"))
 using MKL_jll  # MKL_jll must be loaded _before_ SCS!
 using SCS
 
-if Sys.islinux()
+if Sys.islinux() && Sys.ARCH == :x86_64
     @test SCS.MKLDirectSolver in SCS.available_solvers
 end
 
