@@ -61,6 +61,8 @@ function scs_finish(::Type{DirectSolver}, work::Ptr{Cvoid})
     return @ccall direct.scs_finish(work::Ptr{Cvoid})::Cvoid
 end
 
-function scs_version()
+function scs_version(::Type{DirectSolver})
     return unsafe_string(@ccall direct.scs_version()::Cstring)
 end
+
+scs_version() = scs_version(DirectSolver)
