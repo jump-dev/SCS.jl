@@ -143,9 +143,12 @@ julia> SCS.available_solvers
  SCS.IndirectSolver
 ```
 
-To select the linear solver of choice
- * pass the `linear_solver` option to `JuMP.optimizer_with_attributes`, or to `MOI.OptimizerWithAttributes`;
- * specify the solver as the first argument when using `scs_solve` directly (see scetion Low-level wrapper below).
+To select the linear solver of choice:
+
+ * pass the `linear_solver` option to [`optimizer_with_attributes`](@ref), or to
+   [`MOI.OptimizerWithAttributes`](@ref);
+ * specify the solver as the first argument when using `scs_solve` directly
+   (see the low-level wrapper section below).
 
 ### SCS with MKL Pardiso linear solver
 
@@ -175,7 +178,7 @@ The `MKLDirectSolver` is available on `Linux x86_64` platform only.
 > Note: as of version 1.0 the support for the GPU solver is broken (see
 [this issue](https://github.com/jump-dev/SCS.jl/issues/245)).
 
-To enable the indirect linear solver on gpu one needs to load `CUDA_jll`
+To enable the indirect linear solver on GPU one needs to load `CUDA_jll`
 **before** `SCS`:
 
 ```julia
