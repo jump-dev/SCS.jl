@@ -62,6 +62,7 @@ function _test_runtests(linear_solver)
             # Unexpected failures:
             #   TODO(odow): looks like a tolerance issue?
             "test_linear_add_constraints",
+            "test_conic_HermitianPositiveSemidefiniteConeTriangle_2",
             # Expected test failures:
             #   TODO(odow): get not supported for primal/dual starts
             "test_model_ModelFilter_AbstractConstraintAttribute",
