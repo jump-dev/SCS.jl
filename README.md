@@ -11,8 +11,8 @@ programs, exponential cone programs, and power cone programs.
 
 ## Affiliation
 
-This wrapper is maintained by the JuMP community and is not a project of
-[cvxgrp](https://github.com/cvxgrp).
+This wrapper is maintained by the JuMP community and is not a project of the SCS
+developers.
 
 ## License
 
