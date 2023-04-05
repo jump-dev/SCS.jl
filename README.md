@@ -1,17 +1,32 @@
-# SCS
+# SCS.jl
 
 [![Build Status](https://github.com/jump-dev/SCS.jl/workflows/CI/badge.svg?branch=master)](https://github.com/jump-dev/SCS.jl/actions?query=workflow%3ACI)
 [![codecov](https://codecov.io/gh/jump-dev/SCS.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/jump-dev/SCS.jl)
 
-Julia wrapper for the [SCS](https://github.com/cvxgrp/scs) splitting cone
-solver. SCS can solve linear programs, second-order cone programs, semidefinite
+[SCS.jl](https://github.com/jump-dev/SCS.jl) is a wrapper for the
+[SCS](https://github.com/cvxgrp/scs) splitting cone solver.
+
+SCS can solve linear programs, second-order cone programs, semidefinite
 programs, exponential cone programs, and power cone programs.
+
+## Affiliation
+
+This wrapper is maintained by the JuMP community and is not a project of the SCS
+developers.
+
+## License
+
+`SCS.jl` is licensed under the [MIT License](https://github.com/jump-dev/SCS.jl/blob/master/LICENSE.md).
+
+The underlying solver, [cvxgrp/scs](https://github.com/cvxgrp/scs), is
+licensed under the [MIT License](https://github.com/cvxgrp/scs/blob/master/LICENSE.txt).
 
 ## Installation
 
 Install SCS.jl using the Julia package manager:
 ```julia
-import Pkg; Pkg.add("SCS")
+import Pkg
+Pkg.add("SCS")
 ```
 In addition to installing the `SCS.jl` package, this will also download and
 install the SCS binaries. (You do not need to install SCS separately.)
@@ -19,9 +34,7 @@ install the SCS binaries. (You do not need to install SCS separately.)
 To use a custom binary, read the [Custom solver binaries](https://jump.dev/JuMP.jl/stable/developers/custom_solver_binaries/)
 section of the JuMP documentation.
 
-## Usage
-
-### Use with Convex.jl
+## Use with Convex.jl
 
 This example shows how we can model a simple knapsack problem with Convex and
 use SCS to solve it.
@@ -41,7 +54,7 @@ println([items x.value])
 #  :Bronze 0.9999998036351865]
 ```
 
-### Use with JuMP
+## Use with JuMP
 
 This example shows how we can model a simple knapsack problem with JuMP and use
 SCS to solve it.
@@ -65,6 +78,32 @@ println(value.(take))
 #  1.0000007732744878
 ```
 
+## MathOptInterface API
+
+The SCS optimizer supports the following constraints and attributes.
+
+List of supported objective functions:
+
+ * [`MOI.ObjectiveFunction{MOI.ScalarAffineFunction{Float64}}`](@ref)
+
+List of supported variable types:
+
+ * [`MOI.Reals`](@ref)
+
+List of supported constraint types:
+
+ * [`MOI.VectorAffineFunction{Float64}`](@ref) in [`MOI.DualExponentialCone`](@ref)
+ * [`MOI.VectorAffineFunction{Float64}`](@ref) in [`MOI.DualPowerCone{Float64}`](@ref)
+ * [`MOI.VectorAffineFunction{Float64}`](@ref) in [`MOI.ExponentialCone`](@ref)
+ * [`MOI.VectorAffineFunction{Float64}`](@ref) in [`MOI.Nonnegatives`](@ref)
+ * [`MOI.VectorAffineFunction{Float64}`](@ref) in [`MOI.PowerCone{Float64}`](@ref)
+ * [`MOI.VectorAffineFunction{Float64}`](@ref) in [`MOI.SecondOrderCone`](@ref)
+ * [`MOI.VectorAffineFunction{Float64}`](@ref) in [`MOI.Zeros`](@ref)
+
+List of supported model attributes:
+
+ * [`MOI.ObjectiveSense()`](@ref)
+
 ## Options
 
 All SCS solver options can be set through `Convex.jl` or `MathOptInterface.jl`.
@@ -85,7 +124,7 @@ Common options are:
 See the [`glbopts.h` header](https://github.com/cvxgrp/scs/blob/3aaa93c7aa04c7001df5e51b81f21b126dfa99b3/include/glbopts.h#L35)
 for other options.
 
-### Linear solvers
+## Linear solvers
 
 `SCS` uses a linear solver internally, see
 [this section](https://www.cvxgrp.org/scs/linear_solver/index.html#linear-system-solver)
@@ -104,11 +143,14 @@ julia> SCS.available_solvers
  SCS.IndirectSolver
 ```
 
-To select the linear solver of choice
- * pass the `linear_solver` option to `JuMP.optimizer_with_attributes`, or to `MOI.OptimizerWithAttributes`;
- * specify the solver as the first argument when using `scs_solve` directly (see scetion Low-level wrapper below).
+To select the linear solver of choice:
 
-#### SCS with MKL Pardiso linear solver
+ * pass the `linear_solver` option to [`optimizer_with_attributes`](@ref), or to
+   [`MOI.OptimizerWithAttributes`](@ref);
+ * specify the solver as the first argument when using `scs_solve` directly
+   (see the low-level wrapper section below).
+
+### SCS with MKL Pardiso linear solver
 
 To enable the MKL Pardiso (direct sparse) solver one needs to load `MKL_jll`
 **before** `SCS`:
@@ -131,12 +173,12 @@ julia> SCS.available_solvers
 
 The `MKLDirectSolver` is available on `Linux x86_64` platform only.
 
-#### SCS with Sparse GPU indirect solver (CUDA only)
+### SCS with Sparse GPU indirect solver (CUDA only)
 
 > Note: as of version 1.0 the support for the GPU solver is broken (see
 [this issue](https://github.com/jump-dev/SCS.jl/issues/245)).
 
-To enable the indirect linear solver on gpu one needs to load `CUDA_jll`
+To enable the indirect linear solver on GPU one needs to load `CUDA_jll`
 **before** `SCS`:
 
 ```julia
@@ -157,7 +199,7 @@ julia> SCS.available_solvers
 
 The `GpuIndirectSolver` is available on `Linux x86_64` platform only.
 
-### Low-level wrapper
+## Low-level wrapper
 
 SCS.jl provides a low-level interface to solve a problem directly, without
 interfacing through MathOptInterface.
