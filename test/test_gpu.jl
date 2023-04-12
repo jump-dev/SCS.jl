@@ -8,7 +8,7 @@
 
 # CUDA_jll is not in our Project.toml, so we need to install it on GITLAB_CI.
 import Pkg
-Pkg.add(Pkg.PackageSpec(name = "CUDA_jll", version = "10.1"))
+Pkg.add(Pkg.PackageSpec(name = "CUDA_jll", version = "11.3"))
 
 using CUDA_jll  # CUDA_jll must be loaded _before_ SCS!
 using SCS
