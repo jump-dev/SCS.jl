@@ -175,9 +175,6 @@ The `MKLDirectSolver` is available on `Linux x86_64` platform only.
 
 ### SCS with Sparse GPU indirect solver (CUDA only)
 
-> Note: as of version 1.0 the support for the GPU solver is broken (see
-[this issue](https://github.com/jump-dev/SCS.jl/issues/245)).
-
 To enable the indirect linear solver on GPU one needs to load `CUDA_jll`
 **before** `SCS`:
 
