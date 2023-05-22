@@ -12,7 +12,7 @@ SCS_jll = "f4f2fc5b-1d94-523c-97ea-2ab488bedf4b"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 
 [compat]
-MathOptInterface = "1"
+MathOptInterface = "1.6"
 Requires = "1"
 SCS_GPU_jll = "=3.2.3"
 SCS_MKL_jll = "=3.2.2, =3.2.3"
