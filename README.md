@@ -99,6 +99,7 @@ List of supported constraint types:
  * [`MOI.VectorAffineFunction{Float64}`](@ref) in [`MOI.PowerCone{Float64}`](@ref)
  * [`MOI.VectorAffineFunction{Float64}`](@ref) in [`MOI.SecondOrderCone`](@ref)
  * [`MOI.VectorAffineFunction{Float64}`](@ref) in [`MOI.Zeros`](@ref)
+ * [`MOI.VectorAffineFunction{Float64}`](@ref) in `SCS.ScaledPSDCone`
 
 List of supported model attributes:
 
