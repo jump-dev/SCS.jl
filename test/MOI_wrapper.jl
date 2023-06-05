@@ -191,7 +191,9 @@ function test_redirect_stdout()
             MOI.add_constraint(model, f, MOI.Nonnegatives(3))
             scs = SCS.Optimizer()
             MOI.optimize!(scs, model)
+            return
         end
+        return
     end
     output = read(filename, String)
     @test occursin("SCS", output)
