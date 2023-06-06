@@ -185,6 +185,39 @@ function test_VectorOfVariables_psd_permutation()
     MOI.Bridges.runtests(
         SCS.ScaledPSDConeBridge,
         """
+        variables: x1
+        [x1] in ScaledPositiveSemidefiniteConeTriangle(1)
+        """,
+        """
+        variables: x1
+        [x1] in SCS.ScaledPSDCone(1)
+        """,
+    )
+    MOI.Bridges.runtests(
+        SCS.ScaledPSDConeBridge,
+        """
+        variables: x1, x2, x3
+        [x1, x2, x3] in ScaledPositiveSemidefiniteConeTriangle(2)
+        """,
+        """
+        variables: x1, x2, x3
+        [x1, x2, x3] in SCS.ScaledPSDCone(2)
+        """,
+    )
+    MOI.Bridges.runtests(
+        SCS.ScaledPSDConeBridge,
+        """
+        variables: x1, x2, x3, x4, x5, x6
+        [x1, x2, x3, x4, x5, x6] in ScaledPositiveSemidefiniteConeTriangle(3)
+        """,
+        """
+        variables: x1, x2, x3, x4, x5, x6
+        [x1, x2, x4, x3, x5, x6] in SCS.ScaledPSDCone(3)
+        """,
+    )
+    MOI.Bridges.runtests(
+        SCS.ScaledPSDConeBridge,
+        """
         variables: x1, x2, x3, x4, x5, x6, x7, x8, x9, x10
         [x1, x2, x3, x4, x5, x6, x7, x8, x9, x10] in ScaledPositiveSemidefiniteConeTriangle(4)
         """,
