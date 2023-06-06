@@ -181,6 +181,26 @@ function test_Name_skip()
     return
 end
 
+function test_redirect_stdout()
+    filename = tempname()
+    open(filename, "w") do io
+        redirect_stdout(io) do
+            model = MOI.Utilities.Model{Float64}()
+            x = MOI.add_variables(model, 3)
+            f = MOI.Utilities.operate(vcat, Float64, 1.0 .* x...)
+            MOI.add_constraint(model, f, MOI.Nonnegatives(3))
+            scs = SCS.Optimizer()
+            MOI.optimize!(scs, model)
+            return
+        end
+        return
+    end
+    output = read(filename, String)
+    @test occursin("SCS", output)
+    @test length(output) > 100
+    return
+end
+
 end  # module
 
 TestSCS.runtests()

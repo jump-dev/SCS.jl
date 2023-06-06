@@ -402,5 +402,9 @@ function _unsafe_scs_solve(model::_ScsDataWrapper{S,T}) where {S,T}
         model.options[:warm_start],
     )
     scs_finish(model.linear_solver, scs_work)
+    # SCS does not flush stdout on exit, and the C stdout is not the same as
+    # Julia's stdout, so regular calls to flush(stdout) do not work. A
+    # work-around is for us to manually flush the output after each solve.
+    Base.Libc.flush_cstdio()
     return Solution(model.primal, model.dual, model.slack, scs_info, status)
 end
