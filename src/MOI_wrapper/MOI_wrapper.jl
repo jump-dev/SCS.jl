@@ -181,6 +181,7 @@ function MOI.supports(
     ::Union{
         MOI.ObjectiveSense,
         MOI.ObjectiveFunction{MOI.ScalarAffineFunction{Float64}},
+        MOI.ObjectiveFunction{MOI.ScalarQuadraticFunction{Float64}},
     },
 )
     return true
@@ -258,29 +259,46 @@ function MOI.optimize!(
     end
 
     model_attributes = MOI.get(src, MOI.ListOfModelAttributesSet())
-    objective_function_attr =
-        MOI.ObjectiveFunction{MOI.ScalarAffineFunction{Cdouble}}()
+    max_sense = false
+    obj_attr = nothing
     for attr in model_attributes
-        if attr == MOI.ObjectiveSense() || attr == objective_function_attr
-            continue  # These are handled later
+        if attr == MOI.ObjectiveSense()
+            max_sense = MOI.get(src, attr) == MOI.MAX_SENSE
         elseif attr == MOI.Name()
             continue  # This can be skipped without consequence
+        elseif attr isa MOI.ObjectiveFunction
+            obj_attr = attr
+        else
+            throw(MOI.UnsupportedAttribute(attr))
         end
-        throw(MOI.UnsupportedAttribute(attr))
     end
-    max_sense = false
-    if MOI.ObjectiveSense() in model_attributes
-        max_sense = MOI.get(src, MOI.ObjectiveSense()) == MOI.MAX_SENSE
-    end
-    objective_constant = 0.0
-    c = zeros(A.n)
-    if objective_function_attr in model_attributes
-        obj = MOI.get(src, objective_function_attr)
+    objective_constant, c, P = 0.0, zeros(A.n), SparseArrays.spzeros(A.n, A.n)
+    if obj_attr == MOI.ObjectiveFunction{MOI.ScalarAffineFunction{Cdouble}}()
+        obj = MOI.get(src, obj_attr)
         objective_constant = MOI.constant(obj)
         for term in obj.terms
             c[term.variable.value] += (max_sense ? -1 : 1) * term.coefficient
         end
+    elseif obj_attr ==
+           MOI.ObjectiveFunction{MOI.ScalarQuadraticFunction{Cdouble}}()
+        obj = MOI.get(src, obj_attr)
+        objective_constant = MOI.constant(obj)
+        scale = max_sense ? -1 : 1
+        for term in obj.affine_terms
+            c[term.variable.value] += scale * term.coefficient
+        end
+        nnz = length(obj.quadratic_terms)
+        I, J, V = zeros(Int, nnz), zeros(Int, nnz), zeros(Cdouble, nnz)
+        for (i, qterm) in enumerate(obj.quadratic_terms)
+            I[i] = min(qterm.variable_1.value, qterm.variable_2.value)
+            J[i] = max(qterm.variable_1.value, qterm.variable_2.value)
+            V[i] = scale * qterm.coefficient
+        end
+        P = SparseArrays.sparse(I, J, V, A.n, A.n)
+    elseif obj_attr !== nothing
+        throw(MOI.UnsupportedAttribute(obj_attr))
     end
+
     # `model.primal` contains the result of the previous optimization.
     # It is used as a warm start if its length is the same, e.g.
     # probably because no variable and/or constraint has been added.
@@ -350,7 +368,7 @@ function MOI.optimize!(
         A.m,
         A.n,
         A,
-        SparseArrays.spzeros(A.n, A.n), # placeholder: P
+        P,
         Ab.constants.b,
         c,
         Ab.sets.num_rows[1],
