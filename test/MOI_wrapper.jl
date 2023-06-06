@@ -186,7 +186,7 @@ function test_VectorOfVariables_psd_permutation()
         SCS.ScaledPSDConeBridge,
         """
         variables: x1, x2, x3, x4, x5, x6, x7, x8, x9, x10
-        [x1, x2, x3, x4, x5, x6, x7, x8, x9, x10] in PositiveSemidefiniteConeTriangle(4)
+        [x1, x2, x3, x4, x5, x6, x7, x8, x9, x10] in ScaledPositiveSemidefiniteConeTriangle(4)
         """,
         """
         variables: x1, x2, x3, x4, x5, x6, x7, x8, x9, x10
