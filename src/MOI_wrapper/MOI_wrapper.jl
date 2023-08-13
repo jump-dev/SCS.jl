@@ -173,6 +173,29 @@ end
 MOI.get(optimizer::Optimizer, ::MOI.Silent) = optimizer.silent
 
 ###
+### MOI.TimeLimitSec
+###
+
+MOI.supports(::Optimizer, ::MOI.TimeLimitSec) = true
+
+function MOI.set(optimizer::Optimizer, ::MOI.TimeLimitSec, time_limit::Real)
+    optimizer.options[:time_limit_secs] = convert(Float64, time_limit)
+    return
+end
+
+function MOI.set(optimizer::Optimizer, ::MOI.TimeLimitSec, ::Nothing)
+    delete!(optimizer.options, :time_limit_secs)
+    return
+end
+
+function MOI.get(optimizer::Optimizer, attr::MOI.TimeLimitSec)
+    if !haskey(optimizer.options, :time_limit_secs)
+        throw(MOI.GetAttributeNotAllowed(attr))
+    end
+    return optimizer.options[:time_limit_secs]
+end
+
+###
 ### MOI.AbstractModelAttribute
 ###
 
@@ -482,7 +505,13 @@ function MOI.get(optimizer::Optimizer, ::MOI.TerminationStatus)
     elseif s == -6
         return MOI.ALMOST_DUAL_INFEASIBLE
     elseif s == 2
-        return MOI.ALMOST_OPTIMAL
+        if occursin("reached time_limit_secs", optimizer.sol.raw_status)
+            return MOI.TIME_LIMIT
+        elseif occursin("reached max_iters", optimizer.sol.raw_status)
+            return MOI.ITERATION_LIMIT
+        else
+            return MOI.ALMOST_OPTIMAL
+        end
     elseif s == -5
         return MOI.INTERRUPTED
     elseif s == -4
