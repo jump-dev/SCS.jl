@@ -500,7 +500,13 @@ function MOI.get(optimizer::Optimizer, ::MOI.TerminationStatus)
     elseif s == -6
         return MOI.ALMOST_DUAL_INFEASIBLE
     elseif s == 2
-        return MOI.ALMOST_OPTIMAL
+        if occursin("reached time_limit_secs", optimizer.sol.raw_status)
+            return MOI.TIME_LIMIT
+        elseif occursin("reached max_iters", optimizer.sol.raw_status)
+            return MOI.ITERATION_LIMIT
+        else
+            return MOI.ALMOST_OPTIMAL
+        end
     elseif s == -5
         return MOI.INTERRUPTED
     elseif s == -4
