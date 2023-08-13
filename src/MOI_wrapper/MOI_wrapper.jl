@@ -173,6 +173,24 @@ end
 MOI.get(optimizer::Optimizer, ::MOI.Silent) = optimizer.silent
 
 ###
+### MOI.TimeLimitSec
+###
+
+MOI.supports(::Optimizer, ::MOI.TimeLimitSec) = true
+
+function MOI.set(optimizer::Optimizer, ::MOI.TimeLimitSec, time_limit)
+    optimizer.options[:time_limit_secs] = time_limit
+    return nothing
+end
+
+function MOI.get(optimizer::Optimizer, ::MOI.TimeLimitSec, time_limit)
+    if !haskey(optimizer.options, :time_limit_secs)
+        throw(GetAttributeNotAllowed())
+    end
+    return optimizer.options[:time_limit_secs]
+end
+
+###
 ### MOI.AbstractModelAttribute
 ###
 
