@@ -178,9 +178,14 @@ MOI.get(optimizer::Optimizer, ::MOI.Silent) = optimizer.silent
 
 MOI.supports(::Optimizer, ::MOI.TimeLimitSec) = true
 
-function MOI.set(optimizer::Optimizer, ::MOI.TimeLimitSec, time_limit)
-    optimizer.options[:time_limit_secs] = time_limit
-    return nothing
+function MOI.set(optimizer::Optimizer, ::MOI.TimeLimitSec, time_limit::Real)
+    optimizer.options[:time_limit_secs] = convert(Float64, time_limit)
+    return
+end
+
+function MOI.set(optimizer::Optimizer, ::MOI.TimeLimitSec, ::Nothing)
+    delete!(optimizer.options, :time_limit_secs)
+    return
 end
 
 function MOI.get(optimizer::Optimizer, attr::MOI.TimeLimitSec)
