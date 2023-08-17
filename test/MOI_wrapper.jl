@@ -249,13 +249,16 @@ function test_redirect_stdout()
     return
 end
 
-function test_time_limit()
+function test_attribute_TimeLimitSec()
     model = SCS.Optimizer()
-    @test_throws MOI.GetAttributeNotAllowed MOI.get(model, MOI.TimeLimitSec())
-    MOI.set(model, MOI.TimeLimitSec(), 1)
-    @test MOI.get(model, MOI.TimeLimitSec()) === 1.0
+    @test MOI.supports(model, MOI.TimeLimitSec())
+    @test MOI.get(model, MOI.TimeLimitSec()) === nothing
+    MOI.set(model, MOI.TimeLimitSec(), 0.0)
+    @test MOI.get(model, MOI.TimeLimitSec()) == 0.0
     MOI.set(model, MOI.TimeLimitSec(), nothing)
-    @test_throws MOI.GetAttributeNotAllowed MOI.get(model, MOI.TimeLimitSec())
+    @test MOI.get(model, MOI.TimeLimitSec()) === nothing
+    MOI.set(model, MOI.TimeLimitSec(), 1.0)
+    @test MOI.get(model, MOI.TimeLimitSec()) == 1.0
     return
 end
 
