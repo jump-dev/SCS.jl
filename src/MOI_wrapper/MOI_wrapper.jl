@@ -188,11 +188,9 @@ function MOI.set(optimizer::Optimizer, ::MOI.TimeLimitSec, ::Nothing)
     return
 end
 
-function MOI.get(optimizer::Optimizer, attr::MOI.TimeLimitSec)
-    if !haskey(optimizer.options, :time_limit_secs)
-        throw(MOI.GetAttributeNotAllowed(attr))
-    end
-    return optimizer.options[:time_limit_secs]
+function MOI.get(optimizer::Optimizer, ::MOI.TimeLimitSec)
+    value = get(optimizer.options, :time_limit_secs, nothing)
+    return value::Union{Float64,Nothing}
 end
 
 ###
