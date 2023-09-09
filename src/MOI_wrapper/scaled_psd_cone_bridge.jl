@@ -8,8 +8,9 @@
         side_dimension::Int
     end
 
-Similar to `MOI.ScaledPositiveSemidefiniteConeTriangle` but it the vectorization
-is the lower triangular part column-wise (or the upper triangular part row-wise).
+Similar to `MOI.Scaled{MOI.PositiveSemidefiniteConeTriangle}` but it the
+vectorization is the lower triangular part column-wise (or the upper triangular
+part row-wise).
 """
 struct ScaledPSDCone <: MOI.AbstractVectorSet
     side_dimension::Int
@@ -30,7 +31,7 @@ end
 struct ScaledPSDConeBridge{T,F} <: MOI.Bridges.Constraint.SetMapBridge{
     T,
     ScaledPSDCone,
-    MOI.ScaledPositiveSemidefiniteConeTriangle,
+    MOI.Scaled{MOI.PositiveSemidefiniteConeTriangle},
     F,
     F,
 }
@@ -40,23 +41,23 @@ end
 function MOI.Bridges.Constraint.concrete_bridge_type(
     ::Type{ScaledPSDConeBridge{T}},
     ::Type{F},
-    ::Type{MOI.ScaledPositiveSemidefiniteConeTriangle},
+    ::Type{MOI.Scaled{MOI.PositiveSemidefiniteConeTriangle}},
 ) where {T,F<:MOI.AbstractVectorFunction}
     return ScaledPSDConeBridge{T,F}
 end
 
 function MOI.Bridges.map_set(
     ::Type{<:ScaledPSDConeBridge},
-    set::MOI.ScaledPositiveSemidefiniteConeTriangle,
+    set::MOI.Scaled{MOI.PositiveSemidefiniteConeTriangle},
 )
-    return ScaledPSDCone(set.side_dimension)
+    return ScaledPSDCone(MOI.side_dimension(set))
 end
 
 function MOI.Bridges.inverse_map_set(
     ::Type{<:ScaledPSDConeBridge},
     set::ScaledPSDCone,
 )
-    return MOI.ScaledPositiveSemidefiniteConeTriangle(set.side_dimension)
+    return MOI.Scaled(MOI.PositiveSemidefiniteConeTriangle(set.side_dimension))
 end
 
 function _upper_to_lower_triangular_permutation(dim::Int)
