@@ -3,8 +3,6 @@
 # Use of this source code is governed by an MIT-style license that can be found
 # in the LICENSE.md file or at https://opensource.org/licenses/MIT.
 
-const MOI = MathOptInterface
-
 include("scaled_psd_cone_bridge.jl")
 
 MOI.Utilities.@product_of_sets(
