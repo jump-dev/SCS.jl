@@ -6,10 +6,8 @@
 module TestSCS
 
 using Test
-using MathOptInterface
+import MathOptInterface as MOI
 import SCS
-
-const MOI = MathOptInterface
 
 function runtests()
     for name in names(@__MODULE__; all = true)
@@ -96,6 +94,7 @@ function test_RawOptimizerAttribute()
     MOI.set(model, MOI.RawOptimizerAttribute("eps_abs"), 2.0)
     @test MOI.get(model, MOI.RawOptimizerAttribute("eps_abs")) == 2.0
     @test MOI.get(model, MOI.RawOptimizerAttribute("eps_abs")) == 2.0
+    return
 end
 
 function test_constrained_variables()
@@ -142,6 +141,7 @@ function test_unsupported()
     MOI.set(model, MOI.Test.UnknownConstraintAttribute(), c, 1.0)
     err = MOI.UnsupportedAttribute{MOI.Test.UnknownConstraintAttribute}
     @test_throws err MOI.optimize!(optimizer, model)
+    return
 end
 
 function test_empty_problem()
