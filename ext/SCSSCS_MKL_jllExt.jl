@@ -8,11 +8,9 @@ module SCSSCS_MKL_jllExt
 import SCS
 import SCS_MKL_jll
 
-function __init__()
-    global mkldirect = SCS_MKL_jll.libscsmkl
-    push!(SCS.available_solvers, SCS.MKLDirectSolver)
-    return
-end
+global mkldirect = SCS_MKL_jll.libscsmkl
+
+SCS.is_available(::Type{SCS.MKLDirectSolver}) = true
 
 SCS.scsint_t(::Type{SCS.MKLDirectSolver}) = Clonglong
 

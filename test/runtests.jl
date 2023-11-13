@@ -13,11 +13,15 @@ end
 using Test
 using SCS
 
+solvers_to_test = [SCS.DirectSolver, SCS.IndirectSolver]
+
 if Sys.islinux() && Sys.ARCH == :x86_64
     import Pkg
     Pkg.add("SCS_MKL_jll")
     using SCS_MKL_jll
-    @test SCS.MKLDirectSolver in SCS.available_solvers
+    push!(solvers_to_test, SCS.MKLDirectSolver)
+else
+    @test !SCS.is_available(SCS.MKLDirectSolver)
 end
 
 include("test_problems.jl")
@@ -25,7 +29,8 @@ include("test_problems.jl")
 @testset "test-problems.jl" begin
     @test SCS.scs_version() isa String
     @test VersionNumber(SCS.scs_version()) >= v"3.2.0"
-    for solver in SCS.available_solvers
+    for solver in solvers_to_test
+        @test SCS.is_available(solver)
         @test SCS.scs_version(solver) isa String
         @test VersionNumber(SCS.scs_version(solver)) >= v"3.2.0"
         feasible_basic_problems(solver)

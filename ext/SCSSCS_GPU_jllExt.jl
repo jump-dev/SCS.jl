@@ -8,11 +8,9 @@ module SCSSCS_GPU_jllExt
 import SCS
 import SCS_GPU_jll
 
-function __init__()
-    global gpuindirect = SCS_GPU_jll.libscsgpuindir
-    push!(SCS.available_solvers, SCS.GpuIndirectSolver)
-    return
-end
+global gpuindirect = SCS_GPU_jll.libscsgpuindir
+
+SCS.is_available(::Type{SCS.GpuIndirectSolver}) = true
 
 SCS.scsint_t(::Type{SCS.GpuIndirectSolver}) = Cint
 

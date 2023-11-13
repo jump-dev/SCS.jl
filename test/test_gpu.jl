@@ -13,9 +13,9 @@ Pkg.add("SCS_GPU_jll")
 using SCS, SCS_GPU_jll
 using Test
 
-@test SCS.GpuIndirectSolver in SCS.available_solvers
-
 include("test_problems.jl")
+
+@test SCS.is_available(SCS.GpuIndirectSolver)
 feasible_basic_problems(SCS.GpuIndirectSolver)
 
 # TODO(odow): consider re-enabling these

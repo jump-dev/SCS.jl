@@ -6,21 +6,22 @@
 module SCS
 
 import MathOptInterface
-import Requires
 import SCS_jll
 import SparseArrays
 
-global indirect = SCS_jll.libscsindir
-global direct = SCS_jll.libscsdir
+abstract type LinearSolver end
+
+SCS.is_available(::Type{<:LinearSolver}) = false
 
 include("c_wrapper.jl")
 include("linear_solvers/direct.jl")
 include("linear_solvers/indirect.jl")
 include("MOI_wrapper/MOI_wrapper.jl")
 
-const available_solvers = [DirectSolver, IndirectSolver]
-
+# Code is contained in /ext/SCSSCS_GPU_jllExt
 struct GpuIndirectSolver <: LinearSolver end
+
+# Code is contained in /ext/SCSSCS_MKL_jllExt
 struct MKLDirectSolver <: LinearSolver end
 
 export scs_solve

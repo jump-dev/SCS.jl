@@ -134,16 +134,6 @@ of `SCS` documentation. `SCS.jl` ships with
 * `SCS.LinearSolver` (sparse indirect, by conjugate gradient)
 enabled.
 
-The find currently available linear solvers one can inspect `SCS.available_solvers`:
-```julia
-julia> using SCS
-
-julia> SCS.available_solvers
-2-element Vector{DataType}:
- SCS.DirectSolver
- SCS.IndirectSolver
-```
-
 To select the linear solver of choice:
 
  * pass the `linear_solver` option to [`optimizer_with_attributes`](@ref), or to
@@ -163,11 +153,8 @@ julia> using SCS, SCS_MKL_jll
 
 julia> using SCS
 
-julia> SCS.available_solvers
-3-element Vector{DataType}:
- SCS.DirectSolver
- SCS.IndirectSolver
- SCS.MKLDirectSolver
+julia> SCS.is_available(SCS.MKLDirectSolver)
+true
 ```
 
 The `MKLDirectSolver` is available on `Linux x86_64` platform only.
@@ -182,11 +169,8 @@ julia> import Pkg; Pkg.add("SCS_GPU_jll");
 
 julia> using SCS, SCS_GPU_jll
 
-julia> SCS.available_solvers
-3-element Array{DataType,1}:
- SCS.DirectSolver
- SCS.IndirectSolver
- SCS.GpuIndirectSolver
+julia> SCS.is_available(SCS.GpuIndirectSolver)
+true
 ```
 
 The `GpuIndirectSolver` is available on `Linux x86_64` platform only.

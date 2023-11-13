@@ -3,7 +3,11 @@
 # Use of this source code is governed by an MIT-style license that can be found
 # in the LICENSE.md file or at https://opensource.org/licenses/MIT.
 
+global direct = SCS_jll.libscsdir
+
 struct DirectSolver <: LinearSolver end
+
+is_available(::Type{DirectSolver}) = true
 
 scsint_t(::Type{DirectSolver}) = Clonglong
 
