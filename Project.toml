@@ -12,6 +12,10 @@ SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 SCSSCS_GPU_jllExt = ["SCS_GPU_jll"]
 SCSSCS_MKL_jllExt = ["SCS_MKL_jll"]
 
+[weakdeps]
+SCS_GPU_jll = "af6e375f-46ec-5fa0-b791-491b0dfa44a4"
+SCS_MKL_jll = "3f2553a9-4106-52be-b7dd-865123654657"
+
 [compat]
 MathOptInterface = "1.20"
 Pkg = "<0.0.1, ^1.6"
