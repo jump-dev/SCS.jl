@@ -6,6 +6,7 @@
 module SCS
 
 import MathOptInterface as MOI
+import Requires  # Remove when Julia 1.9 is the LTS
 import SCS_jll
 import SparseArrays
 
@@ -24,9 +25,9 @@ struct GpuIndirectSolver <: LinearSolver end
 # Code is contained in /ext/SCSSCS_MKL_jllExt
 struct MKLDirectSolver <: LinearSolver end
 
-@static if !isdefined(Base, :get_extension)
-    import Requires
-    function __init__()
+function __init__()
+    # Remove when Julia 1.9 is the LTS
+    @static if !isdefined(Base, :get_extension)
         Requires.@require(
             SCS_GPU_jll = "af6e375f-46ec-5fa0-b791-491b0dfa44a4",
             include("../ext/SCSSCS_GPU_jllExt.jl"),
@@ -35,8 +36,8 @@ struct MKLDirectSolver <: LinearSolver end
             SCS_MKL_jll = "3f2553a9-4106-52be-b7dd-865123654657",
             include("../ext/SCSSCS_MKL_jllExt.jl"),
         )
-        return
     end
+    return
 end
 
 export scs_solve
