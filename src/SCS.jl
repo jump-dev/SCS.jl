@@ -26,7 +26,10 @@ struct MKLDirectSolver <: LinearSolver end
 
 if !isdefined(Base, :get_extension)
     import Requires
-    function __init__()
+end
+
+function __init__()
+    @static if !isdefined(Base, :get_extension)
         Requires.@require(
             SCS_GPU_jll = "af6e375f-46ec-5fa0-b791-491b0dfa44a4",
             include("../ext/SCSSCS_GPU_jllExt.jl"),
@@ -35,8 +38,8 @@ if !isdefined(Base, :get_extension)
             SCS_MKL_jll = "3f2553a9-4106-52be-b7dd-865123654657",
             include("../ext/SCSSCS_MKL_jllExt.jl"),
         )
-        return
     end
+    return
 end
 
 export scs_solve
