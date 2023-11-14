@@ -9,11 +9,6 @@
 SCS can solve linear programs, second-order cone programs, semidefinite
 programs, exponential cone programs, and power cone programs.
 
-!!! compat
-    SCS.jl version 2.0 or later requires Julia 1.9 or later. If you are using Julia 1.6,
-    see the [v1.3.1/README.md](https://github.com/jump-dev/SCS.jl/blob/v1.3.1/README.md)
-    for details.
-
 ## Affiliation
 
 This wrapper is maintained by the JuMP community and is not a project of the SCS
@@ -134,19 +129,25 @@ for other options.
 
 `SCS` uses a linear solver internally, see
 [this section](https://www.cvxgrp.org/scs/linear_solver/index.html#linear-system-solver)
-of `SCS` documentation. `SCS.jl` ships with
-* `SCS.DirectSolver` (sparse direct, the default) and
-* `SCS.LinearSolver` (sparse indirect, by conjugate gradient)
-enabled.
+of `SCS` documentation. `SCS.jl` ships with the following linear solvers:
 
-To select the linear solver of choice:
+ * `SCS.DirectSolver` (sparse direct, the default)
+ * `SCS.IndirectSolver` (sparse indirect, by conjugate gradient)
 
- * pass the `linear_solver` option to [`optimizer_with_attributes`](@ref), or to
-   [`MOI.OptimizerWithAttributes`](@ref);
- * specify the solver as the first argument when using `scs_solve` directly
-   (see the low-level wrapper section below).
+To select the linear solver, set the `linear_solver` option, or pass the solver
+as the first argument when using `scs_solve` directly (see the low-level wrapper
+section below). For example:
+
+```julia
+using JuMP, SCS
+model = Model(SCS.Optimizer)
+set_attribute(model, "linear_solver", SCS.IndirectSolver)
+```
 
 ### SCS with MKL Pardiso linear solver
+
+**SCS v2.0 introduced a breaking change. You now need to use `SCS_MKL_jll.jl`
+instead of `MKL_jll.jl`.**
 
 To enable the MKL Pardiso (direct sparse) solver one needs to install and load
 `SCS_MKL_jll`.
@@ -165,6 +166,9 @@ true
 The `MKLDirectSolver` is available on `Linux x86_64` platform only.
 
 ### SCS with Sparse GPU indirect solver (CUDA only)
+
+**SCS v2.0 introduced a breaking change. You now need to use `SCS_GPU_jll.jl`
+instead of `CUDA.jl`.**
 
 To enable the indirect linear solver on GPU one needs to install and load
 `SCS_GPU_jll`.
