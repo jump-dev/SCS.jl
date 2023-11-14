@@ -11,7 +11,7 @@ import SparseArrays
 
 abstract type LinearSolver end
 
-SCS.is_available(::Type{<:LinearSolver}) = false
+is_available(::Type{<:LinearSolver}) = false
 
 include("c_wrapper.jl")
 include("linear_solvers/direct.jl")
