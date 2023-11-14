@@ -14,10 +14,10 @@ using SCS, SCS_GPU_jll
 using Test
 
 include("test_problems.jl")
+include("MOI_wrapper.jl")
 
-@test SCS.is_available(SCS.GpuIndirectSolver)
-feasible_basic_problems(SCS.GpuIndirectSolver)
-
-# TODO(odow): consider re-enabling these
-# include("MOI_wrapper.jl")
-# moi_tests(SCS.GpuIndirectSolver)
+@testset "GpuIndirectSolver" begin
+    @test SCS.is_available(SCS.GpuIndirectSolver)
+    feasible_basic_problems(SCS.GpuIndirectSolver)
+    moi_tests(SCS.GpuIndirectSolver)
+end
