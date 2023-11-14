@@ -20,7 +20,7 @@ function SCS.scs_set_default_settings(
 ) where {I<:Cint}
     return @ccall gpuindirect.scs_set_default_settings(
         stgs::Ref{SCS.ScsSettings{I}},
-    )::Cvoid,
+    )::Cvoid
 end
 
 function SCS.scs_init(
