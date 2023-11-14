@@ -10,18 +10,18 @@ if get(ENV, "BUILDKITE", "false") == "true"
     exit(0)
 end
 
-using Test
-using SCS
-
-solvers_to_test = [SCS.DirectSolver, SCS.IndirectSolver]
-
-if Sys.islinux() && Sys.ARCH == :x86_64
+@static if Sys.islinux() && Sys.ARCH == :x86_64
     import Pkg
     Pkg.add("SCS_MKL_jll")
     using SCS_MKL_jll
+end
+
+using Test
+using SCS
+
+solvers_to_test = Any[SCS.DirectSolver, SCS.IndirectSolver]
+if SCS.is_available(SCS.MKLDirectSolver)
     push!(solvers_to_test, SCS.MKLDirectSolver)
-else
-    @test !SCS.is_available(SCS.MKLDirectSolver)
 end
 
 include("test_problems.jl")
