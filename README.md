@@ -146,8 +146,8 @@ set_attribute(model, "linear_solver", SCS.IndirectSolver)
 
 ### SCS with MKL Pardiso linear solver
 
-**SCS v2.0 introduced a breaking change. You now need to use `SCS_MKL_jll.jl`
-instead of `MKL_jll.jl`.**
+**SCS v2.0 introduced a breaking change. You now need to use `SCS_MKL_jll`
+instead of `MKL_jll`.**
 
 To enable the MKL Pardiso (direct sparse) solver one needs to install and load
 `SCS_MKL_jll`.
@@ -167,8 +167,8 @@ The `MKLDirectSolver` is available on `Linux x86_64` platform only.
 
 ### SCS with Sparse GPU indirect solver (CUDA only)
 
-**SCS v2.0 introduced a breaking change. You now need to use `SCS_GPU_jll.jl`
-instead of `CUDA.jl`.**
+**SCS v2.0 introduced a breaking change. You now need to use `SCS_GPU_jll`
+instead of `CUDA_jll`.**
 
 To enable the indirect linear solver on GPU one needs to install and load
 `SCS_GPU_jll`.
