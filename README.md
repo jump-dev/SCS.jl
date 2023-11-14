@@ -9,6 +9,11 @@
 SCS can solve linear programs, second-order cone programs, semidefinite
 programs, exponential cone programs, and power cone programs.
 
+!!! compat
+    SCS.jl version 2.0 or later requires Julia 1.9 or later. If you are using Julia 1.6,
+    see the [v1.3.1/README.md](https://github.com/jump-dev/SCS.jl/blob/v1.3.1/README.md)
+    for details.
+
 ## Affiliation
 
 This wrapper is maintained by the JuMP community and is not a project of the SCS
