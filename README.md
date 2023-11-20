@@ -129,70 +129,57 @@ for other options.
 
 `SCS` uses a linear solver internally, see
 [this section](https://www.cvxgrp.org/scs/linear_solver/index.html#linear-system-solver)
-of `SCS` documentation. `SCS.jl` ships with
-* `SCS.DirectSolver` (sparse direct, the default) and
-* `SCS.LinearSolver` (sparse indirect, by conjugate gradient)
-enabled.
+of `SCS` documentation. `SCS.jl` ships with the following linear solvers:
 
-The find currently available linear solvers one can inspect `SCS.available_solvers`:
+ * `SCS.DirectSolver` (sparse direct, the default)
+ * `SCS.IndirectSolver` (sparse indirect, by conjugate gradient)
+
+To select the linear solver, set the `linear_solver` option, or pass the solver
+as the first argument when using `scs_solve` directly (see the low-level wrapper
+section below). For example:
+
 ```julia
-julia> using SCS
-
-julia> SCS.available_solvers
-2-element Vector{DataType}:
- SCS.DirectSolver
- SCS.IndirectSolver
+using JuMP, SCS
+model = Model(SCS.Optimizer)
+set_attribute(model, "linear_solver", SCS.IndirectSolver)
 ```
-
-To select the linear solver of choice:
-
- * pass the `linear_solver` option to [`optimizer_with_attributes`](@ref), or to
-   [`MOI.OptimizerWithAttributes`](@ref);
- * specify the solver as the first argument when using `scs_solve` directly
-   (see the low-level wrapper section below).
 
 ### SCS with MKL Pardiso linear solver
 
-To enable the MKL Pardiso (direct sparse) solver one needs to load `MKL_jll`
-**before** `SCS`:
+**SCS.jl v2.0 introduced a breaking change. You now need to use `SCS_MKL_jll`
+instead of `MKL_jll`.**
+
+To enable the MKL Pardiso (direct sparse) solver one needs to install and load
+`SCS_MKL_jll`.
 
 ```julia
-julia> import Pkg
+julia> import Pkg; Pkg.add("SCS_MKL_jll");
 
-julia> Pkg.add(Pkg.PackageSpec(name = "MKL_jll", version = "2022.2"))
-
-julia> using MKL_jll    # This must be called before `using SCS`.
+julia> using SCS, SCS_MKL_jll
 
 julia> using SCS
 
-julia> SCS.available_solvers
-3-element Vector{DataType}:
- SCS.DirectSolver
- SCS.IndirectSolver
- SCS.MKLDirectSolver
+julia> SCS.is_available(SCS.MKLDirectSolver)
+true
 ```
 
 The `MKLDirectSolver` is available on `Linux x86_64` platform only.
 
 ### SCS with Sparse GPU indirect solver (CUDA only)
 
-To enable the indirect linear solver on GPU one needs to load `CUDA_jll`
-**before** `SCS`:
+**SCS.jl v2.0 introduced a breaking change. You now need to use `SCS_GPU_jll`
+instead of `CUDA_jll`.**
+
+To enable the indirect linear solver on GPU one needs to install and load
+`SCS_GPU_jll`.
 
 ```julia
-julia> import Pkg
+julia> import Pkg; Pkg.add("SCS_GPU_jll");
 
-julia> Pkg.add(Pkg.PackageSpec(name = "CUDA_jll", version = "10.1"))
+julia> using SCS, SCS_GPU_jll
 
-julia> using CUDA_jll  # This must be called before `using SCS`.
-
-julia> using SCS
-
-julia> SCS.available_solvers
-3-element Array{DataType,1}:
- SCS.DirectSolver
- SCS.IndirectSolver
- SCS.GpuIndirectSolver
+julia> SCS.is_available(SCS.GpuIndirectSolver)
+true
 ```
 
 The `GpuIndirectSolver` is available on `Linux x86_64` platform only.

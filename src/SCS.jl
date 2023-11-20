@@ -6,45 +6,39 @@
 module SCS
 
 import MathOptInterface as MOI
-import Requires
+import Requires  # Remove when Julia 1.9 is the LTS
 import SCS_jll
 import SparseArrays
 
-function __init__()
-    global indirect = SCS_jll.libscsindir
-    global direct = SCS_jll.libscsdir
+abstract type LinearSolver end
 
-    Requires.@require(
-        CUDA_jll = "e9e359dc-d701-5aa8-82ae-09bbf812ea83",
-        begin
-            import SCS_GPU_jll
-            global gpuindirect = SCS_GPU_jll.libscsgpuindir
-            push!(available_solvers, GpuIndirectSolver)
-        end
-    )
-    Requires.@require(
-        MKL_jll = "856f044c-d86e-5d09-b602-aeab76dc8ba7",
-        begin
-            if Sys.islinux() && Sys.ARCH == :x86_64
-                import SCS_MKL_jll
-                import SCS_MKL_jll.MKL_jll
-                global mkldirect = SCS_MKL_jll.libscsmkl
-
-                push!(available_solvers, MKLDirectSolver)
-            end
-        end
-    )
-    return
-end
+is_available(::Type{<:LinearSolver}) = false
 
 include("c_wrapper.jl")
 include("linear_solvers/direct.jl")
 include("linear_solvers/indirect.jl")
-include("linear_solvers/gpu_indirect.jl")
-include("linear_solvers/mkl_direct.jl")
 include("MOI_wrapper/MOI_wrapper.jl")
 
-const available_solvers = [DirectSolver, IndirectSolver]
+# Code is contained in /ext/SCSSCS_GPU_jllExt
+struct GpuIndirectSolver <: LinearSolver end
+
+# Code is contained in /ext/SCSSCS_MKL_jllExt
+struct MKLDirectSolver <: LinearSolver end
+
+function __init__()
+    # Remove when Julia 1.9 is the LTS
+    @static if !isdefined(Base, :get_extension)
+        Requires.@require(
+            SCS_GPU_jll = "af6e375f-46ec-5fa0-b791-491b0dfa44a4",
+            include("../ext/SCSSCS_GPU_jllExt.jl"),
+        )
+        Requires.@require(
+            SCS_MKL_jll = "3f2553a9-4106-52be-b7dd-865123654657",
+            include("../ext/SCSSCS_MKL_jllExt.jl"),
+        )
+    end
+    return
+end
 
 export scs_solve
 

@@ -10,26 +10,32 @@ if get(ENV, "BUILDKITE", "false") == "true"
     exit(0)
 end
 
+@static if Sys.islinux() && Sys.ARCH == :x86_64
+    import Pkg
+    Pkg.add("SCS_MKL_jll")
+    using SCS_MKL_jll
+end
+
 using Test
-# MKL_jll is not in our Project.toml, so we need to install it.
-import Pkg
-Pkg.add(Pkg.PackageSpec(name = "MKL_jll", version = "2022"))
-using MKL_jll  # MKL_jll must be loaded _before_ SCS!
 using SCS
 
-if Sys.islinux() && Sys.ARCH == :x86_64
-    @test SCS.MKLDirectSolver in SCS.available_solvers
+solvers_to_test = Any[SCS.DirectSolver, SCS.IndirectSolver]
+if SCS.is_available(SCS.MKLDirectSolver)
+    push!(solvers_to_test, SCS.MKLDirectSolver)
 end
 
 include("test_problems.jl")
-@test SCS.scs_version() isa String
-@test VersionNumber(SCS.scs_version()) >= v"3.2.0"
-for solver in SCS.available_solvers
-    @test SCS.scs_version(solver) isa String
-    @test VersionNumber(SCS.scs_version(solver)) >= v"3.2.0"
 
-    feasible_basic_problems(solver)
-    test_options(solver)
+@testset "test-problems.jl" begin
+    @test SCS.scs_version() isa String
+    @test VersionNumber(SCS.scs_version()) >= v"3.2.0"
+    for solver in solvers_to_test
+        @test SCS.is_available(solver)
+        @test SCS.scs_version(solver) isa String
+        @test VersionNumber(SCS.scs_version(solver)) >= v"3.2.0"
+        feasible_basic_problems(solver)
+        test_options(solver)
+    end
 end
 
 include("MOI_wrapper.jl")
