@@ -54,6 +54,7 @@ function _test_runtests(linear_solver)
                 MOI.ConstraintName,
                 MOI.VariableName,
                 MOI.ObjectiveBound,
+                MOI.SolverVersion,
             ],
         ),
         exclude = String[
@@ -64,23 +65,11 @@ function _test_runtests(linear_solver)
             # Expected test failures:
             #   TODO(odow): get not supported for primal/dual starts
             "test_model_ModelFilter_AbstractConstraintAttribute",
-            #   Unimplemented feature
-            "test_attribute_SolverVersion",
             #   ArgumentError: The number of constraints must be greater than 0
             "test_attribute_RawStatusString",
             "test_attribute_SolveTimeSec",
             "test_objective_ObjectiveFunction_blank",
             "test_solve_TerminationStatus_DUAL_INFEASIBLE",
-            #   Problem is a nonconvex QP
-            "test_basic_ScalarQuadraticFunction_EqualTo",
-            "test_basic_ScalarQuadraticFunction_GreaterThan",
-            "test_basic_ScalarQuadraticFunction_Interval",
-            "test_basic_VectorQuadraticFunction_",
-            "test_quadratic_SecondOrderCone_basic",
-            "test_quadratic_nonconvex_",
-            #   MathOptInterface.jl issue #1431
-            "test_model_LowerBoundAlreadySet",
-            "test_model_UpperBoundAlreadySet",
         ],
     )
     return
