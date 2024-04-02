@@ -85,6 +85,7 @@ The SCS optimizer supports the following constraints and attributes.
 List of supported objective functions:
 
  * [`MOI.ObjectiveFunction{MOI.ScalarAffineFunction{Float64}}`](@ref)
+ * [`MOI.ObjectiveFunction{MOI.ScalarQuadraticFunction{Float64}}`](@ref)
 
 List of supported variable types:
 
