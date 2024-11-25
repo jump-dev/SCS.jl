@@ -260,13 +260,7 @@ function MOI.optimize!(
     src::MOI.Utilities.UniversalFallback{OptimizerCache{T}},
 ) where {T}
     linear_solver = get(dest.options, :linear_solver, DirectSolver)
-    if T != scsint_t(linear_solver)
-        cache = MOI.Utilities.UniversalFallback(
-            OptimizerCache{scsint_t(linear_solver)}(),
-        )
-        MOI.copy_to(cache, src)
-        return MOI.optimize!(dest, cache)
-    end
+    @assert T == scsint_t(linear_solver)
     # The real stuff starts here.
     MOI.empty!(dest)
     index_map = MOI.Utilities.identity_index_map(src)
