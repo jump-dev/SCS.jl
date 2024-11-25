@@ -251,6 +251,96 @@ function test_attribute_TimeLimitSec()
     return
 end
 
+function test_SolveTimeSec()
+    model = MOI.Utilities.Model{Float64}()
+    x = MOI.add_variables(model, 3)
+    f = MOI.Utilities.operate(vcat, Float64, 1.0 .* x...)
+    MOI.add_constraint(model, f, MOI.Nonnegatives(3))
+    scs = SCS.Optimizer()
+    MOI.optimize!(scs, model)
+    @test MOI.get(scs, MOI.SolveTimeSec()) >= 0
+    return
+end
+
+function test_RawStatusString()
+    model = MOI.Utilities.Model{Float64}()
+    x = MOI.add_variables(model, 3)
+    f = MOI.Utilities.operate(vcat, Float64, 1.0 .* x...)
+    MOI.add_constraint(model, f, MOI.Nonnegatives(3))
+    scs = SCS.Optimizer()
+    MOI.optimize!(scs, model)
+    @test MOI.get(scs, MOI.RawStatusString()) isa String
+    return
+end
+
+function test_ADMMIterations()
+    model = MOI.Utilities.Model{Float64}()
+    x = MOI.add_variables(model, 3)
+    f = MOI.Utilities.operate(vcat, Float64, 1.0 .* x...)
+    MOI.add_constraint(model, f, MOI.Nonnegatives(3))
+    MOI.add_constraint(
+        model,
+        MOI.Utilities.operate(vcat, Float64, 1.0 * x[1] + 1.0 * x[2] - 2.0),
+        MOI.Nonnegatives(1),
+    )
+    scs = SCS.Optimizer()
+    MOI.optimize!(scs, model)
+    attr = SCS.ADMMIterations()
+    @test MOI.is_set_by_optimize(attr)
+    @test MOI.get(scs, attr) > 0
+    return
+end
+
+function test_max_iters()
+    model = MOI.Utilities.Model{Float64}()
+    x = MOI.add_variables(model, 3)
+    f = MOI.Utilities.operate(vcat, Float64, 1.0 .* x...)
+    MOI.add_constraint(model, f, MOI.Nonnegatives(3))
+    MOI.add_constraint(
+        model,
+        MOI.Utilities.operate(vcat, Float64, 1.0 * x[1] + 1.0 * x[2] - 2.0),
+        MOI.Nonnegatives(1),
+    )
+    scs = SCS.Optimizer()
+    MOI.set(scs, MOI.RawOptimizerAttribute("max_iters"), 1)
+    MOI.optimize!(scs, model)
+    @test MOI.get(scs, MOI.TerminationStatus()) == MOI.ITERATION_LIMIT
+    return
+end
+
+function test_time_limit_secs()
+    model = MOI.Utilities.Model{Float64}()
+    x = MOI.add_variables(model, 3)
+    f = MOI.Utilities.operate(vcat, Float64, 1.0 .* x...)
+    MOI.add_constraint(model, f, MOI.Nonnegatives(3))
+    MOI.add_constraint(
+        model,
+        MOI.Utilities.operate(vcat, Float64, 1.0 * x[1] + 1.0 * x[2] - 2.0),
+        MOI.Nonnegatives(1),
+    )
+    scs = SCS.Optimizer()
+    # The time limit has to be > 0 for SCS to respect it.
+    MOI.set(scs, MOI.RawOptimizerAttribute("time_limit_secs"), 1e-14)
+    MOI.optimize!(scs, model)
+    @test MOI.get(scs, MOI.TerminationStatus()) == MOI.TIME_LIMIT
+    return
+end
+
+function test_unsupported_objective()
+    model = MOI.Utilities.Model{Float64}()
+    x = MOI.add_variables(model, 3)
+    f = MOI.Utilities.operate(vcat, Float64, 1.0 .* x...)
+    MOI.set(model, MOI.ObjectiveSense(), MOI.MIN_SENSE)
+    attr = MOI.ObjectiveFunction{MOI.VariableIndex}()
+    MOI.set(model, attr, x[1])
+    scs = SCS.Optimizer()
+    @test_throws(
+        MOI.UnsupportedAttribute{typeof(attr)},
+        MOI.optimize!(scs, model),
+    )
+    return
+end
+
 end  # module
 
 TestSCS.runtests()

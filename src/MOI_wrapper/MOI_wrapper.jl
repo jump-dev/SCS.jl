@@ -481,49 +481,39 @@ function MOI.get(optimizer::Optimizer, ::ADMMIterations)
     return optimizer.sol.iterations
 end
 
-# Implements getter for result value and statuses
 # SCS returns one of the following integers:
-# -7 SCS_INFEASIBLE_INACCURATE
-# -6 SCS_UNBOUNDED_INACCURATE
-# -5 SCS_SIGINT
-# -4 SCS_FAILED
-# -3 SCS_INDETERMINATE
-# -2 SCS_INFEASIBLE  : primal infeasible, dual unbounded
-# -1 SCS_UNBOUNDED   : primal unbounded, dual infeasible
-#  0 SCS_UNFINISHED  : never returned, used as placeholder
-#  1 SCS_SOLVED
-#  2 SCS_SOLVED_INACCURATE
+const _TerminationStatus = Dict(
+    # -7 SCS_INFEASIBLE_INACCURATE
+    -7 => MOI.ALMOST_INFEASIBLE,
+    # -6 SCS_UNBOUNDED_INACCURATE
+    -6 => MOI.ALMOST_DUAL_INFEASIBLE,
+    # -5 SCS_SIGINT
+    -5 => MOI.INTERRUPTED,
+    # -4 SCS_FAILED
+    -4 => MOI.INVALID_MODEL,
+    # -3 SCS_INDETERMINATE
+    -3 => MOI.SLOW_PROGRESS,
+    # -2 SCS_INFEASIBLE  : primal infeasible, dual unbounded
+    -2 => MOI.INFEASIBLE,
+    # -1 SCS_UNBOUNDED   : primal unbounded, dual infeasible
+    -1 => MOI.DUAL_INFEASIBLE,
+    #  0 SCS_UNFINISHED  : never returned, used as placeholder
+    0 => MOI.OPTIMIZE_NOT_CALLED,
+    #  1 SCS_SOLVED
+    1 => MOI.OPTIMAL,
+    #  2 SCS_SOLVED_INACCURATE
+    2 => MOI.ALMOST_OPTIMAL,
+)
+
 function MOI.get(optimizer::Optimizer, ::MOI.TerminationStatus)
-    s = optimizer.sol.ret_val
-    @assert -7 <= s <= 2
-    if s == -7
-        return MOI.ALMOST_INFEASIBLE
-    elseif s == -6
-        return MOI.ALMOST_DUAL_INFEASIBLE
-    elseif s == 2
+    if optimizer.sol.ret_val == 2
         if occursin("reached time_limit_secs", optimizer.sol.raw_status)
             return MOI.TIME_LIMIT
         elseif occursin("reached max_iters", optimizer.sol.raw_status)
             return MOI.ITERATION_LIMIT
-        else
-            return MOI.ALMOST_OPTIMAL
         end
-    elseif s == -5
-        return MOI.INTERRUPTED
-    elseif s == -4
-        return MOI.INVALID_MODEL
-    elseif s == -3
-        return MOI.SLOW_PROGRESS
-    elseif s == -2
-        return MOI.INFEASIBLE
-    elseif s == -1
-        return MOI.DUAL_INFEASIBLE
-    elseif s == 1
-        return MOI.OPTIMAL
-    else
-        @assert s == 0
-        return MOI.OPTIMIZE_NOT_CALLED
     end
+    return _TerminationStatus[optimizer.sol.ret_val]
 end
 
 function MOI.get(optimizer::Optimizer, attr::MOI.ObjectiveValue)
