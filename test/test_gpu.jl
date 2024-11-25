@@ -17,5 +17,7 @@ include("test_problems.jl")
 
 @testset "GpuIndirectSolver" begin
     @test SCS.is_available(SCS.GpuIndirectSolver)
+    version = SCS.scs_version(SCS.GpuIndirectSolver)
+    @test VersionNumber(version) >= v"3.2.0"
     feasible_basic_problems(SCS.GpuIndirectSolver)
 end

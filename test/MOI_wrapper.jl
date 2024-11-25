@@ -326,6 +326,21 @@ function test_time_limit_secs()
     return
 end
 
+function test_unsupported_objective()
+    model = MOI.Utilities.Model{Float64}()
+    x = MOI.add_variables(model, 3)
+    f = MOI.Utilities.operate(vcat, Float64, 1.0 .* x...)
+    MOI.set(model, MOI.ObjectiveSense(), MOI.MIN_SENSE)
+    attr = MOI.ObjectiveFunction{MOI.VariableIndex}()
+    MOI.set(model, attr, x[1])
+    scs = SCS.Optimizer()
+    @test_throws(
+        MOI.UnsupportedAttribute{typeof(attr)},
+        MOI.optimize!(scs, model),
+    )
+    return
+end
+
 end  # module
 
 TestSCS.runtests()
