@@ -490,7 +490,7 @@ const _TerminationStatus = Dict(
     # -5 SCS_SIGINT
     -5 => MOI.INTERRUPTED,
     # -4 SCS_FAILED
-    -4 => MOI.OTHER_ERROR,
+    -4 => MOI.INVALID_MODEL,
     # -3 SCS_INDETERMINATE
     -3 => MOI.SLOW_PROGRESS,
     # -2 SCS_INFEASIBLE  : primal infeasible, dual unbounded
