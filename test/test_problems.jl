@@ -834,7 +834,7 @@ function test_scs_solve_solution_vectors(solver)
     )
     @test ≈(solution.x, [1.0]; atol = 1e-5)
     @test solution.x !== primal_sol
-    @test is_empty(primal_sol)
+    @test isempty(primal_sol)
     @test_throws(
         ArgumentError,
         scs_solve(
