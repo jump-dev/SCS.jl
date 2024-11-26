@@ -786,3 +786,77 @@ function test_options(T)
     @test_throws ErrorException SCS.scs_solve(T, args...; write_data_filename = @view tmpf[1:end])
     return
 end
+
+function test_scs_solve_solution_vectors(solver)
+    A = reshape([1.0], (1, 1))
+    P = spzeros(1, 1)
+    primal_sol = Float64[0.0]
+    solution = scs_solve(
+        solver,
+        1,  # m
+        1,  # n
+        A,
+        P,
+        [1.0],  # b
+        [1.0],  # c
+        1,   # z
+        0,   # l
+        Float64[],  # bu
+        Float64[],  # bl
+        Int[],  # q
+        Int[],  # s
+        0,  # ep
+        0,  # ed
+        Float64[],  # p
+        primal_sol,
+    )
+    @test ≈(solution.x, [1.0]; atol = 1e-5)
+    @test solution.x === primal_sol
+    primal_sol = Float64[]
+    solution = scs_solve(
+        solver,
+        1,  # m
+        1,  # n
+        A,
+        P,
+        [1.0],  # b
+        [1.0],  # c
+        1,   # z
+        0,   # l
+        Float64[],  # bu
+        Float64[],  # bl
+        Int[],  # q
+        Int[],  # s
+        0,  # ep
+        0,  # ed
+        Float64[],  # p
+        primal_sol,
+    )
+    @test ≈(solution.x, [1.0]; atol = 1e-5)
+    @test solution.x !== primal_sol
+    @test isempty(primal_sol)
+    @test_throws(
+        ArgumentError,
+        scs_solve(
+            solver,
+            1,  # m
+            1,  # n
+            A,
+            P,
+            [1.0],  # b
+            [1.0],  # c
+            1,   # z
+            0,   # l
+            Float64[],  # bu
+            Float64[],  # bl
+            Int[],  # q
+            Int[],  # s
+            0,  # ep
+            0,  # ed
+            Float64[],  # p
+            primal_sol;
+            warm_start = true,
+        ),
+    )
+    return
+end
