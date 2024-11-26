@@ -5,12 +5,6 @@
 
 abstract type AbstractSCSType end
 
-Base.cconvert(::Type{Ptr{Cvoid}}, x::AbstractSCSType) = x
-
-function Base.unsafe_convert(::Type{Ptr{Cvoid}}, x::AbstractSCSType)
-    return pointer_from_objref(x)
-end
-
 mutable struct ScsMatrix{T} <: AbstractSCSType
     values::Ptr{Cdouble}
     rowval::Ptr{T}
