@@ -35,6 +35,7 @@ include("test_problems.jl")
         @test VersionNumber(SCS.scs_version(solver)) >= v"3.2.0"
         feasible_basic_problems(solver)
         test_options(solver)
+        test_scs_solve_solution_vectors(solver)
     end
 end
 
