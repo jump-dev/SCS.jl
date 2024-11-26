@@ -854,7 +854,8 @@ function test_scs_solve_solution_vectors(solver)
             0,  # ep
             0,  # ed
             Float64[],  # p
-            primal_sol,
+            primal_sol;
+            warm_start = true,
         ),
     )
     return
