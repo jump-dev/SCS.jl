@@ -56,6 +56,8 @@ mutable struct ScsCone{T} <: AbstractSCSType
     qsize::T
     s::Ptr{T}
     ssize::T
+    cs::Ptr{T}
+    cssize::T
     ep::T
     ed::T
     p::Ptr{Cdouble}
@@ -130,6 +132,7 @@ struct _ScsDataWrapper{S,T}
     bl::Vector{Cdouble}
     q::Vector{T}
     s::Vector{T}
+    cs::Vector{T}
     ep::T
     ed::T
     p::Vector{Cdouble}
@@ -281,6 +284,7 @@ function scs_solve(
     bl::Vector{Float64},
     q::Vector{<:Integer},
     s::Vector{<:Integer},
+    cs::Vector{<:Integer},
     ep::Integer,
     ed::Integer,
     p::Vector{Float64},
@@ -328,6 +332,7 @@ function scs_solve(
         bl,
         convert(Vector{T}, q),
         convert(Vector{T}, s),
+        convert(Vector{T}, cs),
         ep,
         ed,
         p,
@@ -353,6 +358,8 @@ function _unsafe_scs_solve(model::_ScsDataWrapper{S,T}) where {S,T}
         length(model.q),
         pointer(model.s),
         length(model.s),
+        pointer(model.cs),
+        length(model.cs),
         model.ep,
         model.ed,
         pointer(model.p),
