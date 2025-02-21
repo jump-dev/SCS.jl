@@ -6,7 +6,7 @@
 module SCS
 
 import MathOptInterface as MOI
-import SCS_jll
+import SCS_jll: libscsdir, libscsindir
 import SparseArrays
 
 abstract type LinearSolver end

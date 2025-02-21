@@ -3,8 +3,6 @@
 # Use of this source code is governed by an MIT-style license that can be found
 # in the LICENSE.md file or at https://opensource.org/licenses/MIT.
 
-global direct = SCS_jll.libscsdir
-
 struct DirectSolver <: LinearSolver end
 
 is_available(::Type{DirectSolver}) = true
@@ -16,7 +14,7 @@ function scs_set_default_settings(
     stgs::ScsSettings{I},
 ) where {I<:Clonglong}
     return @ccall(
-        direct.scs_set_default_settings(stgs::Ref{ScsSettings{I}})::Cvoid,
+        libscsdir.scs_set_default_settings(stgs::Ref{ScsSettings{I}})::Cvoid,
     )
 end
 
@@ -26,7 +24,7 @@ function scs_init(
     cone::ScsCone{I},
     stgs::ScsSettings{I},
 ) where {I<:Clonglong}
-    return @ccall direct.scs_init(
+    return @ccall libscsdir.scs_init(
         data::Ref{ScsData{I}},
         cone::Ref{ScsCone{I}},
         stgs::Ref{ScsSettings{I}},
@@ -39,7 +37,7 @@ function scs_update(
     b::Vector{Float64},
     c::Vector{Float64},
 )
-    return @ccall direct.scs_update(
+    return @ccall libscsdir.scs_update(
         work::Ptr{Cvoid},
         b::Ref{Float64},
         c::Ref{Float64},
@@ -53,7 +51,7 @@ function scs_solve(
     info::ScsInfo{I},
     warm_start::Integer,
 ) where {I<:Clonglong}
-    return @ccall direct.scs_solve(
+    return @ccall libscsdir.scs_solve(
         work::Ptr{Cvoid},
         solution::Ref{ScsSolution},
         info::Ref{ScsInfo{I}},
@@ -62,11 +60,11 @@ function scs_solve(
 end
 
 function scs_finish(::Type{DirectSolver}, work::Ptr{Cvoid})
-    return @ccall direct.scs_finish(work::Ptr{Cvoid})::Cvoid
+    return @ccall libscsdir.scs_finish(work::Ptr{Cvoid})::Cvoid
 end
 
 function scs_version(::Type{DirectSolver})
-    return unsafe_string(@ccall direct.scs_version()::Cstring)
+    return unsafe_string(@ccall libscsdir.scs_version()::Cstring)
 end
 
 scs_version() = scs_version(DirectSolver)

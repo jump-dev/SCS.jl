@@ -6,9 +6,7 @@
 module SCSSCS_GPU_jllExt
 
 import SCS
-import SCS_GPU_jll
-
-global gpuindirect = SCS_GPU_jll.libscsgpuindir
+import SCS_GPU_jll: libscsgpuindir
 
 SCS.is_available(::Type{SCS.GpuIndirectSolver}) = true
 
@@ -18,7 +16,7 @@ function SCS.scs_set_default_settings(
     ::Type{SCS.GpuIndirectSolver},
     stgs::SCS.ScsSettings{I},
 ) where {I<:Cint}
-    return @ccall gpuindirect.scs_set_default_settings(
+    return @ccall libscsgpuindir.scs_set_default_settings(
         stgs::Ref{SCS.ScsSettings{I}},
     )::Cvoid
 end
@@ -29,7 +27,7 @@ function SCS.scs_init(
     cone::SCS.ScsCone{I},
     stgs::SCS.ScsSettings{I},
 ) where {I<:Cint}
-    return @ccall gpuindirect.scs_init(
+    return @ccall libscsgpuindir.scs_init(
         data::Ref{SCS.ScsData{I}},
         cone::Ref{SCS.ScsCone{I}},
         stgs::Ref{SCS.ScsSettings{I}},
@@ -56,7 +54,7 @@ function SCS.scs_solve(
     info::SCS.ScsInfo{I},
     warm_start::Integer,
 ) where {I<:Cint}
-    return @ccall gpuindirect.scs_solve(
+    return @ccall libscsgpuindir.scs_solve(
         work::Ptr{Cvoid},
         solution::Ref{SCS.ScsSolution},
         info::Ref{SCS.ScsInfo{I}},
@@ -65,11 +63,11 @@ function SCS.scs_solve(
 end
 
 function SCS.scs_finish(::Type{SCS.GpuIndirectSolver}, work::Ptr{Cvoid})
-    return @ccall gpuindirect.scs_finish(work::Ptr{Cvoid})::Cvoid
+    return @ccall libscsgpuindir.scs_finish(work::Ptr{Cvoid})::Cvoid
 end
 
 function SCS.scs_version(::Type{SCS.GpuIndirectSolver})
-    return unsafe_string(@ccall gpuindirect.scs_version()::Cstring)
+    return unsafe_string(@ccall libscsgpuindir.scs_version()::Cstring)
 end
 
 end  # module

@@ -3,8 +3,6 @@
 # Use of this source code is governed by an MIT-style license that can be found
 # in the LICENSE.md file or at https://opensource.org/licenses/MIT.
 
-global indirect = SCS_jll.libscsindir
-
 struct IndirectSolver <: LinearSolver end
 
 is_available(::Type{IndirectSolver}) = true
@@ -16,7 +14,7 @@ function scs_set_default_settings(
     stgs::ScsSettings{I},
 ) where {I<:Clonglong}
     return @ccall(
-        indirect.scs_set_default_settings(stgs::Ref{ScsSettings{I}})::Cvoid,
+        libscsindir.scs_set_default_settings(stgs::Ref{ScsSettings{I}})::Cvoid,
     )
 end
 
@@ -26,7 +24,7 @@ function scs_init(
     cone::ScsCone{I},
     stgs::ScsSettings{I},
 ) where {I<:Clonglong}
-    return @ccall indirect.scs_init(
+    return @ccall libscsindir.scs_init(
         data::Ref{ScsData{I}},
         cone::Ref{ScsCone{I}},
         stgs::Ref{ScsSettings{I}},
@@ -53,7 +51,7 @@ function scs_solve(
     info::ScsInfo{I},
     warm_start::Integer,
 ) where {I<:Clonglong}
-    return @ccall indirect.scs_solve(
+    return @ccall libscsindir.scs_solve(
         work::Ptr{Cvoid},
         solution::Ref{ScsSolution},
         info::Ref{ScsInfo{I}},
@@ -62,9 +60,9 @@ function scs_solve(
 end
 
 function scs_finish(::Type{IndirectSolver}, work::Ptr{Cvoid})
-    return @ccall indirect.scs_finish(work::Ptr{Cvoid})::Cvoid
+    return @ccall libscsindir.scs_finish(work::Ptr{Cvoid})::Cvoid
 end
 
 function scs_version(::Type{IndirectSolver})
-    return unsafe_string(@ccall indirect.scs_version()::Cstring)
+    return unsafe_string(@ccall libscsindir.scs_version()::Cstring)
 end
