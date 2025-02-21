@@ -6,9 +6,7 @@
 module SCSSCS_MKL_jllExt
 
 import SCS
-import SCS_MKL_jll
-
-global mkldirect = SCS_MKL_jll.libscsmkl
+import SCS_MKL_jll: libscsmkl
 
 SCS.is_available(::Type{SCS.MKLDirectSolver}) = true
 
@@ -19,7 +17,7 @@ function SCS.scs_set_default_settings(
     stgs::SCS.ScsSettings{I},
 ) where {I<:Clonglong}
     return @ccall(
-        mkldirect.scs_set_default_settings(stgs::Ref{SCS.ScsSettings{I}})::Cvoid,
+        libscsmkl.scs_set_default_settings(stgs::Ref{SCS.ScsSettings{I}})::Cvoid,
     )
 end
 
@@ -29,7 +27,7 @@ function SCS.scs_init(
     cone::SCS.ScsCone{I},
     stgs::SCS.ScsSettings{I},
 ) where {I<:Clonglong}
-    return @ccall mkldirect.scs_init(
+    return @ccall libscsmkl.scs_init(
         data::Ref{SCS.ScsData{I}},
         cone::Ref{SCS.ScsCone{I}},
         stgs::Ref{SCS.ScsSettings{I}},
@@ -42,7 +40,7 @@ function SCS.scs_update(
     b::Vector{Float64},
     c::Vector{Float64},
 )
-    return @ccall mkldirect.scs_update(
+    return @ccall libscsmkl.scs_update(
         work::Ptr{Cvoid},
         b::Ref{Float64},
         c::Ref{Float64},
@@ -56,7 +54,7 @@ function SCS.scs_solve(
     info::SCS.ScsInfo{I},
     warm_start::Integer,
 ) where {I<:Clonglong}
-    return @ccall mkldirect.scs_solve(
+    return @ccall libscsmkl.scs_solve(
         work::Ptr{Cvoid},
         solution::Ref{SCS.ScsSolution},
         info::Ref{SCS.ScsInfo{I}},
@@ -65,11 +63,11 @@ function SCS.scs_solve(
 end
 
 function SCS.scs_finish(::Type{SCS.MKLDirectSolver}, work::Ptr{Cvoid})
-    return @ccall mkldirect.scs_finish(work::Ptr{Cvoid})::Cvoid
+    return @ccall libscsmkl.scs_finish(work::Ptr{Cvoid})::Cvoid
 end
 
 function SCS.scs_version(::Type{SCS.MKLDirectSolver})
-    return unsafe_string(@ccall mkldirect.scs_version()::Cstring)
+    return unsafe_string(@ccall libscsmkl.scs_version()::Cstring)
 end
 
 end  # module
