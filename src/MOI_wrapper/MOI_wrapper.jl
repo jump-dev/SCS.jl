@@ -132,7 +132,7 @@ mutable struct Optimizer <: MOI.AbstractOptimizer
 end
 
 function MOI.get(::Optimizer, ::MOI.Bridges.ListOfNonstandardBridges)
-    return [ScaledPSDConeBridge{Cdouble}]
+    return Type[ScaledPSDConeBridge{Cdouble}]
 end
 
 MOI.get(::Optimizer, ::MOI.SolverName) = "SCS"
