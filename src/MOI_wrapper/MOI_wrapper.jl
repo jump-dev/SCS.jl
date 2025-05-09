@@ -384,8 +384,8 @@ function MOI.optimize!(
         P,
         Ab.constants.b,
         c,
-        MOI.Utilities.num_rows(Gh.sets, MOI.Zeros),
-        MOI.Utilities.num_rows(Gh.sets, MOI.Nonnegatives),
+        MOI.Utilities.num_rows(Ab.sets, MOI.Zeros),
+        MOI.Utilities.num_rows(Ab.sets, MOI.Nonnegatives),
         Float64[], # # placeholder: bu
         Float64[], # # placeholder: bl
         _map_sets(MOI.dimension, T, Ab, MOI.SecondOrderCone),
