@@ -56,6 +56,8 @@ mutable struct ScsCone{T} <: AbstractSCSType
     qsize::T
     s::Ptr{T}
     ssize::T
+    cs::Ptr{T}
+    cssize::T
     ep::T
     ed::T
     p::Ptr{Cdouble}
@@ -130,6 +132,7 @@ struct _ScsDataWrapper{S,T}
     bl::Vector{Cdouble}
     q::Vector{T}
     s::Vector{T}
+    cs::Vector{T}
     ep::T
     ed::T
     p::Vector{Cdouble}
@@ -195,7 +198,8 @@ where K is a product cone of
 - positive orthant `{ x | x ≥ 0 }`
 - box cone `{ (t,x) | t*l ≤ x ≤ t*u }`
 - second-order cone (SOC) `{ (t,x) | ||x||_2 ≤ t }`
-- semi-definite cone (SDC) `{ X | X is psd }`
+- positive semi-definite (PSD) cone `{ X ∈ ℝⁿˣⁿ | X is psd }`
+- complex positive semi-definite cone `{ X ∈ ℂⁿˣⁿ | X is psd }`
 - exponential cone `{ (x,y,z) | y e^(x/y) ≤ z, y > 0 }`
 - power cone `{ (x,y,z) | x^a * y^(1-a) ≥ |z|, x ≥ 0, y ≥ 0 }`
 - dual power cone `{ (u,v,w) | (u/a)^a * (v/(1-a))^(1-a) ≥ |w|, u ≥ 0, v ≥ 0 }`
@@ -221,7 +225,8 @@ above by the following arguments.
 - `bu`: the `Vector` of upper bounds for the box cone
 - `bl`: the `Vector` of lower bounds for the box cone
 - `q`: the `Vector` of SOCs sizes
-- `s`: the `Vector` of SDCs sizes
+- `s`: the `Vector` of PSD cones sizes
+- `cs`: the `Vector` of complex PSD cones sizes
 - `ep`: the number of primal exponential cones
 - `ed`: the number of dual exponential cones
 - `p`: the `Vector` of power cone parameters (±1, with negative values for the
@@ -257,7 +262,7 @@ optimal value of the dual variable, `s` is the slack variable, and `info`
 contains various information about the solve step.
 
 !!! warning
-    SCS expects the semi-definite cones to be scaled by a factor of √2. That is,
+    SCS expects the PSD cones to be scaled by a factor of √2. That is,
     the off-diagonal elements in the A matrix and b vector should be multiplied
     by √2, and then the corresponding rows in the dual and slack solution
     vectors should be multiplied by 1/√2.
@@ -281,6 +286,7 @@ function scs_solve(
     bl::Vector{Float64},
     q::Vector{<:Integer},
     s::Vector{<:Integer},
+    cs::Vector{<:Integer},
     ep::Integer,
     ed::Integer,
     p::Vector{Float64},
@@ -328,6 +334,7 @@ function scs_solve(
         bl,
         convert(Vector{T}, q),
         convert(Vector{T}, s),
+        convert(Vector{T}, cs),
         ep,
         ed,
         p,
@@ -353,6 +360,8 @@ function _unsafe_scs_solve(model::_ScsDataWrapper{S,T}) where {S,T}
         length(model.q),
         pointer(model.s),
         length(model.s),
+        pointer(model.cs),
+        length(model.cs),
         model.ep,
         model.ed,
         pointer(model.p),

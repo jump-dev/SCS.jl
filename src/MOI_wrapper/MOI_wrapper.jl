@@ -390,6 +390,7 @@ function MOI.optimize!(
         Float64[], # # placeholder: bl
         _map_sets(MOI.dimension, T, Ab, MOI.SecondOrderCone),
         _map_sets(MOI.side_dimension, T, Ab, ScaledPSDCone),
+        Int[], # placeholder complex PSD
         div(Ab.sets.num_rows[5] - Ab.sets.num_rows[4], 3),
         div(Ab.sets.num_rows[6] - Ab.sets.num_rows[5], 3),
         vcat(
