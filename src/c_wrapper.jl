@@ -409,3 +409,59 @@ function _unsafe_scs_solve(model::_ScsDataWrapper{S,T}) where {S,T}
     Base.Libc.flush_cstdio()
     return Solution(model.primal, model.dual, model.slack, scs_info, status)
 end
+
+# The following is a backward compatible method that does not have the `cs`
+# argument that was introduced in SCS.jl v2.2.0. The underlying C API had a
+# breaking change, but we don't need to expose it to the users of SCS.jl.
+#
+# It is important the function signature of this method matches the function
+# signature of the full `scs_solve` exactly to avoid ambiguity errors.
+function scs_solve(
+    linear_solver::Type{<:LinearSolver},
+    m::Integer,
+    n::Integer,
+    A,
+    P,
+    b::Vector{Float64},
+    c::Vector{Float64},
+    z::Integer,
+    l::Integer,
+    bu::Vector{Float64},
+    bl::Vector{Float64},
+    q::Vector{<:Integer},
+    s::Vector{<:Integer},
+    # cs::Vector{<:Integer},  # Skip this argument
+    ep::Integer,
+    ed::Integer,
+    p::Vector{Float64},
+    primal_sol::Vector{Float64} = zeros(n),
+    dual_sol::Vector{Float64} = zeros(m),
+    slack::Vector{Float64} = zeros(m);
+    warm_start::Bool = false,
+    options...,
+)
+    return scs_solve(
+        linear_solver,
+        m,
+        n,
+        A,
+        P,
+        b,
+        c,
+        z,
+        l,
+        bu,
+        bl,
+        q,
+        s,
+        # cs,  # Skip this argument
+        ep,
+        ed,
+        p,
+        primal_sol,
+        dual_sol,
+        slack;
+        warm_start,
+        options...,
+    )
+end
