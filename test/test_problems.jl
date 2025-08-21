@@ -650,6 +650,33 @@ function feasible_sdp_conic(T)
     @test SCS.raw_status(sol.info) == "solved"
 end
 
+# Problem data taken from https://github.com/cvxgrp/scs/blob/master/test/problems/complex_PSD.h
+function feasible_complex_sdp(T)
+    n = 9
+    m = 10
+    z = 1
+    bu= Float64[]
+    bl= Float64[]
+    l = 0
+    ep = 0
+    ed = 0
+    p = Float64[]
+    q = Int[]
+    s = Int[]
+    cs = [3]
+
+    b = [1.0, 0., 0., 0., 0., 0., 0., 0., 0., 0.]
+    c = [1, 2√2, 3√2, 4√2, 5√2, 6, 7√2, -8√2, 9]
+    rowval = [0, 1, 2, 3, 4, 5, 0, 6, 7, 8, 0, 9]
+    colptr = [0, 2, 3, 4, 5, 6, 8, 9, 10, 12]
+    values = [1.0, -1.0, -1.0, -1.0, -1.0, -1.0, 1.0, -1.0, -1.0, -1.0, 1.0, -1.0]
+    A = SparseMatrixCSC(m, n, colptr .+ 1, rowval .+ 1, vec(values))
+    P = spzeros(n, n)
+    sol = scs_solve(T, m, n, A, P, b, c, z, l, bu, bl, q, s, cs, ep, ed, p)
+    @test sol.ret_val == 1
+    @test SCS.raw_status(sol.info) == "solved"
+end
+
 # Feasible conic problem with power cones
 function feasible_pow_conic(T)
     n = 9
@@ -725,6 +752,7 @@ function feasible_basic_problems(solver)
     feasible_basic_conic(solver)
     feasible_exponential_conic(solver)
     feasible_sdp_conic(solver)
+    feasible_complex_sdp(solver)
     feasible_pow_conic(solver)
     return
 end
