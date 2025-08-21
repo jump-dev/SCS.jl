@@ -454,7 +454,7 @@ function scs_solve(
         bl,
         q,
         s,
-        # cs,  # Skip this argument
+        Int[],  # Default cs argument
         ep,
         ed,
         p,
