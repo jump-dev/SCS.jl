@@ -10,6 +10,6 @@ steps:
           codecov: true
     agents:
       queue: "juliagpu"
-      cuda: "11"
+      cuda: "*"
     if: build.message !~ /\[skip tests\]/
     timeout_in_minutes: 60
