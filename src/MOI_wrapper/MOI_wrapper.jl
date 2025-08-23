@@ -4,6 +4,8 @@
 # in the LICENSE.md file or at https://opensource.org/licenses/MIT.
 
 include("scaled_psd_cone_bridge.jl")
+include("hermitian_complex_psd_cone_bridge.jl")
+include("scaled_complex_psd_cone_bridge.jl")
 
 MOI.Utilities.@product_of_sets(
     _Cones,
@@ -11,6 +13,7 @@ MOI.Utilities.@product_of_sets(
     MOI.Nonnegatives,
     MOI.SecondOrderCone,
     ScaledPSDCone,
+    ScaledComplexPSDCone,
     MOI.ExponentialCone,
     MOI.DualExponentialCone,
     MOI.PowerCone{T},
@@ -132,7 +135,7 @@ mutable struct Optimizer <: MOI.AbstractOptimizer
 end
 
 function MOI.get(::Optimizer, ::MOI.Bridges.ListOfNonstandardBridges)
-    return Type[ScaledPSDConeBridge{Cdouble}]
+    return Type[ScaledPSDConeBridge{Cdouble}, ScaledComplexPSDConeBridge{Cdouble}, HermitianComplexPSDConeBridge{Cdouble}]
 end
 
 MOI.get(::Optimizer, ::MOI.SolverName) = "SCS"
@@ -239,6 +242,7 @@ function MOI.supports_constraint(
             MOI.Nonnegatives,
             MOI.SecondOrderCone,
             ScaledPSDCone,
+            ScaledComplexPSDCone,
             MOI.ExponentialCone,
             MOI.DualExponentialCone,
             MOI.PowerCone{Cdouble},
@@ -390,7 +394,7 @@ function MOI.optimize!(
         Float64[], # # placeholder: bl
         _map_sets(MOI.dimension, T, Ab, MOI.SecondOrderCone),
         _map_sets(MOI.side_dimension, T, Ab, ScaledPSDCone),
-        Int[], # placeholder complex PSD
+        _map_sets(MOI.side_dimension, T, Ab, ScaledComplexPSDCone),
         div(Ab.sets.num_rows[5] - Ab.sets.num_rows[4], 3),
         div(Ab.sets.num_rows[6] - Ab.sets.num_rows[5], 3),
         vcat(
