@@ -24,7 +24,7 @@ Base.copy(x::ScaledComplexPSDCone) = ScaledComplexPSDCone(x.side_dimension)
 MOI.side_dimension(x::ScaledComplexPSDCone) = x.side_dimension
 
 function MOI.dimension(x::ScaledComplexPSDCone)
-    return x.side_dimension ^ 2
+    return x.side_dimension^2
 end
 
 struct ScaledComplexPSDConeBridge{T,F} <: MOI.Bridges.Constraint.SetMapBridge{
@@ -56,7 +56,9 @@ function MOI.Bridges.inverse_map_set(
     ::Type{<:ScaledComplexPSDConeBridge},
     set::ScaledComplexPSDCone,
 )
-    return MOI.Scaled(ComplexPositiveSemidefiniteConeTriangle(set.side_dimension))
+    return MOI.Scaled(
+        ComplexPositiveSemidefiniteConeTriangle(set.side_dimension),
+    )
 end
 
 function _transform_function(func)
@@ -68,11 +70,11 @@ function _transform_function(func)
         c += 1
         newvals[c] = vals[i^2]
         for j in i+1:d
-            triidx = 2i - 1 + (j - 1) ^ 2
+            triidx = 2i - 1 + (j - 1)^2
             c += 1
             newvals[c] = vals[triidx]
             c += 1
-            newvals[c] = -vals[triidx + 1]
+            newvals[c] = -vals[triidx+1]
         end
     end
     return newvals
@@ -87,11 +89,11 @@ function _untransform_function(func)
         c += 1
         newvals[i^2] = vals[c]
         for j in i+1:d
-            triidx = 2i - 1 + (j - 1) ^ 2
+            triidx = 2i - 1 + (j - 1)^2
             c += 1
             newvals[triidx] = vals[c]
             c += 1
-            newvals[triidx + 1] = -vals[c]
+            newvals[triidx+1] = -vals[c]
         end
     end
     return newvals
@@ -103,12 +105,18 @@ function MOI.Bridges.map_function(::Type{<:ScaledComplexPSDConeBridge}, f)
 end
 
 # Used to map the ConstraintPrimal from SCS -> MOI
-function MOI.Bridges.inverse_map_function(::Type{<:ScaledComplexPSDConeBridge}, f)
+function MOI.Bridges.inverse_map_function(
+    ::Type{<:ScaledComplexPSDConeBridge},
+    f,
+)
     return _untransform_function(f)
 end
 
 # Used to map the ConstraintDual from SCS -> MOI
-function MOI.Bridges.adjoint_map_function(::Type{<:ScaledComplexPSDConeBridge}, f)
+function MOI.Bridges.adjoint_map_function(
+    ::Type{<:ScaledComplexPSDConeBridge},
+    f,
+)
     return _untransform_function(f)
 end
 

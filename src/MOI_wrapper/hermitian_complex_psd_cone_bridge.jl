@@ -15,16 +15,23 @@ struct ComplexPositiveSemidefiniteConeTriangle <: MOI.AbstractVectorSet
     side_dimension::Int
 end
 
-function MOI.Utilities.set_with_dimension(::Type{ComplexPositiveSemidefiniteConeTriangle}, dim)
+function MOI.Utilities.set_with_dimension(
+    ::Type{ComplexPositiveSemidefiniteConeTriangle},
+    dim,
+)
     return ComplexPositiveSemidefiniteConeTriangle(isqrt(dim))
 end
 
-Base.copy(x::ComplexPositiveSemidefiniteConeTriangle) = ComplexPositiveSemidefiniteConeTriangle(x.side_dimension)
+function Base.copy(x::ComplexPositiveSemidefiniteConeTriangle)
+    return ComplexPositiveSemidefiniteConeTriangle(x.side_dimension)
+end
 
-MOI.side_dimension(x::ComplexPositiveSemidefiniteConeTriangle) = x.side_dimension
+function MOI.side_dimension(x::ComplexPositiveSemidefiniteConeTriangle)
+    return x.side_dimension
+end
 
 function MOI.dimension(x::ComplexPositiveSemidefiniteConeTriangle)
-    return x.side_dimension ^ 2
+    return x.side_dimension^2
 end
 
 import MutableArithmetics as MA
@@ -70,7 +77,8 @@ function MOI.Utilities.dot_coefficients(
     return b
 end
 
-struct HermitianComplexPSDConeBridge{T,F} <: MOI.Bridges.Constraint.SetMapBridge{
+struct HermitianComplexPSDConeBridge{T,F} <:
+       MOI.Bridges.Constraint.SetMapBridge{
     T,
     ComplexPositiveSemidefiniteConeTriangle,
     MOI.HermitianPositiveSemidefiniteConeTriangle,
@@ -110,9 +118,9 @@ function _hermitian_to_complex(vals)
     l = 1
     newvals = zero(vals)
     for i in 1:side
-        for j in 1:(i - 1)
+        for j in 1:(i-1)
             newvals[l] = vals[k_re]
-            newvals[l + 1] = vals[k_im]
+            newvals[l+1] = vals[k_im]
             k_re += 1
             k_im += 1
             l += 2
@@ -132,9 +140,9 @@ function _complex_to_hermitian(vals)
     l = 1
     newvals = zero(vals)
     for i in 1:side
-        for j in 1:(i - 1)
+        for j in 1:(i-1)
             newvals[k_re] = vals[l]
-            newvals[k_im] = vals[l + 1]
+            newvals[k_im] = vals[l+1]
             k_re += 1
             k_im += 1
             l += 2
@@ -152,12 +160,18 @@ function MOI.Bridges.map_function(::Type{<:HermitianComplexPSDConeBridge}, f)
 end
 
 # Used to map the ConstraintPrimal from Complex -> Hermitian
-function MOI.Bridges.inverse_map_function(::Type{<:HermitianComplexPSDConeBridge}, f)
+function MOI.Bridges.inverse_map_function(
+    ::Type{<:HermitianComplexPSDConeBridge},
+    f,
+)
     return _complex_to_hermitian(f)
 end
 
 # Used to map the ConstraintDual from Complex -> Hermitian
-function MOI.Bridges.adjoint_map_function(::Type{<:HermitianComplexPSDConeBridge}, f)
+function MOI.Bridges.adjoint_map_function(
+    ::Type{<:HermitianComplexPSDConeBridge},
+    f,
+)
     return _complex_to_hermitian(f)
 end
 
