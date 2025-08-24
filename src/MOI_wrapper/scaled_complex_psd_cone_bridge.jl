@@ -49,7 +49,7 @@ function MOI.Bridges.map_set(
     ::Type{<:ScaledComplexPSDConeBridge},
     set::MOI.Scaled{ComplexPositiveSemidefiniteConeTriangle},
 )
-    return ScaledPSDCone(MOI.side_dimension(set))
+    return ScaledComplexPSDCone(MOI.side_dimension(set))
 end
 
 function MOI.Bridges.inverse_map_set(
@@ -61,47 +61,47 @@ function MOI.Bridges.inverse_map_set(
     )
 end
 
-function _transform_function(func)
+function _complex_to_scs(func)
     vals = MOI.Utilities.eachscalar(func)
     d = isqrt(length(vals))
     c = 0
-    newvals = zero(vals)
+    perm = zeros(Int, length(vals))
     for i in 1:d
         c += 1
-        newvals[c] = vals[i^2]
+        perm[c] = i^2
         for j in i+1:d
             triidx = 2i - 1 + (j - 1)^2
             c += 1
-            newvals[c] = vals[triidx]
+            perm[c] = triidx
             c += 1
-            newvals[c] = -vals[triidx+1]
+            perm[c] = triidx+1
         end
     end
-    return newvals
+    return vals[perm]
 end
 
-function _untransform_function(func)
+function _scs_to_complex(func)
     vals = MOI.Utilities.eachscalar(func)
     d = isqrt(length(vals))
     c = 0
-    newvals = zero(vals)
+    perm = zeros(Int, length(vals))
     for i in 1:d
         c += 1
-        newvals[i^2] = vals[c]
+        perm[i^2] = c
         for j in i+1:d
             triidx = 2i - 1 + (j - 1)^2
             c += 1
-            newvals[triidx] = vals[c]
+            perm[triidx] = c
             c += 1
-            newvals[triidx+1] = -vals[c]
+            perm[triidx+1] = c
         end
     end
-    return newvals
+    return vals[perm]
 end
 
 # Map ConstraintFunction from MOI -> SCS
 function MOI.Bridges.map_function(::Type{<:ScaledComplexPSDConeBridge}, f)
-    return _transform_function(f)
+    return _complex_to_scs(f)
 end
 
 # Used to map the ConstraintPrimal from SCS -> MOI
@@ -109,7 +109,7 @@ function MOI.Bridges.inverse_map_function(
     ::Type{<:ScaledComplexPSDConeBridge},
     f,
 )
-    return _untransform_function(f)
+    return _scs_to_complex(f)
 end
 
 # Used to map the ConstraintDual from SCS -> MOI
@@ -117,7 +117,7 @@ function MOI.Bridges.adjoint_map_function(
     ::Type{<:ScaledComplexPSDConeBridge},
     f,
 )
-    return _untransform_function(f)
+    return _scs_to_complex(f)
 end
 
 # Used to set ConstraintDualStart
@@ -125,5 +125,5 @@ function MOI.Bridges.inverse_adjoint_map_function(
     ::Type{<:ScaledComplexPSDConeBridge},
     f,
 )
-    return _transform_function(f)
+    return _complex_to_scs(f)
 end

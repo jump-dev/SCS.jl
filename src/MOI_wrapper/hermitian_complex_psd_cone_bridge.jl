@@ -77,6 +77,11 @@ function MOI.Utilities.dot_coefficients(
     return b
 end
 
+function MOI.is_set_dot_scaled(
+    ::Type{ComplexPositiveSemidefiniteConeTriangle})
+    return true
+end
+
 struct HermitianComplexPSDConeBridge{T,F} <:
        MOI.Bridges.Constraint.SetMapBridge{
     T,
@@ -107,51 +112,53 @@ function MOI.Bridges.inverse_map_set(
     ::Type{<:HermitianComplexPSDConeBridge},
     set::ComplexPositiveSemidefiniteConeTriangle,
 )
-    return MOI.HermtianPositiveSemidefiniteConeTriangle(set.side_dimension)
+    return MOI.HermitianPositiveSemidefiniteConeTriangle(set.side_dimension)
 end
 
-function _hermitian_to_complex(vals)
+function _hermitian_to_complex(func)
+    vals = MOI.Utilities.eachscalar(func)
     dim = length(vals)
     side = isqrt(dim)
     k_re = 1
     k_im = div(side * (side + 1), 2) + 1
     l = 1
-    newvals = zero(vals)
+    perm = zeros(Int, dim)
     for i in 1:side
         for j in 1:(i-1)
-            newvals[l] = vals[k_re]
-            newvals[l+1] = vals[k_im]
+            perm[l] = k_re
+            perm[l+1] = k_im
             k_re += 1
             k_im += 1
             l += 2
         end
-        newvals[l] = vals[k_re]
+        perm[l] = k_re
         k_re += 1
         l += 1
     end
-    return newvals
+    return vals[perm]
 end
 
-function _complex_to_hermitian(vals)
+function _complex_to_hermitian(func)
+    vals = MOI.Utilities.eachscalar(func)
     dim = length(vals)
     side = isqrt(dim)
     k_re = 1
     k_im = div(side * (side + 1), 2) + 1
     l = 1
-    newvals = zero(vals)
+    perm = zeros(Int, dim)
     for i in 1:side
         for j in 1:(i-1)
-            newvals[k_re] = vals[l]
-            newvals[k_im] = vals[l+1]
+            perm[k_re] = l
+            perm[k_im] = l+1
             k_re += 1
             k_im += 1
             l += 2
         end
-        newvals[k_re] = vals[l]
+        perm[k_re] = l
         k_re += 1
         l += 1
     end
-    return newvals
+    return vals[perm]
 end
 
 # Map ConstraintFunction from Hermitian -> Complex
