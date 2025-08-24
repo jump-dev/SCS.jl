@@ -5,6 +5,7 @@ version = "2.1.0"
 
 [deps]
 MathOptInterface = "b8f27783-ece8-5eb3-8dc8-9495eed66fee"
+MutableArithmetics = "d8a4904e-b15c-11e9-3269-09a3773c0cb0"
 PrecompileTools = "aea7be01-6a6a-4083-8856-8a6e6704d82a"
 SCS_jll = "f4f2fc5b-1d94-523c-97ea-2ab488bedf4b"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
@@ -19,6 +20,7 @@ SCSSCS_MKL_jllExt = ["SCS_MKL_jll"]
 
 [compat]
 MathOptInterface = "1.20"
+MutableArithmetics = "1"
 Pkg = "<0.0.1, ^1.6"
 PrecompileTools = "1"
 SCS_GPU_jll = "=3.2.8"
