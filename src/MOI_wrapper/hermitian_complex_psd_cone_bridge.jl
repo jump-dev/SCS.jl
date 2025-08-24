@@ -77,8 +77,7 @@ function MOI.Utilities.dot_coefficients(
     return b
 end
 
-function MOI.is_set_dot_scaled(
-    ::Type{ComplexPositiveSemidefiniteConeTriangle})
+function MOI.is_set_dot_scaled(::Type{ComplexPositiveSemidefiniteConeTriangle})
     return true
 end
 
@@ -149,7 +148,7 @@ function _complex_to_hermitian(func)
     for i in 1:side
         for j in 1:(i-1)
             perm[k_re] = l
-            perm[k_im] = l+1
+            perm[k_im] = l + 1
             k_re += 1
             k_im += 1
             l += 2

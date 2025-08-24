@@ -74,7 +74,7 @@ function _complex_to_scs(func)
             c += 1
             perm[c] = triidx
             c += 1
-            perm[c] = triidx+1
+            perm[c] = triidx + 1
         end
     end
     return vals[perm]
