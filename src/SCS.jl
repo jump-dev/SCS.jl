@@ -6,6 +6,7 @@
 module SCS
 
 import MathOptInterface as MOI
+import MutableArithmetics as MA
 import SCS_jll: libscsdir, libscsindir
 import SparseArrays
 
