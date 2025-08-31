@@ -208,10 +208,11 @@ subject to      A * x + s = b
 where `K` is a product cone of:
 - zero cone
 - positive orthant `{ x | x ≥ 0 }`
-- box cone `{ (t,x) | t*l ≤ x ≤ t*u}`
+- box cone `{ (t,x) | t*l ≤ x ≤ t*u }`
 - second-order cone (SOC) `{ (t,x) | ||x||_2 ≤ t }`
-- semi-definite cone (SDC) `{ X | X is psd }`
-- exponential cone `{ (x,y,z) | y e^(x/y) ≤ z, y>0 }`
+- positive semi-definite (PSD) cone `{ X ∈ ℝⁿˣⁿ | X is psd }`
+- complex positive semi-definite cone `{ X ∈ ℂⁿˣⁿ | X is psd }`
+- exponential cone `{ (x,y,z) | y e^(x/y) ≤ z, y > 0 }`
 - power cone `{ (x,y,z) | x^a * y^(1-a) ≥ |z|, x ≥ 0, y ≥ 0 }`
 - dual power cone `{ (u,v,w) | (u/a)^a * (v/(1-a))^(1-a) ≥ |w|, u ≥ 0, v ≥ 0 }`.
 
