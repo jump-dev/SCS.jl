@@ -34,8 +34,6 @@ function MOI.dimension(x::ComplexPositiveSemidefiniteConeTriangle)
     return x.side_dimension^2
 end
 
-import MutableArithmetics as MA
-
 function MOI.Utilities.set_dot(
     x::AbstractVector{S},
     y::AbstractVector{T},
