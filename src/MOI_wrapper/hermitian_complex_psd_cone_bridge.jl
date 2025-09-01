@@ -22,10 +22,6 @@ function MOI.Utilities.set_with_dimension(
     return ComplexPositiveSemidefiniteConeTriangle(isqrt(dim))
 end
 
-function Base.copy(x::ComplexPositiveSemidefiniteConeTriangle)
-    return ComplexPositiveSemidefiniteConeTriangle(x.side_dimension)
-end
-
 function MOI.side_dimension(x::ComplexPositiveSemidefiniteConeTriangle)
     return x.side_dimension
 end
