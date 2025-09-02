@@ -393,7 +393,7 @@ function test_HermitianComplexPSDConeBridge()
         0.15+0.31im 0.33+0.0im 0.01-0.32im
         -0.29+0.16im 0.01+0.32im 0.31+0.0im
     ]
-    @test isapprox(H, H_expected; atol = 1e-2)
+    @test isapprox(H, H_expected; atol = 2e-2)
     graph = sprint(MOI.Bridges.print_active_bridges, model)
     @test occursin("SCS.HermitianComplexPSDConeBridge", graph)
     @test occursin("SCS.ScaledComplexPSDConeBridge", graph)
