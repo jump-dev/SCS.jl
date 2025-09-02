@@ -388,7 +388,12 @@ function test_HermitianComplexPSDConeBridge()
     h_dual0 = vcat(h_dual, 0.0)
     R, I = h_dual[[1 2 4; 2 3 5; 4 5 6]], h_dual0[[10 7 8; 10 10 9; 10 10 10]]
     H = R .+ I .* im .- I' .* im
-    @test LinearAlgebra.eigmin(H) >= -1e-3
+    H_expected = [
+        0.36+0.0im 0.15-0.31im -0.29-0.16im
+        0.15+0.31im 0.33+0.0im 0.01-0.32im
+        -0.29+0.16im 0.01+0.32im 0.31+0.0im
+    ]
+    @test isapprox(H, H_expected; atol = 1e-2)
     graph = sprint(MOI.Bridges.print_active_bridges, model)
     @test occursin("SCS.HermitianComplexPSDConeBridge", graph)
     @test occursin("SCS.ScaledComplexPSDConeBridge", graph)
