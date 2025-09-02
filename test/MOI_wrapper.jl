@@ -340,6 +340,87 @@ function test_unsupported_objective()
     return
 end
 
+function test_Scaled_Complex_PSDCone_dimension()
+    for (d, v) in (2 => 3, 3 => 6, 4 => 10)
+        set = SCS.ScaledComplexPSDCone(d)
+        @test MOI.side_dimension(set) == d
+        @test MOI.dimension(set) == d^2
+        set = SCS.ScaledPSDCone(d)
+        @test MOI.side_dimension(set) == d
+        @test MOI.dimension(set) == v
+    end
+    return
+end
+
+function test_HermitianComplexPSDConeBridge()
+    inner = MOI.instantiate(SCS.Optimizer; with_cache_type = Float64)
+    model = MOI.Bridges.full_bridge_optimizer(inner, Float64)
+    MOI.set(model, MOI.Silent(), true)
+    t = MOI.add_variable(model)
+    x = MOI.add_variables(model, 9)
+    c_g = MOI.add_constraint(
+        model,
+        MOI.Utilities.operate(vcat, Float64, x .- (1.0:9.0)...),
+        MOI.Zeros(9),
+    )
+    h = 1.0 .* x
+    h[[1, 3, 6]] .+= t
+    c_h = MOI.add_constraint(
+        model,
+        MOI.Utilities.operate(vcat, Float64, h...),
+        MOI.HermitianPositiveSemidefiniteConeTriangle(3),
+    )
+    MOI.set(model, MOI.ObjectiveSense(), MOI.MIN_SENSE)
+    f = 1.0 * t
+    MOI.set(model, MOI.ObjectiveFunction{typeof(f)}(), f)
+    MOI.optimize!(model)
+    MOI.get(model, MOI.TerminationStatus())
+    x_primal = MOI.get(model, MOI.VariablePrimal(), x)
+    t_primal = MOI.get(model, MOI.VariablePrimal(), t)
+    @test ≈(x_primal, 1:9; atol = 1e-3)
+    # -11.034899 is the minimum eigen value of [1 2+7i 4+8i; . 3 5+9i; . . 6]
+    @test ≈(t_primal, 11.034899152582094; atol = 1e-3)
+    g_dual = MOI.get(model, MOI.ConstraintDual(), c_g)
+    g_primal = MOI.get(model, MOI.ConstraintPrimal(), c_g)
+    @test ≈(g_dual' * x_primal, t_primal; atol = 1e-3)
+    h_dual = MOI.get(model, MOI.ConstraintDual(), c_h)
+    h_primal = MOI.get(model, MOI.ConstraintPrimal(), c_h)
+    h_dual0 = vcat(h_dual, 0.0)
+    R, I = h_dual[[1 2 4; 2 3 5; 4 5 6]], h_dual0[[10 7 8; 10 10 9; 10 10 10]]
+    H = R .+ I .* im .- I' .* im
+    H_expected = [
+        0.36+0.0im 0.15-0.31im -0.29-0.16im
+        0.15+0.31im 0.33+0.0im 0.01-0.32im
+        -0.29+0.16im 0.01+0.32im 0.31+0.0im
+    ]
+    @test isapprox(H, H_expected; atol = 2e-2)
+    graph = sprint(MOI.Bridges.print_active_bridges, model)
+    @test occursin("SCS.HermitianComplexPSDConeBridge", graph)
+    @test occursin("SCS.ScaledComplexPSDConeBridge", graph)
+    @test occursin("SCS.ScaledComplexPSDCone", graph)
+    F = MOI.VectorAffineFunction{Float64}
+    S = SCS.ScaledComplexPSDCone
+    indices = MOI.get(inner, MOI.ListOfConstraintIndices{F,S}())
+    @test length(indices) == 1
+    f = MOI.get(inner, MOI.ConstraintFunction(), only(indices))
+    s = MOI.get(inner, MOI.ConstraintSet(), only(indices))
+    y = MOI.get(inner, MOI.ListOfVariableIndices())
+    w = sqrt.([1, 2, 2, 2, 2, 1, 2, 2, 1])
+    y_w = y[[2, 3, 8, 5, 9, 4, 6, 10, 7]]
+    h_y = w .* y_w + y[1] .* Float64[1, 0, 0, 0, 0, 1, 0, 0, 1]
+    @test isapprox(f, MOI.Utilities.operate(vcat, Float64, h_y...))
+    @test s == SCS.ScaledComplexPSDCone(3)
+    MOI.set(model, MOI.VariablePrimalStart(), t, t_primal)
+    MOI.set(model, MOI.VariablePrimalStart(), x, x_primal)
+    MOI.set(model, MOI.ConstraintDualStart(), c_g, g_dual)
+    MOI.set(model, MOI.ConstraintDualStart(), c_h, h_dual)
+    MOI.set(model, MOI.ConstraintPrimalStart(), c_g, g_primal)
+    MOI.set(model, MOI.ConstraintPrimalStart(), c_h, h_primal)
+    MOI.optimize!(model)
+    @test MOI.get(model, SCS.ADMMIterations()) == 0
+    return
+end
+
 end  # module
 
 TestSCS.runtests()
