@@ -56,6 +56,20 @@ function MOI.Utilities.set_dot(
     return result
 end
 
+function MOI.Utilities.set_dot(
+    x::MOI.Utilities.CanonicalVector{T},
+    y::MOI.Utilities.CanonicalVector{T},
+    set::ComplexPositiveSemidefiniteConeTriangle,
+) where {T}
+    if x.index != y.index
+        return zero(T)
+    elseif isqrt(x.index)^2 == x.index
+        return one(T)
+    else
+        return 2one(T)
+    end
+end
+
 function MOI.Utilities.dot_coefficients(
     a::AbstractVector,
     set::ComplexPositiveSemidefiniteConeTriangle,
