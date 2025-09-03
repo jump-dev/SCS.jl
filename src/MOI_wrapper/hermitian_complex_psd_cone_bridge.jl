@@ -66,7 +66,7 @@ function MOI.Utilities.set_dot(
     elseif isqrt(x.index)^2 == x.index
         return one(T)
     else
-        return 2one(T)
+        return T(2)
     end
 end
 
