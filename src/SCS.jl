@@ -5,10 +5,20 @@
 
 module SCS
 
+import LinearAlgebra
 import MathOptInterface as MOI
 import MutableArithmetics as MA
+import OpenBLAS32_jll
 import SCS_jll: libscsdir, libscsindir
 import SparseArrays
+
+function __init__()
+    config = LinearAlgebra.BLAS.lbt_get_config()
+    if !any(lib -> lib.interface == :lp64, config.loaded_libs)
+        LinearAlgebra.BLAS.lbt_forward(OpenBLAS32_jll.libopenblas_path)
+    end
+    return
+end
 
 abstract type LinearSolver end
 
@@ -30,6 +40,7 @@ export scs_solve
 import PrecompileTools
 
 PrecompileTools.@setup_workload begin
+    __init__()
     PrecompileTools.@compile_workload begin
         model = MOI.Utilities.CachingOptimizer(
             MOI.Utilities.UniversalFallback(MOI.Utilities.Model{Float64}()),
