@@ -192,6 +192,40 @@ true
 
 The `GpuIndirectSolver` is available on `Linux x86_64` platform only.
 
+## BLAS and LAPACK
+
+With Julia v1.10 or later, SCS is compiled with
+[`libblastrampoline`](https://github.com/JuliaLinearAlgebra/libblastrampoline)
+(LBT), a library that can change between BLAS and LAPACK backends at runtime.
+
+The default BLAS and LAPACK backend is [OpenBLAS](https://github.com/OpenMathLib/OpenBLAS),
+and we rely on the Julia artifact `OpenBLAS32_jll.jl` if no backend is loaded
+before `using SCS`.
+
+Using LBT, we can also switch dynamically to other BLAS backends such as Intel
+MKL, BLIS, and Apple Accelerate. Because SCS relies heavily on BLAS and LAPACK
+routines, using an optimized backend for a particular platform can improve the
+performance.
+
+### MKL
+
+If you have [MKL.jl](https://github.com/JuliaLinearAlgebra/MKL.jl) installed,
+switch to MKL by adding `using MKL` to your code:
+
+```julia
+using MKL
+using SCS
+```
+
+### AppleAccelerate
+
+If you are using macOS ≥ v13.4 and you have [AppleAccelerate.jl](https://github.com/JuliaLinearAlgebra/AppleAccelerate.jl) installed, add `using AppleAccelerate` to your code:
+
+```julia
+using AppleAccelerate
+using SCS
+```
+
 ## Low-level wrapper
 
 SCS.jl provides a low-level interface to solve a problem directly, without
