@@ -24,7 +24,7 @@ SCSSCS_MKL_jllExt = ["SCS_MKL_jll"]
 LinearAlgebra = "1.10.0"
 MathOptInterface = "1.20"
 MutableArithmetics = "1"
-OpenBLAS32_jll = "0.3.29"
+OpenBLAS32_jll = "0.3.10"
 Pkg = "1"
 PrecompileTools = "1"
 SCS_GPU_jll = "=3.2.9"
