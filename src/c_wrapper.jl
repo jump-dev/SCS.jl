@@ -146,6 +146,7 @@ struct _ScsDataWrapper{S,T}
     ep::T
     ed::T
     p::Vector{Cdouble}
+    d::Vector{T}
     primal::Vector{Cdouble}
     dual::Vector{Cdouble}
     slack::Vector{Cdouble}
@@ -300,6 +301,7 @@ function scs_solve(
     ep::Integer,
     ed::Integer,
     p::Vector{Float64},
+    d::Vector{<:Integer},
     primal_sol::Vector{Float64} = zeros(n),
     dual_sol::Vector{Float64} = zeros(m),
     slack::Vector{Float64} = zeros(m);
@@ -348,6 +350,7 @@ function scs_solve(
         ep,
         ed,
         p,
+        convert(Vector{T}, d),
         primal_sol,
         dual_sol,
         slack,
@@ -376,8 +379,8 @@ function _unsafe_scs_solve(model::_ScsDataWrapper{S,T}) where {S,T}
         model.ed,
         pointer(model.p),
         length(model.p),
-        C_NULL,
-        0,
+        pointer(model.d),
+        length(model.d),
         C_NULL,
         C_NULL,
         0,
@@ -454,6 +457,7 @@ function scs_solve(
     ep::Integer,
     ed::Integer,
     p::Vector{Float64},
+    # d::Vector{<:Integer}, # Skip this argument
     primal_sol::Vector{Float64} = zeros(n),
     dual_sol::Vector{Float64} = zeros(m),
     slack::Vector{Float64} = zeros(m);
@@ -478,6 +482,59 @@ function scs_solve(
         ep,
         ed,
         p,
+        Int[],  # Default d argument
+        primal_sol,
+        dual_sol,
+        slack;
+        warm_start,
+        options...,
+    )
+end
+
+function scs_solve(
+    linear_solver::Type{<:LinearSolver},
+    m::Integer,
+    n::Integer,
+    A,
+    P,
+    b::Vector{Float64},
+    c::Vector{Float64},
+    z::Integer,
+    l::Integer,
+    bu::Vector{Float64},
+    bl::Vector{Float64},
+    q::Vector{<:Integer},
+    s::Vector{<:Integer},
+    cs::Vector{<:Integer},
+    ep::Integer,
+    ed::Integer,
+    p::Vector{Float64},
+    # d::Vector{<:Integer}, # Skip this argument
+    primal_sol::Vector{Float64} = zeros(n),
+    dual_sol::Vector{Float64} = zeros(m),
+    slack::Vector{Float64} = zeros(m);
+    warm_start::Bool = false,
+    options...,
+)
+    return scs_solve(
+        linear_solver,
+        m,
+        n,
+        A,
+        P,
+        b,
+        c,
+        z,
+        l,
+        bu,
+        bl,
+        q,
+        s,
+        cs,
+        ep,
+        ed,
+        p,
+        Int[],  # Default d argument
         primal_sol,
         dual_sol,
         slack;

@@ -18,6 +18,7 @@ MOI.Utilities.@product_of_sets(
     MOI.DualExponentialCone,
     MOI.PowerCone{T},
     MOI.DualPowerCone{T},
+    MOI.LogDetConeTriangle,
 )
 
 struct _SetConstants{T}
@@ -251,6 +252,7 @@ function MOI.supports_constraint(
             MOI.DualExponentialCone,
             MOI.PowerCone{Cdouble},
             MOI.DualPowerCone{Cdouble},
+            MOI.LogDetConeTriangle,
         },
     },
 )
@@ -410,6 +412,7 @@ function MOI.optimize!(
                 MOI.DualPowerCone{Cdouble},
             ),
         ),
+        _map_sets(set -> set.side_dimension, T, Ab, MOI.LogDetConeTriangle),
         dest.sol.primal,
         dest.sol.dual,
         dest.sol.slack;
