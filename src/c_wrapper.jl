@@ -62,6 +62,16 @@ mutable struct ScsCone{T} <: AbstractSCSType
     ed::T
     p::Ptr{Cdouble}
     psize::T
+    d::Ptr{T}
+    dsize::T
+    nuc_m::Ptr{T}
+    nuc_n::Ptr{T}
+    nucsize::T
+    ell1::Ptr{T}
+    ell1_size::T
+    sl_n::Ptr{T}
+    sl_k::Ptr{T}
+    sl_size::T
 end
 
 mutable struct ScsSolution <: AbstractSCSType
@@ -366,6 +376,16 @@ function _unsafe_scs_solve(model::_ScsDataWrapper{S,T}) where {S,T}
         model.ed,
         pointer(model.p),
         length(model.p),
+        C_NULL,
+        0,
+        C_NULL,
+        C_NULL,
+        0,
+        C_NULL,
+        0,
+        C_NULL,
+        C_NULL,
+        0,
     )
     scs_data = ScsData{T}(
         model.m,
