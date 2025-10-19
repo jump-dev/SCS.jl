@@ -19,13 +19,12 @@ function MOI.Utilities.set_with_dimension(::Type{ScaledLogDetConeTriangle}, dim)
     return ScaledLogDetConeTriangle(div(-1 + isqrt(1 + 8 * dim), 2))
 end
 
-Base.copy(set::ScaledLogDetConeTriangle) = ScaledLogDetConeTriangle(set.side_dimension)
-
 function MOI.dimension(set::ScaledLogDetConeTriangle)
     return MOI.dimension(MOI.LogDetConeTriangle(set.side_dimension))
 end
 
-struct ScaledLogDetConeTriangleBridge{T,F} <: MOI.Bridges.Constraint.SetMapBridge{
+struct ScaledLogDetConeTriangleBridge{T,F} <:
+       MOI.Bridges.Constraint.SetMapBridge{
     T,
     ScaledLogDetConeTriangle,
     MOI.Scaled{MOI.LogDetConeTriangle},
@@ -62,12 +61,17 @@ function _transform_function(
     func,
     moi_to_scs::Bool,
 ) where {T}
-    fs = MOI.Utilities.eachscalar(func)
+    scalars = MOI.Utilities.eachscalar(func)
     upper_to_lower, lower_to_upper =
-        _upper_to_lower_triangular_permutation(length(fs) - 2)
+        _upper_to_lower_triangular_permutation(length(scalars) - 2)
     p = moi_to_scs ? lower_to_upper : upper_to_lower
-    return MOI.Utilities.operate(vcat, T, -fs[1], fs[2], fs[p.+2])
-    return g
+    return MOI.Utilities.operate(
+        vcat,
+        T,
+        MOI.Utilities.operate(-, T, scalars[1]),
+        scalars[2],
+        scalars[p.+2],
+    )
 end
 
 # Map ConstraintFunction from MOI -> SCS
