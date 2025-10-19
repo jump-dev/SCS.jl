@@ -421,6 +421,47 @@ function test_HermitianComplexPSDConeBridge()
     return
 end
 
+function test_ScaledLogDetConeTriangleBridge()
+    set = SCS.ScaledLogDetConeTriangle(3)
+    @test MOI.dimension(set) == 8
+    @test MOI.Utilities.set_with_dimension(SCS.ScaledLogDetConeTriangle, 8) ==
+          set
+    MOI.Bridges.runtests(
+        SCS.ScaledLogDetConeTriangleBridge,
+        """
+        variables: t, u, x1, x2, x3
+        [1.0 * t, u, x1, x2, x3] in Scaled(LogDetConeTriangle(2))
+        """,
+        """
+        variables: t, u, x1, x2, x3
+        [-1.0 * t, u, x1, x2, x3] in SCS.ScaledLogDetConeTriangle(2)
+        """,
+    )
+    MOI.Bridges.runtests(
+        SCS.ScaledLogDetConeTriangleBridge,
+        """
+        variables: t, u, x1, x2, x3, x4, x5, x6
+        [1.0 * t, u, x1, x2, x3, x4, x5, x6] in Scaled(LogDetConeTriangle(3))
+        """,
+        """
+        variables: t, u, x1, x2, x3, x4, x5, x6
+        [-1.0 * t, u, x1, x2, x4, x3, x5, x6] in SCS.ScaledLogDetConeTriangle(3)
+        """,
+    )
+    MOI.Bridges.runtests(
+        SCS.ScaledLogDetConeTriangleBridge,
+        """
+        variables: t, u, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10
+        [1.0 * t, u, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10] in Scaled(LogDetConeTriangle(4))
+        """,
+        """
+        variables: t, u, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10
+        [-1.0 * t, u, x1, x2, x4, x7, x3, x5, x8, x6, x9, x10] in SCS.ScaledLogDetConeTriangle(4)
+        """,
+    )
+    return
+end
+
 end  # module
 
 TestSCS.runtests()
