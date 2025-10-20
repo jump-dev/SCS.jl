@@ -7,7 +7,6 @@ module SCS
 
 import LinearAlgebra
 import MathOptInterface as MOI
-import MutableArithmetics as MA
 import OpenBLAS32_jll
 import SCS_jll: libscsdir, libscsindir
 import SparseArrays
