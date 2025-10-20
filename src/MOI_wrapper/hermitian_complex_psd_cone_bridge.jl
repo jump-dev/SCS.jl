@@ -35,19 +35,19 @@ function MOI.Utilities.set_dot(
     y::AbstractVector{T},
     set::ComplexPositiveSemidefiniteConeTriangle,
 ) where {S,T}
-    U = MA.promote_operation(MA.add_mul, S, T)
+    U = promote_type(S, T)
     result = zero(U)
     d = set.side_dimension
     k = 0
     for j in 1:d
         for i in 1:j-1
             k += 1
-            result = MA.add_mul!!(result, 2, x[k], y[k])
+            result += 2 * x[k] * y[k]
             k += 1
-            result = MA.add_mul!!(result, 2, x[k], y[k])
+            result += 2 * x[k] * y[k]
         end
         k += 1
-        result = MA.add_mul!!(result, x[k], y[k])
+        result += x[k] * y[k]
     end
     return result
 end
