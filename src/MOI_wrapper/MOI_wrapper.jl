@@ -415,6 +415,11 @@ function MOI.optimize!(
             ),
         ),
         _map_sets(set -> set.side_dimension, T, Ab, ScaledLogDetConeTriangle),
+        T[],    # nuc_m
+        T[],    # nuc_n
+        T[],    # ell1
+        T[],    # sl_n
+        T[],    # nuc_k
         dest.sol.primal,
         dest.sol.dual,
         dest.sol.slack;

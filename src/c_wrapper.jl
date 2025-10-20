@@ -147,6 +147,11 @@ struct _ScsDataWrapper{S,T}
     ed::T
     p::Vector{Cdouble}
     d::Vector{T}
+    nuc_m::Vector{T}
+    nuc_n::Vector{T}
+    ell1::Vector{T}
+    sl_n::Vector{T}
+    sl_k::Vector{T}
     primal::Vector{Cdouble}
     dual::Vector{Cdouble}
     slack::Vector{Cdouble}
@@ -205,7 +210,8 @@ subject to      A * x + s = b
                 s in K
 ```
 where K is a product cone of
-- zero cone
+
+- zero cone `{ 0 }`
 - positive orthant `{ x | x ≥ 0 }`
 - box cone `{ (t,x) | t*l ≤ x ≤ t*u }`
 - second-order cone (SOC) `{ (t,x) | ||x||_2 ≤ t }`
@@ -214,10 +220,15 @@ where K is a product cone of
 - exponential cone `{ (x,y,z) | y e^(x/y) ≤ z, y > 0 }`
 - power cone `{ (x,y,z) | x^a * y^(1-a) ≥ |z|, x ≥ 0, y ≥ 0 }`
 - dual power cone `{ (u,v,w) | (u/a)^a * (v/(1-a))^(1-a) ≥ |w|, u ≥ 0, v ≥ 0 }`
+- log determinant cone `{ (t, u, X) | t ≥ -u log(det(X / u)) }`
+- nuclear norm cone `{ (t, X) | t ≥ ||X||_* }`
+- L1-matrix norm cone `{ (t, X) | t ≥ Σᵢ|Xᵢⱼ| ∀j}`
+- Ky-Fan norm cone `{ (t, X) | t ≥ Σᵏ λᵢ(X) }`
 
 ## Input arguments
 
 The problem data are:
+
 - `linear_solver`: a `LinearSolver` to use
 - `m`: the number of affine constraints
 - `n`: the number of variables
@@ -242,6 +253,12 @@ above by the following arguments.
 - `ed`: the number of dual exponential cones
 - `p`: the `Vector` of power cone parameters (±1, with negative values for the
   dual cone)
+- `d`: the `Vector` of log-det cone sizes
+- `nuc_m`: the `Vector` of nuclear-norm row dimensions
+- `nuc_n`: the `Vector` of nuclear-norm column dimensions
+- `ell1`: the `Vector` of L1-matrix-norm sizes
+- `sl_n`: the `Vector` of Ky-Fan norm cone sizes
+- `sl_k`: the `Vector` of Ky-Fan norm cone constants
 
 Provide a warm start to SCS by overriding:
 - `primal_sol = zeros(n)`: a `Vector` to warmstart the primal variables,
@@ -302,6 +319,11 @@ function scs_solve(
     ed::Integer,
     p::Vector{Float64},
     d::Vector{<:Integer},
+    nuc_m::Vector{<:Integer},
+    nuc_n::Vector{<:Integer},
+    ell1::Vector{<:Integer},
+    sl_n::Vector{<:Integer},
+    sl_k::Vector{<:Integer},
     primal_sol::Vector{Float64} = zeros(n),
     dual_sol::Vector{Float64} = zeros(m),
     slack::Vector{Float64} = zeros(m);
@@ -320,6 +342,8 @@ function scs_solve(
         end
         primal_sol, dual_sol, slack = zeros(n), zeros(m), zeros(m)
     end
+    @assert length(sl_n) == length(sl_k)
+    @assert length(nuc_m) == length(nuc_n)
     T = scsint_t(linear_solver)
     m, n, z, l, ep, ed = T(m), T(n), T(z), T(l), T(ep), T(ed)
     Avalues, Arowval, Acolptr = _to_sparse(T, A)
@@ -351,6 +375,11 @@ function scs_solve(
         ed,
         p,
         convert(Vector{T}, d),
+        convert(Vector{T}, nuc_m),
+        convert(Vector{T}, nuc_n),
+        convert(Vector{T}, ell1),
+        convert(Vector{T}, sl_n),
+        convert(Vector{T}, sl_k),
         primal_sol,
         dual_sol,
         slack,
@@ -381,14 +410,14 @@ function _unsafe_scs_solve(model::_ScsDataWrapper{S,T}) where {S,T}
         length(model.p),
         pointer(model.d),
         length(model.d),
-        C_NULL,
-        C_NULL,
-        0,
-        C_NULL,
-        0,
-        C_NULL,
-        C_NULL,
-        0,
+        pointer(model.nuc_m),
+        pointer(model.nuc_n),
+        length(model.nuc_m),
+        pointer(model.ell1),
+        length(model.ell1),
+        pointer(model.sl_k),
+        pointer(model.sl_n),
+        length(model.sl_n),
     )
     scs_data = ScsData{T}(
         model.m,
@@ -457,13 +486,19 @@ function scs_solve(
     ep::Integer,
     ed::Integer,
     p::Vector{Float64},
-    # d::Vector{<:Integer}, # Skip this argument
+    # d::Vector{<:Integer},     # Skip this argument
+    # nuc_m::Vector{<:Integer}, # Skip this argument
+    # nuc_n::Vector{<:Integer}, # Skip this argument
+    # ell1::Vector{<:Integer},  # Skip this argument
+    # sl_n::Vector{<:Integer},  # Skip this argument
+    # sl_k::Vector{<:Integer},  # Skip this argument
     primal_sol::Vector{Float64} = zeros(n),
     dual_sol::Vector{Float64} = zeros(m),
     slack::Vector{Float64} = zeros(m);
     warm_start::Bool = false,
     options...,
 )
+    T = scsint_t(linear_solver)
     return scs_solve(
         linear_solver,
         m,
@@ -478,11 +513,16 @@ function scs_solve(
         bl,
         q,
         s,
-        Int[],  # Default cs argument
+        T[],  # Default cs argument
         ep,
         ed,
         p,
-        Int[],  # Default d argument
+        T[],  # Default d argument
+        T[],  # Default nuc_m argument
+        T[],  # Default nuc_n argument
+        T[],  # Default ell1 argument
+        T[],  # Default sl_n argument
+        T[],  # Default sl_k argument
         primal_sol,
         dual_sol,
         slack;
@@ -509,13 +549,19 @@ function scs_solve(
     ep::Integer,
     ed::Integer,
     p::Vector{Float64},
-    # d::Vector{<:Integer}, # Skip this argument
+    # d::Vector{<:Integer},     # Skip this argument
+    # nuc_m::Vector{<:Integer}, # Skip this argument
+    # nuc_n::Vector{<:Integer}, # Skip this argument
+    # ell1::Vector{<:Integer},  # Skip this argument
+    # sl_n::Vector{<:Integer},  # Skip this argument
+    # sl_k::Vector{<:Integer},  # Skip this argument
     primal_sol::Vector{Float64} = zeros(n),
     dual_sol::Vector{Float64} = zeros(m),
     slack::Vector{Float64} = zeros(m);
     warm_start::Bool = false,
     options...,
 )
+    T = scsint_t(linear_solver)
     return scs_solve(
         linear_solver,
         m,
@@ -534,7 +580,12 @@ function scs_solve(
         ep,
         ed,
         p,
-        Int[],  # Default d argument
+        T[],  # Default d argument
+        T[],  # Default nuc_m argument
+        T[],  # Default nuc_n argument
+        T[],  # Default ell1 argument
+        T[],  # Default sl_n argument
+        T[],  # Default sl_k argument
         primal_sol,
         dual_sol,
         slack;
