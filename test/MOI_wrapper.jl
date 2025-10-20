@@ -462,6 +462,67 @@ function test_ScaledLogDetConeTriangleBridge()
     return
 end
 
+function test_NormNuclearConeBridge()
+    set = SCS.NormNuclearCone(3, 2)
+    @test MOI.dimension(set) == 7
+    MOI.Bridges.runtests(
+        SCS.NormNuclearConeBridge,
+        """
+        variables: t, x1, x2, x3
+        [1.0 * t, x1, x2, x3] in NormNuclearCone(1, 3)
+        """,
+        """
+        variables: t, x1, x2, x3
+        [1.0 * t, x1, x2, x3] in SCS.NormNuclearCone(3, 1)
+        """,
+    )
+    MOI.Bridges.runtests(
+        SCS.NormNuclearConeBridge,
+        """
+        variables: t, x1, x2, x3
+        [1.0 * t, x1, x2, x3] in NormNuclearCone(3, 1)
+        """,
+        """
+        variables: t, x1, x2, x3
+        [1.0 * t, x1, x2, x3] in SCS.NormNuclearCone(3, 1)
+        """,
+    )
+    MOI.Bridges.runtests(
+        SCS.NormNuclearConeBridge,
+        """
+        variables: t, x1, x2, x3, x4
+        [1.0 * t, x1, x2, x3, x4] in NormNuclearCone(2, 2)
+        """,
+        """
+        variables: t, x1, x2, x3, x4
+        [1.0 * t, x1, x2, x3, x4] in SCS.NormNuclearCone(2, 2)
+        """,
+    )
+    MOI.Bridges.runtests(
+        SCS.NormNuclearConeBridge,
+        """
+        variables: t, x1, x2, x3, x4, x5, x6
+        [1.0 * t, x1, x2, x3, x4, x5, x6] in NormNuclearCone(2, 3)
+        """,
+        """
+        variables: t, x1, x2, x3, x4, x5, x6
+        [1.0 * t, x1, x3, x5, x2, x4, x6] in SCS.NormNuclearCone(3, 2)
+        """,
+    )
+    MOI.Bridges.runtests(
+        SCS.NormNuclearConeBridge,
+        """
+        variables: t, x1, x2, x3, x4, x5, x6
+        [1.0 * t, x1, x2, x3, x4, x5, x6] in NormNuclearCone(3, 2)
+        """,
+        """
+        variables: t, x1, x2, x3, x4, x5, x6
+        [1.0 * t, x1, x2, x3, x4, x5, x6] in SCS.NormNuclearCone(3, 2)
+        """,
+    )
+    return
+end
+
 end  # module
 
 TestSCS.runtests()

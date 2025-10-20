@@ -7,6 +7,7 @@ include("scaled_psd_cone_bridge.jl")
 include("hermitian_complex_psd_cone_bridge.jl")
 include("scaled_complex_psd_cone_bridge.jl")
 include("ScaledLogDetConeTriangle.jl")
+include("NormNuclearCone.jl")
 
 MOI.Utilities.@product_of_sets(
     _Cones,
@@ -20,17 +21,20 @@ MOI.Utilities.@product_of_sets(
     MOI.PowerCone{T},
     MOI.DualPowerCone{T},
     ScaledLogDetConeTriangle,
+    NormNuclearCone,
 )
 
 struct _SetConstants{T}
     b::Vector{T}
     power_coefficients::Dict{Int,T}
-    _SetConstants{T}() where {T} = new{T}(T[], Dict{Int,T}())
+    row_dim::Dict{Int,Int}
+    _SetConstants{T}() where {T} = new{T}(T[], Dict{Int,T}(), Dict{Int,Int}())
 end
 
 function Base.empty!(x::_SetConstants)
     empty!(x.b)
     empty!(x.power_coefficients)
+    empty!(x.row_dim)
     return x
 end
 
@@ -50,6 +54,15 @@ function MOI.Utilities.load_constants(
     return
 end
 
+function MOI.Utilities.load_constants(
+    x::_SetConstants{T},
+    offset,
+    set::NormNuclearCone,
+) where {T}
+    x.row_dim[offset+1] = set.row_dim
+    return
+end
+
 function MOI.Utilities.function_constants(x::_SetConstants, rows)
     return MOI.Utilities.function_constants(x.b, rows)
 end
@@ -65,6 +78,16 @@ function MOI.Utilities.set_from_constants(
 ) where {T,S<:Union{MOI.PowerCone{T},MOI.DualPowerCone{T}}}
     @assert length(rows) == 3
     return S(x.power_coefficients[first(rows)])
+end
+
+function MOI.Utilities.set_from_constants(
+    x::_SetConstants,
+    ::Type{NormNuclearCone},
+    rows,
+)
+    row_dim = x.row_dim[first(rows)]
+    col_dim = div(length(rows), row_dim)
+    return NormNuclearCone(row_dim, col_dim)
 end
 
 const OptimizerCache{T} = MOI.Utilities.GenericModel{
@@ -142,6 +165,7 @@ function MOI.get(::Optimizer, ::MOI.Bridges.ListOfNonstandardBridges)
         ScaledComplexPSDConeBridge{Cdouble},
         HermitianComplexPSDConeBridge{Cdouble},
         ScaledLogDetConeTriangleBridge{Cdouble},
+        NormNuclearConeBridge{Cdouble},
     ]
 end
 
@@ -255,6 +279,7 @@ function MOI.supports_constraint(
             MOI.PowerCone{Cdouble},
             MOI.DualPowerCone{Cdouble},
             ScaledLogDetConeTriangle,
+            NormNuclearCone,
         },
     },
 )
@@ -415,8 +440,8 @@ function MOI.optimize!(
             ),
         ),
         _map_sets(set -> set.side_dimension, T, Ab, ScaledLogDetConeTriangle),
-        T[],    # nuc_m
-        T[],    # nuc_n
+        _map_sets(set -> set.row_dim, T, Ab, NormNuclearCone),
+        _map_sets(set -> set.column_dim, T, Ab, NormNuclearCone),
         T[],    # ell1
         T[],    # sl_n
         T[],    # nuc_k
