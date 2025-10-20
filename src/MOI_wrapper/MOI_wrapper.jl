@@ -6,6 +6,7 @@
 include("scaled_psd_cone_bridge.jl")
 include("hermitian_complex_psd_cone_bridge.jl")
 include("scaled_complex_psd_cone_bridge.jl")
+include("ScaledLogDetConeTriangle.jl")
 
 MOI.Utilities.@product_of_sets(
     _Cones,
@@ -18,6 +19,7 @@ MOI.Utilities.@product_of_sets(
     MOI.DualExponentialCone,
     MOI.PowerCone{T},
     MOI.DualPowerCone{T},
+    ScaledLogDetConeTriangle,
 )
 
 struct _SetConstants{T}
@@ -139,6 +141,7 @@ function MOI.get(::Optimizer, ::MOI.Bridges.ListOfNonstandardBridges)
         ScaledPSDConeBridge{Cdouble},
         ScaledComplexPSDConeBridge{Cdouble},
         HermitianComplexPSDConeBridge{Cdouble},
+        ScaledLogDetConeTriangleBridge{Cdouble},
     ]
 end
 
@@ -251,6 +254,7 @@ function MOI.supports_constraint(
             MOI.DualExponentialCone,
             MOI.PowerCone{Cdouble},
             MOI.DualPowerCone{Cdouble},
+            ScaledLogDetConeTriangle,
         },
     },
 )
@@ -410,6 +414,12 @@ function MOI.optimize!(
                 MOI.DualPowerCone{Cdouble},
             ),
         ),
+        _map_sets(set -> set.side_dimension, T, Ab, ScaledLogDetConeTriangle),
+        T[],    # nuc_m
+        T[],    # nuc_n
+        T[],    # ell1
+        T[],    # sl_n
+        T[],    # nuc_k
         dest.sol.primal,
         dest.sol.dual,
         dest.sol.slack;
