@@ -32,12 +32,8 @@ function _transpose(set::MOI.NormNuclearCone, f::AbstractVector, dir::Bool)
     if set.row_dim >= set.column_dim
         return f
     end
-    shape = ifelse(
-        dir,
-        (set.row_dim, set.column_dim),
-        (set.column_dim, set.row_dim),
-    )
-    return [f[1]; vec(reshape(f[2:end], shape)')]
+    m, n = set.row_dim, set.column_dim
+    return [f[1]; vec(reshape(f[2:end], dir ? (m, n) : (n, m))')]
 end
 
 function _transpose(
@@ -59,11 +55,8 @@ function MOI.Bridges.Constraint.bridge_constraint(
     s::MOI.NormNuclearCone,
 ) where {T}
     m, n = max(s.row_dim, s.column_dim), min(s.row_dim, s.column_dim)
-    ci = MOI.add_constraint(
-        model,
-        _transpose(s, f, true),
-        NormNuclearCone(m, n),
-    )
+    g = _transpose(s, f, true)
+    ci = MOI.add_constraint(model, g, NormNuclearCone(m, n))
     return NormNuclearConeBridge{T}(s, ci)
 end
 
@@ -153,7 +146,7 @@ function MOI.set(
     model::MOI.ModelLike,
     attr::Union{MOI.ConstraintPrimalStart,MOI.ConstraintDualStart},
     bridge::NormNuclearConeBridge{T},
-    start::Union{Nothing,AbstractVector{T}}
+    start::Union{Nothing,AbstractVector{T}},
 ) where {T}
     g = _transpose(bridge.set, start, true)
     MOI.set(model, attr, bridge.constraint, start)
