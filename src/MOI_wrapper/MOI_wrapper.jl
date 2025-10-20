@@ -3,11 +3,11 @@
 # Use of this source code is governed by an MIT-style license that can be found
 # in the LICENSE.md file or at https://opensource.org/licenses/MIT.
 
-include("scaled_psd_cone_bridge.jl")
-include("hermitian_complex_psd_cone_bridge.jl")
-include("scaled_complex_psd_cone_bridge.jl")
-include("ScaledLogDetConeTriangle.jl")
-include("NormNuclearCone.jl")
+include("sets/ScaledPSDCone.jl")
+include("sets/ComplexPositiveSemidefiniteConeTriangle.jl")
+include("sets/ScaledComplexPSDCone.jl")
+include("sets/ScaledLogDetConeTriangle.jl")
+include("sets/NormNuclearCone.jl")
 
 MOI.Utilities.@product_of_sets(
     _Cones,
