@@ -63,10 +63,6 @@ function MOI.Utilities.load_constants(
     return
 end
 
-function MOI.Utilities.function_constants(x::_SetConstants, rows)
-    return MOI.Utilities.function_constants(x.b, rows)
-end
-
 function MOI.Utilities.set_from_constants(x::_SetConstants, S, rows)
     return MOI.Utilities.set_from_constants(x.b, S, rows)
 end

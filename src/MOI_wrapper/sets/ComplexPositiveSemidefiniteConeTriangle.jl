@@ -31,28 +31,6 @@ function MOI.dimension(x::ComplexPositiveSemidefiniteConeTriangle)
 end
 
 function MOI.Utilities.set_dot(
-    x::AbstractVector{S},
-    y::AbstractVector{T},
-    set::ComplexPositiveSemidefiniteConeTriangle,
-) where {S,T}
-    U = promote_type(S, T)
-    result = zero(U)
-    d = set.side_dimension
-    k = 0
-    for j in 1:d
-        for i in 1:j-1
-            k += 1
-            result += 2 * x[k] * y[k]
-            k += 1
-            result += 2 * x[k] * y[k]
-        end
-        k += 1
-        result += x[k] * y[k]
-    end
-    return result
-end
-
-function MOI.Utilities.set_dot(
     x::MOI.Utilities.CanonicalVector{T},
     y::MOI.Utilities.CanonicalVector{T},
     set::ComplexPositiveSemidefiniteConeTriangle,
@@ -66,28 +44,7 @@ function MOI.Utilities.set_dot(
     end
 end
 
-function MOI.Utilities.dot_coefficients(
-    a::AbstractVector,
-    set::ComplexPositiveSemidefiniteConeTriangle,
-)
-    d = set.side_dimension
-    b = copy(a)
-    k = 0
-    for j in 1:d
-        for i in 1:j-1
-            k += 1
-            b[k] /= 2
-            k += 1
-            b[k] /= 2
-        end
-        k += 1
-    end
-    return b
-end
-
-function MOI.is_set_dot_scaled(::Type{ComplexPositiveSemidefiniteConeTriangle})
-    return true
-end
+MOI.is_set_dot_scaled(::Type{ComplexPositiveSemidefiniteConeTriangle}) = true
 
 struct HermitianComplexPSDConeBridge{T,F} <:
        MOI.Bridges.Constraint.SetMapBridge{
