@@ -155,6 +155,12 @@ mutable struct Optimizer <: MOI.AbstractOptimizer
     Optimizer() = new(nothing, MOISolution(), false, Dict{Symbol,Any}())
 end
 
+function MOI.default_cache(dest::Optimizer, ::Type{Cdouble})
+    linear_solver = get(dest.options, :linear_solver, DirectSolver)
+    T = scsint_t(linear_solver)
+    return MOI.Utilities.UniversalFallback(OptimizerCache{T}())
+end
+
 function MOI.get(::Optimizer, ::MOI.Bridges.ListOfNonstandardBridges)
     return Type[
         ScaledPSDConeBridge{Cdouble},
@@ -293,6 +299,7 @@ function MOI.optimize!(
     src::MOI.Utilities.UniversalFallback{OptimizerCache{T}},
 ) where {T}
     linear_solver = get(dest.options, :linear_solver, DirectSolver)
+    # TODO otherwise, just convert the inner indices, no big deal
     @assert T == scsint_t(linear_solver)
     # The real stuff starts here.
     MOI.empty!(dest)
