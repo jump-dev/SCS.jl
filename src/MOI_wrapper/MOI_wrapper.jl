@@ -155,7 +155,7 @@ mutable struct Optimizer <: MOI.AbstractOptimizer
     Optimizer() = new(nothing, MOISolution(), false, Dict{Symbol,Any}())
 end
 
-function MOI.default_cache(::Optimizer, ::Type{Cdouble})
+function MOI.default_cache(dest::Optimizer, ::Type{Cdouble})
     linear_solver = get(dest.options, :linear_solver, DirectSolver)
     T = scsint_t(linear_solver)
     return MOI.Utilities.UniversalFallback(OptimizerCache{T}())
