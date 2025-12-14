@@ -86,7 +86,7 @@ function MOI.Utilities.set_from_constants(
     return NormNuclearCone(row_dim, col_dim)
 end
 
-const OptimizerCache{T} = MOI.Utilities.GenericModel{
+const OptimizerCache = MOI.Utilities.GenericModel{
     Cdouble,
     MOI.Utilities.ObjectiveContainer{Cdouble},
     MOI.Utilities.VariablesContainer{Cdouble},
@@ -153,6 +153,10 @@ mutable struct Optimizer <: MOI.AbstractOptimizer
     options::Dict{Symbol,Any}
 
     Optimizer() = new(nothing, MOISolution(), false, Dict{Symbol,Any}())
+end
+
+function MOI.default_cache(::Optimizer, ::Type{Cdouble})
+    return MOI.Utilities.UniversalFallback(OptimizerCache())
 end
 
 function MOI.get(::Optimizer, ::MOI.Bridges.ListOfNonstandardBridges)
@@ -290,8 +294,8 @@ end
 
 function MOI.optimize!(
     dest::Optimizer,
-    src::MOI.Utilities.UniversalFallback{OptimizerCache{T}},
-) where {T}
+    src::MOI.Utilities.UniversalFallback{OptimizerCache},
+)
     linear_solver = get(dest.options, :linear_solver, DirectSolver)
     @assert T == scsint_t(linear_solver)
     # The real stuff starts here.
@@ -488,7 +492,7 @@ end
 function MOI.optimize!(dest::Optimizer, src::MOI.ModelLike)
     linear_solver = get(dest.options, :linear_solver, DirectSolver)
     T = scsint_t(linear_solver)
-    cache = MOI.Utilities.UniversalFallback(OptimizerCache{T}())
+    cache = MOI.Utilities.UniversalFallback(OptimizerCache())
     index_map = MOI.copy_to(cache, src)
     MOI.optimize!(dest, cache)
     return index_map, false
