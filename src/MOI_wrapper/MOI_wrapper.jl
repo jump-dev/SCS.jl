@@ -86,7 +86,7 @@ function MOI.Utilities.set_from_constants(
     return NormNuclearCone(row_dim, col_dim)
 end
 
-const OptimizerCache = MOI.Utilities.GenericModel{
+const OptimizerCache{T} = MOI.Utilities.GenericModel{
     Cdouble,
     MOI.Utilities.ObjectiveContainer{Cdouble},
     MOI.Utilities.VariablesContainer{Cdouble},
@@ -156,7 +156,9 @@ mutable struct Optimizer <: MOI.AbstractOptimizer
 end
 
 function MOI.default_cache(::Optimizer, ::Type{Cdouble})
-    return MOI.Utilities.UniversalFallback(OptimizerCache())
+    linear_solver = get(dest.options, :linear_solver, DirectSolver)
+    T = scsint_t(linear_solver)
+    return MOI.Utilities.UniversalFallback(OptimizerCache{T}())
 end
 
 function MOI.get(::Optimizer, ::MOI.Bridges.ListOfNonstandardBridges)
@@ -294,9 +296,10 @@ end
 
 function MOI.optimize!(
     dest::Optimizer,
-    src::MOI.Utilities.UniversalFallback{OptimizerCache},
-)
+    src::MOI.Utilities.UniversalFallback{OptimizerCache{T}},
+) where {T}
     linear_solver = get(dest.options, :linear_solver, DirectSolver)
+    # TODO otherwise, just convert the inner indices, no big deal
     @assert T == scsint_t(linear_solver)
     # The real stuff starts here.
     MOI.empty!(dest)
