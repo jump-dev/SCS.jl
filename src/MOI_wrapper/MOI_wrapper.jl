@@ -495,7 +495,7 @@ end
 function MOI.optimize!(dest::Optimizer, src::MOI.ModelLike)
     linear_solver = get(dest.options, :linear_solver, DirectSolver)
     T = scsint_t(linear_solver)
-    cache = MOI.Utilities.UniversalFallback(OptimizerCache())
+    cache = MOI.Utilities.UniversalFallback(OptimizerCache{T}())
     index_map = MOI.copy_to(cache, src)
     MOI.optimize!(dest, cache)
     return index_map, false
