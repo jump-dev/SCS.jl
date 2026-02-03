@@ -45,6 +45,10 @@ function MOI.Utilities.load_constants(x::_SetConstants, offset, f)
     return
 end
 
+function MOI.Utilities.function_constants(x::_SetConstants, i)
+    return MOI.Utilities.function_constants(x.b, i)
+end
+
 function MOI.Utilities.load_constants(
     x::_SetConstants{T},
     offset,

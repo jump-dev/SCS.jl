@@ -358,22 +358,22 @@ function test_HermitianComplexPSDConeBridge()
     MOI.set(model, MOI.Silent(), true)
     t = MOI.add_variable(model)
     x = MOI.add_variables(model, 9)
-    c_g = MOI.add_constraint(
-        model,
-        MOI.Utilities.operate(vcat, Float64, x .- (1.0:9.0)...),
-        MOI.Zeros(9),
-    )
+    g_func = MOI.Utilities.operate(vcat, Float64, x .- (1.0:9.0)...)
+    c_g = MOI.add_constraint(model, g_func, MOI.Zeros(9))
     h = 1.0 .* x
     h[[1, 3, 6]] .+= t
+    h_func = MOI.Utilities.operate(vcat, Float64, h...)
     c_h = MOI.add_constraint(
         model,
-        MOI.Utilities.operate(vcat, Float64, h...),
+        h_func,
         MOI.HermitianPositiveSemidefiniteConeTriangle(3),
     )
     MOI.set(model, MOI.ObjectiveSense(), MOI.MIN_SENSE)
     f = 1.0 * t
     MOI.set(model, MOI.ObjectiveFunction{typeof(f)}(), f)
     MOI.optimize!(model)
+    @test g_func ≈ MOI.get(model, MOI.ConstraintFunction(), c_g)
+    @test h_func ≈ MOI.get(model, MOI.ConstraintFunction(), c_h)
     MOI.get(model, MOI.TerminationStatus())
     x_primal = MOI.get(model, MOI.VariablePrimal(), x)
     t_primal = MOI.get(model, MOI.VariablePrimal(), t)
