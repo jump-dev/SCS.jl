@@ -549,6 +549,18 @@ function test_HermitianComplexPSDConeBridge()
     return
 end
 
+function test_get_function_constants()
+    dest = SCS.Optimizer()
+    cache = MOI.default_cache(dest, Float64)
+    x = MOI.add_variables(cache, 2)
+    f = MOI.Utilities.vectorize(1.0 .+ x)
+    c = MOI.add_constraint(cache, f, MOI.Zeros(2))
+    MOI.Utilities.final_touch(cache, nothing)
+    @test isapprox(f, MOI.get(cache, MOI.ConstraintFunction(), c))
+    @test MOI.get(cache, MOI.ConstraintSet(), c) == MOI.Zeros(2)
+    return
+end
+
 end  # module
 
 TestSCS.runtests()
