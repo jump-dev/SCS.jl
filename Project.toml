@@ -1,6 +1,6 @@
 name = "SCS"
 uuid = "c946c3f1-0d1f-5ce8-9dea-7daa1f7e2d13"
-version = "2.6.1"
+version = "2.6.2"
 repo = "https://github.com/jump-dev/SCS.jl"
 
 [deps]
@@ -20,7 +20,7 @@ SCSSCS_GPU_jllExt = ["SCS_GPU_jll"]
 SCSSCS_MKL_jllExt = ["SCS_MKL_jll"]
 
 [compat]
-LinearAlgebra = "1.10.0"
+LinearAlgebra = "1"
 MathOptInterface = "1.20"
 OpenBLAS32_jll = "0.3.10"
 Pkg = "1"
