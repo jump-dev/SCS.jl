@@ -90,6 +90,10 @@ function MOI.Utilities.set_from_constants(
     return NormNuclearCone(row_dim, col_dim)
 end
 
+function MOI.Utilities.modify_constants(x::_SetConstants, rows, value)
+    return MOI.Utilities.modify_constants(x.b, rows, value)
+end
+
 const OptimizerCache{T} = MOI.Utilities.GenericModel{
     Cdouble,
     MOI.Utilities.ObjectiveContainer{Cdouble},

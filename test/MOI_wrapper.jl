@@ -561,6 +561,18 @@ function test_get_function_constants()
     return
 end
 
+function test_modify_constants()
+    model = MOI.instantiate(SCS.Optimizer; with_cache_type = Float64)
+    x = MOI.add_variable(model)
+    f = MOI.Utilities.vectorize([1.0 * x - 1.0])
+    c = MOI.add_constraint(model, f, MOI.Zeros(1))
+    MOI.Utilities.final_touch(model, nothing)
+    MOI.modify(model, c, MOI.VectorConstantChange([-2.0]))
+    g = MOI.get(model, MOI.ConstraintFunction(), c)
+    @test g.constants == [-2.0]
+    return
+end
+
 end  # module
 
 TestSCS.runtests()
