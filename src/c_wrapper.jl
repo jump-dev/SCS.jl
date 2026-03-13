@@ -156,11 +156,11 @@ struct _ScsDataWrapper{S,T}
     dual::Vector{Cdouble}
     slack::Vector{Cdouble}
     settings::ScsSettings{T}
-    options::Any
+    options::Dict{Symbol,Union{String,Int,Cdouble}}
 end
 
 function _sanitize_options(options)
-    option_dict = Dict{Symbol,Any}()
+    option_dict = Dict{Symbol,Union{String,Int,Cdouble}}()
     for (key, value) in options
         if key == :linear_solver
             continue
