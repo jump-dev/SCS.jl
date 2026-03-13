@@ -523,7 +523,7 @@ function test_NormNuclearConeBridge()
     return
 end
 
-function test_HermitianComplexPSDConeBridge()
+function test_HermitianComplexPSDConeBridge2()
     MOI.Bridges.runtests(
         SCS.HermitianComplexPSDConeBridge,
         """
