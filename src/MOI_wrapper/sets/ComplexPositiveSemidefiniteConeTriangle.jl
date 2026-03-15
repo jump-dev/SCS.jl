@@ -55,6 +55,12 @@ struct HermitianComplexPSDConeBridge{T,F} <:
     F,
 }
     constraint::MOI.ConstraintIndex{F,ComplexPositiveSemidefiniteConeTriangle}
+
+    function HermitianComplexPSDConeBridge{T,F}(
+        ci::MOI.ConstraintIndex{F,ComplexPositiveSemidefiniteConeTriangle},
+    ) where {T,F}
+        return new{T,F}(ci)
+    end
 end
 
 MOI.Bridges.bridging_cost(::Type{<:HermitianComplexPSDConeBridge}) = 0.1

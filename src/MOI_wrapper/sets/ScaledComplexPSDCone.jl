@@ -35,6 +35,12 @@ struct ScaledComplexPSDConeBridge{T,F} <: MOI.Bridges.Constraint.SetMapBridge{
     F,
 }
     constraint::MOI.ConstraintIndex{F,ScaledComplexPSDCone}
+
+    function ScaledComplexPSDConeBridge{T,F}(
+        ci::MOI.ConstraintIndex{F,ScaledComplexPSDCone},
+    ) where {T,F}
+        return new{T,F}(ci)
+    end
 end
 
 MOI.Bridges.bridging_cost(::Type{<:ScaledComplexPSDConeBridge}) = 0.1

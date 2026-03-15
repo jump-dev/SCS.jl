@@ -611,7 +611,8 @@ function MOI.get(
     ci::MOI.ConstraintIndex{F,S},
 ) where {F,S}
     MOI.check_result_index_bounds(optimizer, attr)
-    return optimizer.sol.slack[MOI.Utilities.rows(optimizer.cones, ci)]
+    rows = MOI.Utilities.rows(optimizer.cones::_Cones{Cdouble}, ci)
+    return optimizer.sol.slack[rows]
 end
 
 function MOI.get(optimizer::Optimizer, attr::MOI.DualStatus)
@@ -633,7 +634,8 @@ function MOI.get(
     ci::MOI.ConstraintIndex{F,S},
 ) where {F,S}
     MOI.check_result_index_bounds(optimizer, attr)
-    return optimizer.sol.dual[MOI.Utilities.rows(optimizer.cones, ci)]
+    rows = MOI.Utilities.rows(optimizer.cones::_Cones{Cdouble}, ci)
+    return optimizer.sol.dual[rows]
 end
 
 MOI.get(optimizer::Optimizer, ::MOI.ResultCount) = 1
