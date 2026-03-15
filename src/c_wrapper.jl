@@ -165,20 +165,16 @@ function _sanitize_options(::Type{T}, options) where {T}
         if key == :linear_solver
             continue
         elseif !hasfield(ScsSettings, key)
-            throw(
-                ArgumentError(
-                    "Unrecognized option passed to SCS solver: $(key)",
-                ),
-            )
-        end
-        if isa(value, Integer)
+            msg = "Unrecognized option passed to SCS solver: $(key)"
+            throw(ArgumentError(msg))
+        elseif value isa Integer
             option_dict[key] = convert(T, value)
-        elseif isa(value, AbstractFloat)
+        elseif value, isa AbstractFloat
             option_dict[key] = convert(Cdouble, value)
-        elseif isa(value, String)
-            option_dict[key] = value
+        elseif value isa AbstractString
+            option_dict[key] = convert(String, value)
         else
-            throw(ArgumentError("Option with unsupported type: $((key,value))"))
+            throw(ArgumentError("Option with unsupported type: $key=>$value"))
         end
     end
     return option_dict
