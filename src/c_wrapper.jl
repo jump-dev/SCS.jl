@@ -156,22 +156,27 @@ struct _ScsDataWrapper{S,T}
     dual::Vector{Cdouble}
     slack::Vector{Cdouble}
     settings::ScsSettings{T}
-    options::Any
+    options::Dict{Symbol,Union{String,T,Cdouble}}
 end
 
-function _sanitize_options(options)
-    option_dict = Dict{Symbol,Any}()
+function _sanitize_options(::Type{T}, options) where {T}
+    option_dict = Dict{Symbol,Union{String,T,Cdouble}}()
     for (key, value) in options
         if key == :linear_solver
             continue
         elseif !hasfield(ScsSettings, key)
-            throw(
-                ArgumentError(
-                    "Unrecognized option passed to SCS solver: $(key)",
-                ),
-            )
+            msg = "Unrecognized option passed to SCS solver: $(key)"
+            throw(ArgumentError(msg))
+        elseif value isa Integer
+            option_dict[key] = convert(T, value)
+        elseif value isa AbstractFloat
+            option_dict[key] = convert(Cdouble, value)
+        elseif value isa AbstractString
+            option_dict[key] = convert(String, value)
+        else
+            msg = "Option with unsupported type: $key=>$(repr(value))"
+            throw(ArgumentError(msg))
         end
-        option_dict[key] = value
     end
     return option_dict
 end
@@ -348,8 +353,8 @@ function scs_solve(
     m, n, z, l, ep, ed = T(m), T(n), T(z), T(l), T(ep), T(ed)
     Avalues, Arowval, Acolptr = _to_sparse(T, A)
     Pvalues, Prowval, Pcolptr = _to_sparse(T, P)
-    option_dict = _sanitize_options(options)
-    option_dict[:warm_start] = convert(Int, warm_start)
+    option_dict = _sanitize_options(T, options)
+    option_dict[:warm_start] = convert(T, warm_start)
     model = _ScsDataWrapper(
         linear_solver,
         m,
@@ -428,13 +433,11 @@ function _unsafe_scs_solve(model::_ScsDataWrapper{S,T}) where {S,T}
         pointer(model.c),
     )
     for (key, value) in model.options
-        if value isa AbstractString
-            if value isa String
-                cstr =
-                    Base.unsafe_convert(Cstring, Base.cconvert(Cstring, value))
-                setproperty!(model.settings, key, cstr)
-            else
-                error("You must pass a `String` as the value for $(key)")
+        if value isa String
+            GC.@preserve value begin
+                c_value = Base.cconvert(String, value)
+                c_str = Base.unsafe_convert(Cstring, c_value)
+                setproperty!(model.settings, key, c_str)
             end
         else
             setproperty!(model.settings, key, value)
