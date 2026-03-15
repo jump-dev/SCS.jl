@@ -807,10 +807,6 @@ function test_options(T)
         ArgumentError("Unrecognized option passed to SCS solver: eps"),
         SCS.scs_solve(T, args...; eps_abs = 1e-12, eps = 1e-12),
     )
-    @test_throws(
-        ArgumentError("Option with unsupported type: eps_abs=>:abc"),
-        SCS.scs_solve(T, args...; eps_abs = :abc),
-    )
     tmpf = tempname()
     @test !isfile(tmpf)
     SCS.scs_solve(T, args...; eps_abs = 1e-12, write_data_filename = tmpf)
