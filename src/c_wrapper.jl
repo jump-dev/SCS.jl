@@ -169,12 +169,13 @@ function _sanitize_options(::Type{T}, options) where {T}
             throw(ArgumentError(msg))
         elseif value isa Integer
             option_dict[key] = convert(T, value)
-        elseif value, isa AbstractFloat
+        elseif value isa AbstractFloat
             option_dict[key] = convert(Cdouble, value)
         elseif value isa AbstractString
             option_dict[key] = convert(String, value)
         else
-            throw(ArgumentError("Option with unsupported type: $key=>$value"))
+            msg = "Option with unsupported type: $key=>$(repr(value))"
+            throw(ArgumentError(msg))
         end
     end
     return option_dict

@@ -799,20 +799,25 @@ function test_options(T)
         eps_rel = Float32(1e-10),
     )
     @test isapprox(solution.x' * args.c, -99.0; rtol = 1e-9)
-    @test_throws(ArgumentError, SCS.scs_solve(T, args...; eps = 1e-12))
-    err = try
-        SCS.scs_solve(T, args...; eps_abs = 1e-12, eps = 1e-12)
-    catch ex
-        ex
-    end
-    @test err.msg == "Unrecognized option passed to SCS solver: eps"
-
+    @test_throws(
+        ArgumentError("Unrecognized option passed to SCS solver: eps"),
+        SCS.scs_solve(T, args...; eps = 1e-12),
+    )
+    @test_throws(
+        ArgumentError("Unrecognized option passed to SCS solver: eps"),
+        SCS.scs_solve(T, args...; eps_abs = 1e-12, eps = 1e-12),
+    )
+    @test_throws(
+        ArgumentError("Option with unsupported type: eps_abs=>:abc"),
+        SCS.scs_solve(T, args...; eps_abs = :abc),
+    )
     tmpf = tempname()
     @test !isfile(tmpf)
     SCS.scs_solve(T, args...; eps_abs = 1e-12, write_data_filename = tmpf)
     @test isfile(tmpf)
-
-    @test_throws ArgumentError SCS.scs_solve(T, args...; write_data_filename = @view tmpf[1:end])
+    rm(tmpf)
+    SCS.scs_solve(T, args...; write_data_filename = @view tmpf[1:end])
+    @test isfile(tmpf)
     return
 end
 
