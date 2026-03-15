@@ -108,6 +108,8 @@ List of supported constraint types:
  * [`MOI.VectorAffineFunction{Float64}`](@ref) in [`MOI.Zeros`](@ref)
  * [`MOI.VectorAffineFunction{Float64}`](@ref) in `SCS.ScaledComplexPSDCone`
  * [`MOI.VectorAffineFunction{Float64}`](@ref) in `SCS.ScaledPSDCone`
+ * [`MOI.VectorAffineFunction{Float64}`](@ref) in `SCS.ScaledLogDetConeTriangle`
+ * [`MOI.VectorAffineFunction{Float64}`](@ref) in `SCS.NormNuclearCone`
 
 List of supported model attributes:
 
@@ -250,6 +252,10 @@ where `K` is a product cone of:
 - exponential cone `{ (x,y,z) | y e^(x/y) ≤ z, y > 0 }`
 - power cone `{ (x,y,z) | x^a * y^(1-a) ≥ |z|, x ≥ 0, y ≥ 0 }`
 - dual power cone `{ (u,v,w) | (u/a)^a * (v/(1-a))^(1-a) ≥ |w|, u ≥ 0, v ≥ 0 }`.
+- log determinant cone `{ (t, u, X) | t ≥ -u log(det(X / u)) }`
+- nuclear norm cone `{ (t, X) | t ≥ ||X||_* }`
+- L1-matrix norm cone `{ (t, X) | t ≥ Σᵢ|Xᵢⱼ| ∀j}`
+- sum of k largest eigenvalues cone `{ (t, X) | t ≥ Σᵏ λᵢ(X) }`
 
 To solve this problem with SCS, call `SCS.scs_solve`; see the docstring for
 details.

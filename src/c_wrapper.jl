@@ -223,7 +223,7 @@ where K is a product cone of
 - log determinant cone `{ (t, u, X) | t ≥ -u log(det(X / u)) }`
 - nuclear norm cone `{ (t, X) | t ≥ ||X||_* }`
 - L1-matrix norm cone `{ (t, X) | t ≥ Σᵢ|Xᵢⱼ| ∀j}`
-- Ky-Fan norm cone `{ (t, X) | t ≥ Σᵏ λᵢ(X) }`
+- sum of k largest eigenvalues cone `{ (t, X) | t ≥ Σᵏ λᵢ(X) }`
 
 ## Input arguments
 
@@ -257,8 +257,8 @@ above by the following arguments.
 - `nuc_m`: the `Vector` of nuclear-norm row dimensions
 - `nuc_n`: the `Vector` of nuclear-norm column dimensions
 - `ell1`: the `Vector` of L1-matrix-norm sizes
-- `sl_n`: the `Vector` of Ky-Fan norm cone sizes
-- `sl_k`: the `Vector` of Ky-Fan norm cone constants
+- `sl_n`: the `Vector` of sum of k largest eigenvalues cone sizes
+- `sl_k`: the `Vector` of sum of k largest eigenvalues cone constants
 
 Provide a warm start to SCS by overriding:
 - `primal_sol = zeros(n)`: a `Vector` to warmstart the primal variables,
