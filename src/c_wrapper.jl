@@ -178,11 +178,7 @@ function _sanitize_options(::Type{T}, options) where {T}
         elseif isa(value, String)
             option_dict[key] = value
         else
-            throw(
-                ArgumentError(
-                    "Option with unsupported type: $((key,value))",
-                ),
-            )
+            throw(ArgumentError("Option with unsupported type: $((key,value))"))
         end
     end
     return option_dict
@@ -361,7 +357,7 @@ function scs_solve(
     Avalues, Arowval, Acolptr = _to_sparse(T, A)
     Pvalues, Prowval, Pcolptr = _to_sparse(T, P)
     option_dict = _sanitize_options(T, options)
-    option_dict[:warm_start] = convert(Int, warm_start)
+    option_dict[:warm_start] = convert(T, warm_start)
     model = _ScsDataWrapper(
         linear_solver,
         m,
