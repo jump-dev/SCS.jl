@@ -30,9 +30,26 @@ mutable struct ScsSettings{T} <: AbstractSCSType
     acceleration_interval::T # interval to apply acceleration
     write_data_filename::Cstring # if set dump raw problem data to the file
     log_csv_filename::Cstring # if set log solve data to the file
-    function ScsSettings(linear_solver::Type{<:LinearSolver})
+
+    function ScsSettings(linear_solver::Type{<:LinearSolver}; kwargs...)
         settings = new{scsint_t(linear_solver)}()
         scs_set_default_settings(linear_solver, settings)
+        for (key, value) in kwargs
+            if key == :linear_solver
+                continue
+            elseif !hasfield(ScsSettings, key)
+                msg = "Unrecognized option passed to SCS solver: $(key)"
+                throw(ArgumentError(msg))
+            elseif value isa AbstractString
+                GC.@preserve value begin
+                    c_value = Base.cconvert(String, value)
+                    c_str = Base.unsafe_convert(Cstring, c_value)
+                    setproperty!(settings, key, c_str)
+                end
+            else
+                setproperty!(settings, key, value)
+            end
+        end
         return settings
     end
 end
@@ -156,26 +173,6 @@ struct _ScsDataWrapper{S,T}
     dual::Vector{Cdouble}
     slack::Vector{Cdouble}
     settings::ScsSettings{T}
-end
-
-function _load_settings!(settings::ScsSettings{T}, options) where {T}
-    for (key, value) in options
-        if key == :linear_solver
-            continue
-        elseif !hasfield(ScsSettings, key)
-            msg = "Unrecognized option passed to SCS solver: $(key)"
-            throw(ArgumentError(msg))
-        end
-        if value isa AbstractString
-            GC.@preserve value begin
-                c_value = Base.cconvert(String, value)
-                c_str = Base.unsafe_convert(Cstring, c_value)
-                setproperty!(settings, key, c_str)
-            end
-        else
-            setproperty!(settings, key, value)
-        end
-    end
 end
 
 function raw_status(info::ScsInfo)
@@ -350,9 +347,6 @@ function scs_solve(
     m, n, z, l, ep, ed = T(m), T(n), T(z), T(l), T(ep), T(ed)
     Avalues, Arowval, Acolptr = _to_sparse(T, A)
     Pvalues, Prowval, Pcolptr = _to_sparse(T, P)
-    settings = ScsSettings(linear_solver)
-    _load_settings!(settings, options)
-    settings.warm_start = warm_start
     model = _ScsDataWrapper(
         linear_solver,
         m,
@@ -386,7 +380,7 @@ function scs_solve(
         primal_sol,
         dual_sol,
         slack,
-        settings,
+        ScsSettings(linear_solver; warm_start, options...),
     )
     Base.GC.@preserve model begin
         return _unsafe_scs_solve(model)
