@@ -437,8 +437,11 @@ function _unsafe_scs_solve(model::_ScsDataWrapper{S,T}) where {S,T}
     )
     for (key, value) in model.options
         if value isa String
-            cstr = Base.unsafe_convert(Cstring, Base.cconvert(Cstring, value))
-            setproperty!(model.settings, key, cstr)
+            GC.@preserve value begin
+                c_value = Base.cconvert(String, value)
+                c_str = Base.unsafe_convert(Cstring, c_value)
+                setproperty!(model.settings, key, c_str)
+            end
         else
             setproperty!(model.settings, key, value)
         end
