@@ -182,8 +182,8 @@ function _sanitize_options(::Type{T}, options) where {T}
 end
 
 function raw_status(info::ScsInfo)
-    data = UInt8[info.status[i] for i in 1:findfirst(iszero, info.status)-1]
-    return String(data)
+    index = findfirst(iszero, info.status)::Int
+    return String(UInt8[info.status[i] for i in 1:index-1])
 end
 
 function _to_sparse(::Type{T}, A::AbstractMatrix) where {T}
@@ -455,7 +455,7 @@ function _unsafe_scs_solve(model::_ScsDataWrapper{S,T}) where {S,T}
         scs_work,
         scs_solution,
         scs_info,
-        model.options[:warm_start],
+        model.options[:warm_start]::T,
     )
     scs_finish(model.linear_solver, scs_work)
     # SCS does not flush stdout on exit, and the C stdout is not the same as

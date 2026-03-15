@@ -32,6 +32,12 @@ struct ScaledLogDetConeTriangleBridge{T,F} <:
     F,
 }
     constraint::MOI.ConstraintIndex{F,ScaledLogDetConeTriangle}
+
+    function ScaledLogDetConeTriangleBridge{T,F}(
+        ci::MOI.ConstraintIndex{F,ScaledLogDetConeTriangle},
+    ) where {T,F}
+        return new{T,F}(ci)
+    end
 end
 
 function MOI.Bridges.Constraint.concrete_bridge_type(

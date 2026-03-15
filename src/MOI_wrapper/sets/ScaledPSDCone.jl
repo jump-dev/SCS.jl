@@ -36,6 +36,12 @@ struct ScaledPSDConeBridge{T,F} <: MOI.Bridges.Constraint.SetMapBridge{
     F,
 }
     constraint::MOI.ConstraintIndex{F,ScaledPSDCone}
+
+    function ScaledPSDConeBridge{T,F}(
+        ci::MOI.ConstraintIndex{F,ScaledPSDCone},
+    ) where {T,F}
+        return new{T,F}(ci)
+    end
 end
 
 function MOI.Bridges.Constraint.concrete_bridge_type(

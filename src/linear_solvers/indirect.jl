@@ -37,7 +37,7 @@ function scs_update(
     b::Vector{Float64},
     c::Vector{Float64},
 )
-    return @ccall direct.scs_update(
+    return @ccall libscsindir.scs_update(
         work::Ptr{Cvoid},
         b::Ref{Float64},
         c::Ref{Float64},
