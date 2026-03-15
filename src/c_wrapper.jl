@@ -156,11 +156,11 @@ struct _ScsDataWrapper{S,T}
     dual::Vector{Cdouble}
     slack::Vector{Cdouble}
     settings::ScsSettings{T}
-    options::Dict{Symbol,Union{String,Int,Cdouble}}
+    options::Dict{Symbol,Union{String,T,Cdouble}}
 end
 
-function _sanitize_options(options)
-    option_dict = Dict{Symbol,Union{String,Int,Cdouble}}()
+function _sanitize_options(::Type{T}, options) where {T}
+    option_dict = Dict{Symbol,Union{String,T,Cdouble}}()
     for (key, value) in options
         if key == :linear_solver
             continue
@@ -171,7 +171,19 @@ function _sanitize_options(options)
                 ),
             )
         end
-        option_dict[key] = value
+        if isa(value, Integer)
+            option_dict[key] = convert(T, value)
+        elseif isa(value, AbstractFloat)
+            option_dict[key] = convert(Cdouble, value)
+        elseif isa(value, String)
+            option_dict[key] = value
+        else
+            throw(
+                ArgumentError(
+                    "Option with unsupported type: $((key,value))",
+                ),
+            )
+        end
     end
     return option_dict
 end
@@ -348,7 +360,7 @@ function scs_solve(
     m, n, z, l, ep, ed = T(m), T(n), T(z), T(l), T(ep), T(ed)
     Avalues, Arowval, Acolptr = _to_sparse(T, A)
     Pvalues, Prowval, Pcolptr = _to_sparse(T, P)
-    option_dict = _sanitize_options(options)
+    option_dict = _sanitize_options(T, options)
     option_dict[:warm_start] = convert(Int, warm_start)
     model = _ScsDataWrapper(
         linear_solver,

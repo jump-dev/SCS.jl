@@ -794,8 +794,9 @@ function test_options(T)
         solution.s;
         max_iters = 1,
         warm_start = true,
+        verbose = true,
         eps_abs = 1e-10,
-        eps_rel = 1e-10,
+        eps_rel = Float32(1e-10),
     )
     @test isapprox(solution.x' * args.c, -99.0; rtol = 1e-9)
     @test_throws(ArgumentError, SCS.scs_solve(T, args...; eps = 1e-12))
@@ -811,7 +812,7 @@ function test_options(T)
     SCS.scs_solve(T, args...; eps_abs = 1e-12, write_data_filename = tmpf)
     @test isfile(tmpf)
 
-    @test_throws MethodError SCS.scs_solve(T, args...; write_data_filename = @view tmpf[1:end])
+    @test_throws ArgumentError SCS.scs_solve(T, args...; write_data_filename = @view tmpf[1:end])
     return
 end
 
