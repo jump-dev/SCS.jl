@@ -76,7 +76,7 @@ function _transform_function(
         T,
         MOI.Utilities.operate(-, T, scalars[1]),
         scalars[2],
-        scalars[p.+2],
+        scalars[p .+ 2],
     )
 end
 

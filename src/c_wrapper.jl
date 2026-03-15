@@ -183,7 +183,7 @@ end
 
 function raw_status(info::ScsInfo)
     index = findfirst(iszero, info.status)::Int
-    return String(UInt8[info.status[i] for i in 1:index-1])
+    return String(UInt8[info.status[i] for i in 1:(index-1)])
 end
 
 function _to_sparse(::Type{T}, A::AbstractMatrix) where {T}

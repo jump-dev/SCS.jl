@@ -17,7 +17,9 @@ function SCS.scs_set_default_settings(
     stgs::SCS.ScsSettings{I},
 ) where {I<:Clonglong}
     return @ccall(
-        libscsmkl.scs_set_default_settings(stgs::Ref{SCS.ScsSettings{I}})::Cvoid,
+        libscsmkl.scs_set_default_settings(
+            stgs::Ref{SCS.ScsSettings{I}},
+        )::Cvoid,
     )
 end
 

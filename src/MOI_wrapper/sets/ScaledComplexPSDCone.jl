@@ -77,7 +77,7 @@ function _complex_to_scs(func)
     for i in 1:d
         c += 1
         perm[c] = i^2
-        for j in i+1:d
+        for j in (i+1):d
             triidx = 2i - 1 + (j - 1)^2
             c += 1
             perm[c] = triidx
@@ -96,7 +96,7 @@ function _scs_to_complex(func)
     for i in 1:d
         c += 1
         perm[i^2] = c
-        for j in i+1:d
+        for j in (i+1):d
             triidx = 2i - 1 + (j - 1)^2
             c += 1
             perm[triidx] = c
