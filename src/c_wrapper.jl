@@ -30,9 +30,26 @@ mutable struct ScsSettings{T} <: AbstractSCSType
     acceleration_interval::T # interval to apply acceleration
     write_data_filename::Cstring # if set dump raw problem data to the file
     log_csv_filename::Cstring # if set log solve data to the file
-    function ScsSettings(linear_solver::Type{<:LinearSolver})
+
+    function ScsSettings(linear_solver::Type{<:LinearSolver}; kwargs...)
         settings = new{scsint_t(linear_solver)}()
         scs_set_default_settings(linear_solver, settings)
+        for (key, value) in kwargs
+            if key == :linear_solver
+                continue
+            elseif !hasfield(ScsSettings, key)
+                msg = "Unrecognized option passed to SCS solver: $(key)"
+                throw(ArgumentError(msg))
+            elseif value isa AbstractString
+                GC.@preserve value begin
+                    c_value = Base.cconvert(String, value)
+                    c_str = Base.unsafe_convert(Cstring, c_value)
+                    setproperty!(settings, key, c_str)
+                end
+            else
+                setproperty!(settings, key, value)
+            end
+        end
         return settings
     end
 end
@@ -156,29 +173,6 @@ struct _ScsDataWrapper{S,T}
     dual::Vector{Cdouble}
     slack::Vector{Cdouble}
     settings::ScsSettings{T}
-    options::Dict{Symbol,Union{String,T,Cdouble}}
-end
-
-function _sanitize_options(::Type{T}, options) where {T}
-    option_dict = Dict{Symbol,Union{String,T,Cdouble}}()
-    for (key, value) in options
-        if key == :linear_solver
-            continue
-        elseif !hasfield(ScsSettings, key)
-            msg = "Unrecognized option passed to SCS solver: $(key)"
-            throw(ArgumentError(msg))
-        elseif value isa Integer
-            option_dict[key] = convert(T, value)
-        elseif value isa AbstractFloat
-            option_dict[key] = convert(Cdouble, value)
-        elseif value isa AbstractString
-            option_dict[key] = convert(String, value)
-        else
-            msg = "Option with unsupported type: $key=>$(repr(value))"
-            throw(ArgumentError(msg))
-        end
-    end
-    return option_dict
 end
 
 function raw_status(info::ScsInfo)
@@ -353,8 +347,6 @@ function scs_solve(
     m, n, z, l, ep, ed = T(m), T(n), T(z), T(l), T(ep), T(ed)
     Avalues, Arowval, Acolptr = _to_sparse(T, A)
     Pvalues, Prowval, Pcolptr = _to_sparse(T, P)
-    option_dict = _sanitize_options(T, options)
-    option_dict[:warm_start] = convert(T, warm_start)
     model = _ScsDataWrapper(
         linear_solver,
         m,
@@ -388,8 +380,7 @@ function scs_solve(
         primal_sol,
         dual_sol,
         slack,
-        ScsSettings(linear_solver),
-        option_dict,
+        ScsSettings(linear_solver; warm_start, options...),
     )
     Base.GC.@preserve model begin
         return _unsafe_scs_solve(model)
@@ -432,17 +423,6 @@ function _unsafe_scs_solve(model::_ScsDataWrapper{S,T}) where {S,T}
         pointer(model.b),
         pointer(model.c),
     )
-    for (key, value) in model.options
-        if value isa String
-            GC.@preserve value begin
-                c_value = Base.cconvert(String, value)
-                c_str = Base.unsafe_convert(Cstring, c_value)
-                setproperty!(model.settings, key, c_str)
-            end
-        else
-            setproperty!(model.settings, key, value)
-        end
-    end
     scs_work = scs_init(model.linear_solver, scs_data, scs_cone, model.settings)
     scs_solution = ScsSolution(
         pointer(model.primal),
@@ -455,7 +435,7 @@ function _unsafe_scs_solve(model::_ScsDataWrapper{S,T}) where {S,T}
         scs_work,
         scs_solution,
         scs_info,
-        model.options[:warm_start]::T,
+        model.settings.warm_start,
     )
     scs_finish(model.linear_solver, scs_work)
     # SCS does not flush stdout on exit, and the C stdout is not the same as
