@@ -17,7 +17,7 @@ jobs:
       matrix:
         version: ['1.10', '1']  # Test against LTS and current minor release
         os: [ubuntu-latest, macOS-latest, windows-latest]
-        arch: [x64]
+        arch: [default]
         include:
           # Also test against 32-bit Linux on LTS.
           - version: '1.10'
