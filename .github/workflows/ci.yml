@@ -17,7 +17,7 @@ jobs:
       matrix:
         version: ['1.10', '1']  # Test against LTS and current minor release
         os: [ubuntu-latest, macOS-latest, windows-latest]
-        arch: [x64]
+        arch: [default]
         include:
           # Also test against 32-bit Linux on LTS.
           - version: '1.10'
@@ -29,7 +29,7 @@ jobs:
             arch: aarch64
     steps:
       - uses: actions/checkout@v6
-      - uses: julia-actions/setup-julia@v2
+      - uses: julia-actions/setup-julia@v3
         with:
           version: ${{ matrix.version }}
           arch: ${{ matrix.arch }}
