@@ -439,8 +439,8 @@ function MOI.optimize!(
         _map_sets(MOI.dimension, T, Ab, MOI.SecondOrderCone),
         _map_sets(MOI.side_dimension, T, Ab, ScaledPSDCone),
         _map_sets(MOI.side_dimension, T, Ab, ScaledComplexPSDCone),
-        div(Ab.sets.num_rows[6] - Ab.sets.num_rows[5], 3),
-        div(Ab.sets.num_rows[7] - Ab.sets.num_rows[6], 3),
+        div(MOI.Utilities.num_rows(Ab.sets, MOI.ExponentialCone), 3),
+        div(MOI.Utilities.num_rows(Ab.sets, MOI.DualExponentialCone), 3),
         vcat(
             _map_sets(set -> set.exponent, Float64, Ab, MOI.PowerCone{Cdouble}),
             _map_sets(
