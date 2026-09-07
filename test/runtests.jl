@@ -36,6 +36,7 @@ include("test_problems.jl")
         feasible_basic_problems(solver)
         test_options(solver)
         test_scs_solve_solution_vectors(solver)
+        test_several_sum_largest(solver)
     end
 end
 
