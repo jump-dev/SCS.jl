@@ -891,7 +891,7 @@ function test_scs_solve_solution_vectors(solver)
     return
 end
 
-function test_several_sum_largest()
+function test_several_sum_largest(solver)
     Ax = [
         -1.0, -1.0, 1.0, -1.0, -1.0, 1.0, -1.0, -1.0, 1.0, -1.0, -1.0, 1.0,
         -1.0, -1.0, 1.0, -1.0, -1.0, 1.0, -1.0, -1.0, 1.0, -1.0, -1.0, 1.0,
@@ -1206,7 +1206,7 @@ function test_several_sum_largest()
     c = zeros(42)
     c[1:2] .= 1:2
     ret = SCS.scs_solve(
-        SCS.DirectSolver,
+        solver,
         1643,       # m
         42,         # n
         SparseArrays.sparse(Ai .+ 1, Aj, Ax), # A,
