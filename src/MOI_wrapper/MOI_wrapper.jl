@@ -455,7 +455,7 @@ function MOI.optimize!(
         _map_sets(set -> set.column_dim, T, Ab, NormNuclearCone),
         T[],    # ell1
         T[],    # sl_n
-        T[],    # nuc_k
+        T[],    # sl_k
         dest.sol.primal,
         dest.sol.dual,
         dest.sol.slack;
