@@ -411,8 +411,8 @@ function _unsafe_scs_solve(model::_ScsDataWrapper{S,T}) where {S,T}
         length(model.nuc_m),
         pointer(model.ell1),
         length(model.ell1),
-        pointer(model.sl_k),
         pointer(model.sl_n),
+        pointer(model.sl_k),
         length(model.sl_n),
     )
     scs_data = ScsData{T}(
