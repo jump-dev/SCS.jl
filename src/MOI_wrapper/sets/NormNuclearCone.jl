@@ -149,6 +149,6 @@ function MOI.set(
     start::Union{Nothing,AbstractVector{T}},
 ) where {T}
     g = _transpose(bridge.set, start, true)
-    MOI.set(model, attr, bridge.constraint, start)
+    MOI.set(model, attr, bridge.constraint, g)
     return
 end

@@ -573,6 +573,17 @@ function test_modify_constants()
     return
 end
 
+function test_norm_nuclear_cone_constraint_primal_start()
+    model = MOI.instantiate(SCS.Optimizer; with_bridge_type = Float64)
+    x = MOI.add_variables(model, 7)
+    f = MOI.VectorOfVariables(x)
+    ci = MOI.add_constraint(model, f, MOI.NormNuclearCone(2, 3))
+    start = collect(1.0:7.0)
+    MOI.set(model, MOI.ConstraintPrimalStart(), ci, start)
+    @test isapprox(MOI.get(model, MOI.ConstraintPrimalStart(), ci), start)
+    return
+end
+
 end  # module
 
 TestSCS.runtests()
