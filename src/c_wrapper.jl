@@ -121,6 +121,17 @@ mutable struct ScsInfo{T} <: AbstractSCSType
     comp_slack::Cdouble
     rejected_accel_steps::T
     accepted_accel_steps::T
+    # aa_stats (new in SCS 3.3)
+    aa_iter::T
+    aa_n_accept::T
+    aa_n_reject_lapack::T
+    aa_n_reject_rank0::T
+    aa_n_reject_nonfinite::T
+    aa_n_reject_weight_cap::T
+    aa_n_safeguard_reject::T
+    aa_last_rank::T
+    aa_last_aa_norm::Cdouble
+    aa_last_regularization::Cdouble
     lin_sys_time::Cdouble
     cone_time::Cdouble
     accel_time::Cdouble
