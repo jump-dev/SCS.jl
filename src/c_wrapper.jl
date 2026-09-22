@@ -17,6 +17,7 @@ mutable struct ScsSettings{T} <: AbstractSCSType
     normalize::T # boolean, heuristic data rescaling
     scale::Cdouble # if normalized, rescales by this factor
     adaptive_scale::T # boolean, whether to adaptively update `scale`
+    adaptive_diag_scale::T # boolean, whether to refine R per row
     rho_x::Cdouble # x equality constraint scaling
     max_iters::T # maximum iterations to take
     eps_abs::Cdouble # absolute convergence tolerance
@@ -28,6 +29,9 @@ mutable struct ScsSettings{T} <: AbstractSCSType
     warm_start::T # boolean, warm start (put initial guess in Sol struct)
     acceleration_lookback::T # memory for acceleration
     acceleration_interval::T # interval to apply acceleration
+    acceleration_type_1::T # boolean, whether AA uses type-I (1) or type-II (2) acceleration
+    acceleration_regularization::Cdouble # Tikhonov regularization for AA least-squares solve
+    acceleration_relaxation::Cdouble # AA relaxation factor β
     write_data_filename::Cstring # if set dump raw problem data to the file
     log_csv_filename::Cstring # if set log solve data to the file
 
@@ -117,6 +121,17 @@ mutable struct ScsInfo{T} <: AbstractSCSType
     comp_slack::Cdouble
     rejected_accel_steps::T
     accepted_accel_steps::T
+    # aa_stats (new in SCS 3.3)
+    aa_iter::T
+    aa_n_accept::T
+    aa_n_reject_lapack::T
+    aa_n_reject_rank0::T
+    aa_n_reject_nonfinite::T
+    aa_n_reject_weight_cap::T
+    aa_n_safeguard_reject::T
+    aa_last_rank::T
+    aa_last_aa_norm::Cdouble
+    aa_last_regularization::Cdouble
     lin_sys_time::Cdouble
     cone_time::Cdouble
     accel_time::Cdouble
