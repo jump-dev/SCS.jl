@@ -217,6 +217,36 @@ function test_VectorOfVariables_psd_permutation()
     return
 end
 
+function test_ScaledPSDConeBridge_modify()
+    for (m, n) in [3 => 2, 6 => 3, 10 => 4]
+        inner = MOI.Utilities.UniversalFallback(MOI.Utilities.Model{Float64}())
+        model = MOI.Bridges.Constraint.SingleBridgeOptimizer{
+            SCS.ScaledPSDConeBridge{Float64},
+        }(
+            inner,
+        )
+        x = MOI.add_variables(model, m)
+        f = MOI.Utilities.vectorize(1.0 .* x)
+        c = MOI.add_constraint(
+            model,
+            f,
+            MOI.ScaledPositiveSemidefiniteConeTriangle(n),
+        )
+        @test ≈(MOI.get(model, MOI.ConstraintFunction(), c), f)
+        b = sin.(1:m)
+        MOI.modify(model, c, MOI.VectorConstantChange(b))
+        f.constants .= b
+        @test ≈(MOI.get(model, MOI.ConstraintFunction(), c), f)
+        a = cos.(1:m)
+        for i in 1:m
+            MOI.modify(model, c, MOI.MultirowChange(x[i], [(i, a[i])]))
+        end
+        f = MOI.Utilities.vectorize(a .* x .+ b)
+        @test ≈(MOI.get(model, MOI.ConstraintFunction(), c), f)
+    end
+    return
+end
+
 function test_redirect_stdout()
     filename = tempname()
     open(filename, "w") do io

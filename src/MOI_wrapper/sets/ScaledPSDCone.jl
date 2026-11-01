@@ -114,3 +114,33 @@ function MOI.Bridges.inverse_adjoint_map_function(
 )
     return _transform_function(f, true)
 end
+
+function MOI.modify(
+    model::MOI.ModelLike,
+    bridge::ScaledPSDConeBridge,
+    change::MOI.MultirowChange,
+)
+    set = MOI.get(model, MOI.ConstraintSet(), bridge.constraint)
+    d = MOI.dimension(set)
+    upper_to_lower, _ = _upper_to_lower_triangular_permutation(d)
+    new_coefficients =
+        [(upper_to_lower[row], c) for (row, c) in change.new_coefficients]
+    sort!(new_coefficients; by = first)
+    MOI.modify(
+        model,
+        bridge.constraint,
+        MOI.MultirowChange(change.variable, new_coefficients),
+    )
+    return
+end
+
+function MOI.modify(
+    model::MOI.ModelLike,
+    bridge::ScaledPSDConeBridge,
+    change::MOI.VectorConstantChange,
+)
+    new_constant = MOI.Bridges.map_function(bridge, change.new_constant)
+    new_change = MOI.VectorConstantChange(new_constant)
+    MOI.modify(model, bridge.constraint, new_change)
+    return
+end
